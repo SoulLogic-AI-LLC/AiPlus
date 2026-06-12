@@ -25,26 +25,26 @@ case "$OS" in
     echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
-RELEASE_URL="https://github.com/izhiwen/AiPlus_StarWeaver/releases/download/${TAG}/aiplus-${TARGET}.${EXT}"
+RELEASE_URL="https://github.com/izhiwen/AiPlus_StarWeaver/releases/download/v1.0.0-test-3/aiplus-${TARGET}.${EXT}"
 CHECKSUM_URL="${RELEASE_URL}.sha256"
 
-echo "Installing AiPlus ${TAG} for ${TARGET}..."
+echo "Installing AiPlus v1.0.0-test-3 for ${TARGET}..."
 INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
-curl -fsSL "$RELEASE_URL" -o "/tmp/aiplus-${TAG}.${EXT}"
+curl -fsSL "$RELEASE_URL" -o "/tmp/aiplus-v1.0.0-test-3.${EXT}"
 
 if [ "$EXT" = "tar.gz" ]; then
-  tar -xzf "/tmp/aiplus-${TAG}.${EXT}" -C /tmp
+  tar -xzf "/tmp/aiplus-v1.0.0-test-3.${EXT}" -C /tmp
 fi
 
 install -m 0755 /tmp/aiplus "$INSTALL_DIR/aiplus"
-rm -f "/tmp/aiplus-${TAG}.${EXT}" /tmp/aiplus
+rm -f "/tmp/aiplus-v1.0.0-test-3.${EXT}" /tmp/aiplus
 
 echo ""
-echo "✓ AiPlus ${TAG} installed to ${INSTALL_DIR}/aiplus"
+echo "✓ AiPlus v1.0.0-test-3 installed to ${INSTALL_DIR}/aiplus"
 echo ""
 if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
   echo "Add this to your shell config (~/.zshrc or ~/.bashrc):"
-  echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
+  echo "  export PATH=\"${INSTALL_DIR}:$PATH\""
 fi
