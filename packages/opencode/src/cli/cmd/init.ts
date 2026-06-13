@@ -35,6 +35,9 @@ export const InitCommand = cmd({
     // Write .aiplus/ skeleton
     const agentTeamToml = `schema_version = "1.0"
 
+[execution]
+backend = "opencode"
+
 [team]
 project_name = "<your-project>"
 core_roles = [
