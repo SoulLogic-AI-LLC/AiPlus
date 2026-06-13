@@ -175,6 +175,10 @@ function isVersionGreater(left: string, right: string) {
   return a.prerelease.localeCompare(b.prerelease, undefined, { numeric: true }) > 0
 }
 
+function useSafeOpenTuiStartup() {
+  return process.platform === "darwin"
+}
+
 export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
   const global = yield* Global.Service
   const exit = { epilogue: undefined as string | undefined, reason: undefined as unknown }
@@ -187,7 +191,8 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
             targetFps: 60,
             gatherStats: false,
             exitOnCtrlC: false,
-            useKittyKeyboard: {},
+            useKittyKeyboard: useSafeOpenTuiStartup() ? null : {},
+            ...(useSafeOpenTuiStartup() ? { useThread: false } : {}),
             autoFocus: false,
             openConsoleOnError: false,
             useMouse: !Flag.OPENCODE_DISABLE_MOUSE && input.config.mouse,

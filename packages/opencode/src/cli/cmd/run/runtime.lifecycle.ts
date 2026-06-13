@@ -34,6 +34,10 @@ import { formatModelLabel } from "./variant.shared"
 
 const FOOTER_HEIGHT = 4
 
+function useSafeOpenTuiStartup() {
+  return process.platform === "darwin"
+}
+
 type SplashState = {
   entry: boolean
   exit: boolean
@@ -186,7 +190,8 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
       autoFocus: false,
       openConsoleOnError: false,
       exitOnCtrlC: false,
-      useKittyKeyboard: { events: process.platform === "win32" },
+      useKittyKeyboard: useSafeOpenTuiStartup() ? null : { events: process.platform === "win32" },
+      ...(useSafeOpenTuiStartup() ? { useThread: false } : {}),
       screenMode: "split-footer",
       footerHeight: FOOTER_HEIGHT,
       externalOutputMode: "capture-stdout",
