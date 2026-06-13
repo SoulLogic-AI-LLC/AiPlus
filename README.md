@@ -2,7 +2,7 @@
 
 **OpenCode, augmented with the AiPlus agent team layer.**
 
-![v0.0.2](https://img.shields.io/badge/version-v0.0.2-blue)
+![v0.0.3](https://img.shields.io/badge/version-v0.0.3-blue)
 ![7/7 capabilities](https://img.shields.io/badge/capabilities-7%2F7-green)
 ![20 personas](https://img.shields.io/badge/personas-20-orange)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
@@ -11,11 +11,25 @@
 
 ## Quick Start
 
+### Developer (from source)
+
 ```bash
 git clone git@github.com:izhiwen/AiPlus-Native.git
 cd AiPlus-Native && bun install
 bun run dev
 ```
+
+Requires **Bun ≥ 1.3.14**.
+
+### User (binary release) <sup>[v0.1.0 milestone]</sup>
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/main/install.sh | bash
+```
+
+The binary release pipeline is **not yet built**. The install script above will be available
+once platform binaries are produced via `bun build --compile`. Until then, use the developer
+flow above.
 
 ---
 
@@ -119,21 +133,28 @@ Roles are grouped by **pillar** — each pillar has distinct permissions and res
 
 ## Roadmap
 
-### v0.0.3 — Lobby CLI + Hash Chain + IdempotencyKey
-- `aiplus lobby status|bind|resume` — role dashboard
-- Hash chain for dispatch-log and memory
-- IdempotencyKey in effect gateway
-
-### v1.0 — Memory 3-Layer + Token Cost + Velocity
-- 3-layer memory: session → project → global
+### ✅ v0.0.3 — 7-in-1 Release
+- Lobby CLI — `aiplus lobby status|bind|resume`
+- GAP-1 idempotencyKey + GAP-2 hash chain
 - Token cost tracking per role/session
 - Velocity estimation (p50/p90)
-- Secret broker integration
+- GAP-6 session resume compact pressure
+- GAP-3/4 audit module fixes
+- GAP-10 secret broker
 
-### Phase B — GUI Panels
-- Lobby dashboard (web UI)
-- Dispatch kanban board
-- Compact pressure gauge
+### ✅ v0.0.3 — B0 REST API + B1 Lobby Dashboard
+- `GET /aiplus/lobby/status|dispatch|compact/capsule|personas`
+- TUI `home_bottom` lobby widget + F2 full-screen route
+
+### 🚧 v0.1.0 — Binary Distribution
+- `bun build --compile` → platform binaries (macOS arm64/x64, Linux x64, Windows x64)
+- `install.sh` one-liner installer
+- Release pipeline (GitHub Actions → build matrix → upload assets)
+
+### 📋 v1.0
+- 3-layer memory: session → project → global
+- B2 Dispatch kanban board (TUI route)
+- B3 Compact pressure gauge (TUI sidebar)
 - Effect gateway monitor
 
 ---
