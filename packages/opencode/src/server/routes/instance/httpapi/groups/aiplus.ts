@@ -60,7 +60,7 @@ const TokenCount = Schema.Struct({
 const ContextCapsule = Schema.Struct({
   sessionId: Schema.String,
   contextUsage: Schema.Number,
-  pressureLevel: Schema.Literals(["silent", "low", "medium", "high", "critical"]),
+  pressureLevel: Schema.Literals(["silent", "soft", "hard", "emergency"]),
   tokenCount: TokenCount,
   model: Schema.String,
   writtenAt: Schema.String,
@@ -80,11 +80,11 @@ const ContextCapsuleWithThresholds = Schema.Struct({
   thresholds: Schema.Record(Schema.String, CompactThresholds),
 })
 
-/** Permission rule. */
+/** Permission rule (matches YAML frontmatter format). */
 const PermissionRule = Schema.Struct({
-  action: Schema.String,
+  permission: Schema.String,
   pattern: Schema.String,
-  effect: Schema.Literals(["allow", "deny"]),
+  action: Schema.Literals(["allow", "deny"]),
 })
 
 /** Persona info. */

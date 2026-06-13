@@ -280,30 +280,33 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
         const modeMatch = frontmatter.match(/^mode:\s*(.+)$/m)
         const hiddenMatch = frontmatter.match(/^hidden:\s*(.+)$/m)
 
-        // Parse permissions
-        const permissions: Array<{ action: string; pattern: string; effect: "allow" | "deny" }> = []
+        // Parse permissions (YAML format: permission/pattern/action)
+        const permissions: Array<{ permission: string; pattern: string; action: "allow" | "deny" }> = []
         const permLines = frontmatter.split("\n")
         let inPerm = false
+        let currentPerm: { permission?: string; pattern?: string; action?: "allow" | "deny" } = {}
         for (const line of permLines) {
           if (line.trim().startsWith("- permission:")) {
+            // Save previous entry if complete
+            if (currentPerm.permission && currentPerm.pattern && currentPerm.action) {
+              permissions.push(currentPerm as { permission: string; pattern: string; action: "allow" | "deny" })
+            }
             inPerm = true
+            currentPerm = {}
+            const permMatch = line.match(/permission:\s*"?([^"]+)"?/)
+            if (permMatch) currentPerm.permission = permMatch[1]
             continue
           }
           if (inPerm) {
-            const actionMatch = line.match(/action:\s*"?(\w+)"?/)
             const patternMatch = line.match(/pattern:\s*"?([^"]+)"?/)
-            const effectMatch = line.match(/effect:\s*"?(\w+)"?/)
-            if (actionMatch && patternMatch && effectMatch) {
-              permissions.push({
-                action: actionMatch[1],
-                pattern: patternMatch[1],
-                effect: effectMatch[1] as "allow" | "deny",
-              })
-            }
-            if (line.trim().startsWith("- permission:") || line.trim() === "") {
-              inPerm = false
-            }
+            const actionMatch = line.match(/action:\s*"?(\w+)"?/)
+            if (patternMatch) currentPerm.pattern = patternMatch[1]
+            if (actionMatch) currentPerm.action = actionMatch[1] as "allow" | "deny"
           }
+        }
+        // Save last entry
+        if (currentPerm.permission && currentPerm.pattern && currentPerm.action) {
+          permissions.push(currentPerm as { permission: string; pattern: string; action: "allow" | "deny" })
         }
 
         personas.push({
