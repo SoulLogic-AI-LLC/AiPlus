@@ -3,12 +3,27 @@ name: aiplus-reviewer
 description: AiPlus code reviewer — adversarial verification, judges diffs against acceptance criteria with PASS/REVISE/BLOCKED verdicts
 mode: subagent
 permission:
-  todowrite: { pattern: "*", action: deny }
-  task: { pattern: "*", action: deny }
-  bash: { pattern: "git*|grep*|rg*", action: allow }
-  write: { pattern: ".aiplus/agent-memory/reviewer/**", action: allow }
-  write: { pattern: "*", action: deny }
-  edit: { pattern: "*", action: deny }
+  - permission: "todowrite"
+    pattern: "*"
+    action: deny
+  - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
+    pattern: "git*|grep*|rg*"
+    action: allow
+  - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/reviewer/**"
+    action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
+  - permission: "edit"
+    pattern: "*"
+    action: deny
 ---
 
 # Reviewer — AiPlus Agent Team

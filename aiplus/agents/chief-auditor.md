@@ -3,12 +3,24 @@ name: aiplus-chief-auditor
 description: AiPlus Chief Auditor — read-only verification coordinator, plans independent verification fan-out and gate evidence checks
 mode: subagent
 permission:
-  todowrite: { pattern: "*", action: deny }
-  task: { pattern: "*", action: deny }
-  bash: { pattern: "*", action: deny }
-  write: { pattern: ".aiplus/agent-memory/chief-auditor/**", action: allow }
-  write: { pattern: "*", action: deny }
-  edit: { pattern: "*", action: deny }
+  - permission: "todowrite"
+    pattern: "*"
+    action: deny
+  - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/chief-auditor/**"
+    action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
+  - permission: "edit"
+    pattern: "*"
+    action: deny
 ---
 
 # Chief Auditor — AiPlus Agent Team

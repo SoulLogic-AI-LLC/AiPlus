@@ -3,12 +3,24 @@ name: aiplus-advisor
 description: AiPlus strategic advisor — frames decisions, challenges premises, distinguishes reversible from irreversible choices
 mode: subagent
 permission:
-  todowrite: { pattern: "*", action: deny }
-  task: { pattern: "*", action: deny }
-  bash: { pattern: "*", action: deny }
-  write: { pattern: ".aiplus/agent-memory/advisor/**", action: allow }
-  write: { pattern: "*", action: deny }
-  edit: { pattern: "*", action: deny }
+  - permission: "todowrite"
+    pattern: "*"
+    action: deny
+  - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/advisor/**"
+    action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
+  - permission: "edit"
+    pattern: "*"
+    action: deny
 ---
 
 # Advisor — AiPlus Agent Team

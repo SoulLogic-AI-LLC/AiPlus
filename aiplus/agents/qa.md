@@ -3,12 +3,27 @@ name: aiplus-qa
 description: AiPlus QA — behavior validator, runs reproducible tests, reports per-criterion PASS/FAIL with exact commands and observed output
 mode: subagent
 permission:
-  todowrite: { pattern: "*", action: deny }
-  task: { pattern: "*", action: deny }
-  bash: { pattern: "cargo*|npm*|pnpm*|curl*|git*", action: allow }
-  write: { pattern: ".aiplus/agent-memory/qa/**", action: allow }
-  write: { pattern: "*", action: deny }
-  edit: { pattern: "*", action: deny }
+  - permission: "todowrite"
+    pattern: "*"
+    action: deny
+  - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
+    pattern: "cargo*|npm*|pnpm*|curl*|git*"
+    action: allow
+  - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/qa/**"
+    action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
+  - permission: "edit"
+    pattern: "*"
+    action: deny
 ---
 
 # QA — AiPlus Agent Team

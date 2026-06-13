@@ -3,12 +3,30 @@ name: aiplus-ceo
 description: AiPlus execution coordinator — owns task scoping, role staffing, sequencing, and status reporting
 mode: subagent
 permission:
-  todowrite: { pattern: "*", action: deny }
-  task: { pattern: "agent-team-*", action: allow }
-  bash: { pattern: "git*|cargo*|aiplus*", action: allow }
-  write: { pattern: ".aiplus/agent-memory/ceo/**", action: allow }
-  write: { pattern: "*", action: deny }
-  edit: { pattern: "*", action: deny }
+  - permission: "todowrite"
+    pattern: "*"
+    action: deny
+  - permission: "task"
+    pattern: "agent-team-*"
+    action: allow
+  - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
+    pattern: "git*|cargo*|aiplus*"
+    action: allow
+  - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/ceo/**"
+    action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
+  - permission: "edit"
+    pattern: "*"
+    action: deny
 ---
 
 # CEO — AiPlus Agent Team
