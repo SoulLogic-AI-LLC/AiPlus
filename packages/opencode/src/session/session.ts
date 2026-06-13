@@ -47,10 +47,9 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 
-// AiPlus hooks — dynamic imports to avoid pulling node:fs into TUI worker bundle
-import { detectLane } from "./detect-lane"
-// NOTE: appendDispatchLog, acquireWorktreeLease, appendMemoryEntry, auditVerify
-// are imported dynamically at call sites to prevent TUI RPC crash.
+// AiPlus hooks — RPC emit to main process (0 node:fs in worker)
+import { Rpc } from "@/util/rpc"
+import type { AiplusHookEvent } from "./aiplus-hook-events"
 
 const runtime = makeRuntime(Database.Service, Database.defaultLayer)
 
@@ -582,25 +581,14 @@ export const layer: Layer.Layer<
 
       yield* events.publish(SessionV1.Event.Created, { sessionID: result.id, info: result })
 
-      // AiPlus create-time hooks — fire-and-forget (Fix A)
-      // require() to avoid pulling node:fs into TUI worker bundle
-      const projectRoot = ctx.worktree
-      const lane = detectLane()
-      const role = (result.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
+      // AiPlus create-time hooks — RPC emit to main process (Fix A)
       try {
-        const { append } = require("../../../../aiplus/dispatch/writer") as typeof import("../../../../aiplus/dispatch/writer")
-        append(projectRoot, {
-          dispatchId: `dispatch-${result.id}`,
-          role,
-          task: result.agent ? `[${result.agent}] session created` : "(session-create)",
-          status: "created",
+        Rpc.emit("aiplus.hook", {
+          type: "session.created",
           sessionId: result.id,
-          worktreePath: projectRoot,
-        })
-      } catch { /* fire-and-forget */ }
-      try {
-        const { acquire } = require("../../../../aiplus/worktree/lease") as typeof import("../../../../aiplus/worktree/lease")
-        acquire(projectRoot, result.id, lane, projectRoot)
+          agent: result.agent,
+          worktree: ctx.worktree,
+        } satisfies AiplusHookEvent)
       } catch { /* fire-and-forget */ }
 
       return result
@@ -688,25 +676,19 @@ export const layer: Layer.Layer<
           yield* remove(child.id)
         }
 
-        // AiPlus terminal hooks on session delete (Fix C/D — memory + audit at end)
-        // require() to avoid pulling node:fs into TUI worker bundle
+        // AiPlus terminal hooks on session delete — RPC emit to main process (Fix C/D)
         if (hasInstance) {
           try {
             const delCtxOpt = yield* InstanceState.context.pipe(Effect.option)
             if (delCtxOpt._tag === "Some") {
-              const role = (session.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
-              const { appendMemoryEntry } = require("../../../../aiplus/memory/append") as typeof import("../../../../aiplus/memory/append")
-              const { verify } = require("../../../../aiplus/audit/runner") as typeof import("../../../../aiplus/audit/runner")
-              appendMemoryEntry({
-                projectRoot: delCtxOpt.value.worktree,
+              Rpc.emit("aiplus.hook", {
+                type: "session.deleted",
                 sessionId: sessionID,
-                role,
-                startedAt: new Date(session.time.created).toISOString(),
-                endedAt: new Date().toISOString(),
-                task: session.title ?? "(session-delete)",
-                outcome: "success",
-              })
-              verify(delCtxOpt.value.worktree, sessionID)
+                agent: session.agent,
+                title: session.title,
+                createdAt: session.time.created,
+                worktree: delCtxOpt.value.worktree,
+              } satisfies AiplusHookEvent)
             }
           } catch { /* fire-and-forget */ }
         }

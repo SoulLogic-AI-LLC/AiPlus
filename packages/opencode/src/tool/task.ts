@@ -15,7 +15,9 @@ import { EffectBridge } from "@/effect/bridge"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Database } from "@opencode-ai/core/database/database"
 
-// AiPlus terminal hooks — dynamic imports to avoid pulling node:fs into TUI worker bundle
+// AiPlus terminal hooks — RPC emit to main process (0 node:fs in worker)
+import { Rpc } from "@/util/rpc"
+import type { AiplusHookEvent } from "../session/aiplus-hook-events"
 import { InstanceState } from "@/effect/instance-state"
 
 export interface TaskPromptOps {
@@ -96,7 +98,7 @@ export const TaskTool = Tool.define(
     const instanceCtx = yield* InstanceState.context
     const aiplusProjectRoot = instanceCtx.worktree
 
-    /** AiPlus terminal hooks — fire-and-forget on task completion (Fix C/D/E). */
+    /** AiPlus terminal hooks — RPC emit to main process (Fix C/D/E). */
     function aiplusFireTerminalHooks(input: {
       sessionId: string
       role: string
@@ -106,41 +108,19 @@ export const TaskTool = Tool.define(
       tokensUsed?: number
       tokensTotal?: number
     }) {
-      // Fix C: memory write at terminal state
       try {
-        const { appendMemoryEntry } = require("../../../aiplus/memory/append") as typeof import("../../../aiplus/memory/append")
-        appendMemoryEntry({
-          projectRoot: aiplusProjectRoot,
+        Rpc.emit("aiplus.hook", {
+          type: "task.completed",
           sessionId: input.sessionId,
           role: input.role,
-          startedAt: new Date(Date.now() - 60_000).toISOString(), // fallback ~1min
-          endedAt: new Date().toISOString(),
           task: input.task,
           outcome: input.outcome,
-        })
+          modelId: input.modelId,
+          tokensUsed: input.tokensUsed,
+          tokensTotal: input.tokensTotal,
+          worktree: aiplusProjectRoot,
+        } satisfies AiplusHookEvent)
       } catch { /* fire-and-forget */ }
-
-      // Fix D: audit verify at end (not create)
-      try {
-        const { verify } = require("../../../aiplus/audit/runner") as typeof import("../../../aiplus/audit/runner")
-        verify(aiplusProjectRoot, input.sessionId)
-      } catch { /* fire-and-forget */ }
-
-      // Fix E: compact pressure with actual token usage (not create-time 0)
-      if (input.modelId && input.tokensUsed && input.tokensTotal) {
-        try {
-          const { checkPressure } = require("../../../aiplus/compact/monitor") as typeof import("../../../aiplus/compact/monitor")
-          const { writeCapsule } = require("../../../aiplus/compact/capsule") as typeof import("../../../aiplus/compact/capsule")
-          const pressure = checkPressure({
-            used: input.tokensUsed,
-            total: input.tokensTotal,
-            model: input.modelId,
-          })
-          if (!pressure.action.silent) {
-            writeCapsule(aiplusProjectRoot, pressure)
-          }
-        } catch { /* fire-and-forget */ }
-      }
     }
 
     const run = Effect.fn("TaskTool.execute")(function* (
