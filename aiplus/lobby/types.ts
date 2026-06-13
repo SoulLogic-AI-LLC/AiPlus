@@ -68,7 +68,7 @@ export interface LobbyStatus {
 export interface DispatchEntry {
   dispatchId: string
   role: string
-  lane?: string
+  lane?: string | null
   outcome?: string
   timestamp: string
   schemaVersion?: string
