@@ -31,7 +31,7 @@ export const ROLE_COMPACT_PROFILES: Record<string, CompactProfile> = {
   "advisor":                CompactProfile.CONTINUOUS,
   "ceo":                    CompactProfile.CONTINUOUS,
 
-  // TASK_BOUND — clear task boundaries (15 roles)
+  // TASK_BOUND — clear task boundaries (16 roles)
   "engineer-a":             CompactProfile.TASK_BOUND,
   "engineer-b":             CompactProfile.TASK_BOUND,
   "qa":                     CompactProfile.TASK_BOUND,

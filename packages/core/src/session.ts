@@ -36,7 +36,6 @@ import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
 import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier"
-import { interceptToolCall } from "../../../aiplus/effects/gateway"
 
 // C.1 Multi-Lane: detect CEO lane from environment or agent name.
 // AIPLUS_CEO_LANE env takes priority (ceo-1, ceo-2, ceo-3).
