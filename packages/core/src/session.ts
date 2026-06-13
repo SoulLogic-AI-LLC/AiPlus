@@ -33,6 +33,7 @@ import * as fs from "node:fs"
 import { checkPressure } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
+import { interceptToolCall } from "../../../aiplus/effects/gateway"
 
 // AiPlus compact handoff: check context pressure on session create.
 // Model info + token snapshot come from the session context.

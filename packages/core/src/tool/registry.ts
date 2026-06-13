@@ -8,6 +8,7 @@ import { SessionMessage } from "../session/message"
 import { SessionSchema } from "../session/schema"
 import { ToolOutputStore } from "../tool-output-store"
 import { Wildcard } from "../util/wildcard"
+import { interceptToolCall } from "../../../aiplus/effects/gateway"
 import { ApplicationTools } from "./application-tools"
 import { definition, permission, settle, validateName, type AnyTool, type RegistrationError } from "./tool"
 import { Tools } from "./tools"
@@ -58,6 +59,24 @@ const registryLayer = Layer.effect(
         }
       if (advertised && registration.identity !== advertised)
         return { result: { type: "error" as const, value: `Stale tool call: ${input.call.name}` } }
+
+      // AiPlus effect gateway: intercept tool call for idempotency check.
+      const interceptResult = interceptToolCall({
+        toolName: input.call.name,
+        toolArgs: (input.call.arguments as Record<string, unknown>) ?? {},
+        sessionId: input.sessionID,
+        role: input.agent ?? "unknown",
+        projectRoot: process.cwd(),
+      })
+      if (!interceptResult.allowed) {
+        return {
+          result: {
+            type: "error" as const,
+            value: `Effect gateway blocked: ${interceptResult.reason}`,
+          },
+        }
+      }
+
       const pending = yield* settle(registration.tool, input.call, {
         sessionID: input.sessionID,
         agent: input.agent,
