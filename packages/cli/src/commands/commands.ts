@@ -32,5 +32,19 @@ export const Commands = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCO
         register: Flag.boolean("register").pipe(Flag.withDefault(false)),
       },
     }),
+    Spec.make("lobby", {
+      description: "AiPlus Agent Team lobby — role status, binding, and session resume",
+      commands: [
+        Spec.make("status", { description: "Show pillar-grouped roles and lane status" }),
+        Spec.make("bind", {
+          description: "Bind a role to the current session",
+          params: { role: Argument.string("role").pipe(Argument.optional) },
+        }),
+        Spec.make("resume", {
+          description: "Show session info and resume instructions",
+          params: { sessionId: Argument.string("sessionId") },
+        }),
+      ],
+    }),
   ],
 })
