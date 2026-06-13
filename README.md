@@ -13,12 +13,17 @@
 
 ### One-line install (macOS Apple Silicon)
 
+**Public repo** (or with `GITHUB_TOKEN`):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
-aiplus-native
 ```
 
-Downloads a prebuilt binary for macOS arm64. Requires the repo to be **public** (currently private — `curl` needs auth for private repos). If 404, use the developer flow below until the repo is made public.
+**Private repo** (uses `gh` for auth):
+```bash
+gh release download v0.1.0 -R izhiwen/AiPlus-Native -p install.sh -O - | bash
+```
+
+Both install to `~/.local/bin/aiplus-native`. Add `~/.local/bin` to your PATH if needed.
 
 ### Developer (from source)
 

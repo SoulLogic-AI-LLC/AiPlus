@@ -2,39 +2,58 @@
 set -eu
 
 # ============================================================
-# AiPlus-Native installer — one-line binary install (macOS arm64)
-# Usage: curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+# AiPlus-Native installer (macOS arm64)
+#
+# Public repo:
+#   curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+#
+# Private repo:
+#   gh release download v0.1.0 -R izhiwen/AiPlus-Native -p install.sh -O - | bash
 # ============================================================
 
 REPO="izhiwen/AiPlus-Native"
 CMD="aiplus-native"
 NAME="${CMD}-darwin-arm64"
 
-BASE="https://github.com/${REPO}/releases/latest/download"
-URL="${BASE}/${NAME}"
-
-# Note: if the repo is private, GitHub release assets require authentication.
-# Use: GITHUB_TOKEN=$(gh auth token) curl -H "Authorization: Bearer $GITHUB_TOKEN" -L "$URL"
-# Or make the repo public at: https://github.com/izhiwen/AiPlus-Native/settings
-
 echo "AiPlus-Native installer (macOS arm64)"
-echo "  downloading: ${URL}"
-echo ""
 
+# ---- download binary via gh release (works for private repos too) ----
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-if command -v curl >/dev/null 2>&1; then
-  curl -fsSL --progress-bar "$URL" -o "${TMP}/${CMD}"
-elif command -v wget >/dev/null 2>&1; then
-  wget -q --show-progress "$URL" -O "${TMP}/${CMD}"
-else
-  echo "Error: curl or wget is required to download AiPlus-Native."
+echo "  downloading ${NAME} from ${REPO}..."
+
+# Try gh first (handles private repo auth automatically)
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  RELEASE="${1:-v0.1.0}"
+  gh release download "$RELEASE" -R "$REPO" -p "$NAME" -D "$TMP" --clobber 2>/dev/null || true
+  if [ -f "${TMP}/${NAME}" ]; then
+    mv "${TMP}/${NAME}" "${TMP}/${CMD}"
+  fi
+fi
+
+# Fallback: try curl (works if repo is public or GITHUB_TOKEN is set)
+if [ ! -f "${TMP}/${CMD}" ]; then
+  BASE="https://github.com/${REPO}/releases/latest/download"
+  URL="${BASE}/${NAME}"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} "$URL" -o "${TMP}/${CMD}" || true
+  fi
+fi
+
+if [ ! -f "${TMP}/${CMD}" ]; then
+  echo ""
+  echo "Error: could not download ${NAME}."
+  echo "  Ensure one of:"
+  echo "    - gh is installed and authenticated (gh auth login)"
+  echo "    - the repo is public"
+  echo "    - GITHUB_TOKEN is set"
   exit 1
 fi
 
 chmod +x "${TMP}/${CMD}"
 
+# ---- install ----
 INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
 mv "${TMP}/${CMD}" "${INSTALL_DIR}/${CMD}"
