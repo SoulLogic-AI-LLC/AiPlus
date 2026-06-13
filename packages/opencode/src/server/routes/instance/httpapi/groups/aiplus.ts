@@ -67,6 +67,19 @@ const ContextCapsule = Schema.Struct({
   recommendation: Schema.String,
 })
 
+/** Compact thresholds per model. */
+const CompactThresholds = Schema.Struct({
+  soft: Schema.Number,
+  hard: Schema.Number,
+  emergency: Schema.Number,
+})
+
+/** Context capsule with thresholds. */
+const ContextCapsuleWithThresholds = Schema.Struct({
+  capsule: Schema.NullOr(ContextCapsule),
+  thresholds: Schema.Record(Schema.String, CompactThresholds),
+})
+
 /** Permission rule. */
 const PermissionRule = Schema.Struct({
   action: Schema.String,
@@ -92,6 +105,7 @@ const root = "/aiplus"
 export const AiplusPaths = {
   lobbyStatus: `${root}/lobby/status`,
   dispatchGet: `${root}/dispatch/:sessionId`,
+  dispatchList: `${root}/dispatch/list`,
   capsuleGet: `${root}/compact/capsule`,
   personasList: `${root}/personas`,
 } as const
@@ -131,13 +145,24 @@ export const AiplusApi = HttpApi.make("aiplus")
         ),
       )
       .add(
+        HttpApiEndpoint.get("dispatchList", AiplusPaths.dispatchList, {
+          success: described(Schema.Array(DispatchEntry), "All dispatch entries"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "aiplus.dispatchList",
+            summary: "List all dispatch entries",
+            description: "Retrieve all dispatch log entries.",
+          }),
+        ),
+      )
+      .add(
         HttpApiEndpoint.get("capsuleGet", AiplusPaths.capsuleGet, {
-          success: described(Schema.NullOr(ContextCapsule), "Context capsule or null if none exists"),
+          success: described(ContextCapsuleWithThresholds, "Context capsule with per-model thresholds"),
         }).annotateMerge(
           OpenApi.annotations({
             identifier: "aiplus.capsuleGet",
             summary: "Get compact capsule",
-            description: "Retrieve the current context pressure capsule.",
+            description: "Retrieve the current context pressure capsule with per-model thresholds.",
           }),
         ),
       )

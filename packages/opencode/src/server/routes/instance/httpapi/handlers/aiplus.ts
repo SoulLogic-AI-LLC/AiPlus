@@ -3,6 +3,7 @@ import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { COMPACT_THRESHOLDS } from "@opencode-ai/core/compact/thresholds"
 
 // ===== File Read Utilities =====
 
@@ -231,11 +232,27 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
       }
     })
 
+    // GET /aiplus/dispatch/list
+    const dispatchList = Effect.fn("AiplusHttpApi.dispatchList")(function* () {
+      const dispatchLogPath = path.join(projectRoot, ".aiplus", "agents", "dispatch-log.jsonl")
+      const entries = readJsonlFile<DispatchEntry>(dispatchLogPath)
+
+      // Extract sessionId from dispatchId if not present
+      return entries.map(e => {
+        const match = e.dispatchId.match(/^dispatch-(\d+)-/)
+        const sessionId = e.sessionId ?? (match ? `session-${match[1]}` : e.dispatchId)
+        return { ...e, sessionId }
+      })
+    })
+
     // GET /aiplus/compact/capsule
     const capsuleGet = Effect.fn("AiplusHttpApi.capsuleGet")(function* () {
       const capsulePath = path.join(projectRoot, ".aiplus", "compact", "context-capsule.json")
       const capsule = readJsonFile<ContextCapsule>(capsulePath)
-      return capsule ?? null
+      return {
+        capsule: capsule ?? null,
+        thresholds: COMPACT_THRESHOLDS,
+      }
     })
 
     // GET /aiplus/personas
@@ -306,6 +323,7 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
     return handlers
       .handle("lobbyStatus", () => lobbyStatus())
       .handle("dispatchGet", (ctx) => dispatchGet(ctx))
+      .handle("dispatchList", () => dispatchList())
       .handle("capsuleGet", () => capsuleGet())
       .handle("personasList", () => personasList())
   }),
