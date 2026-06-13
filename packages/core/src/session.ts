@@ -30,6 +30,34 @@ import { MessageDecodeError } from "./session/error"
 import { SessionEvent } from "./session/event"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
+import { checkPressure } from "../../../aiplus/compact/monitor"
+import { writeCapsule } from "../../../aiplus/compact/capsule"
+
+// AiPlus compact handoff: check context pressure on session create.
+// Model info + token snapshot come from the session context.
+function checkCompactPressure(entry: {
+  sessionId: string
+  model?: { id: string; providerID: string; variant?: string }
+  worktreePath: string
+}) {
+  try {
+    const modelId = entry.model?.id ?? "unknown"
+    // At session create, token usage is ~0 (empty session).
+    // Full tracking via session resume hooks — future PR.
+    const result = checkPressure({ used: 0, total: 200_000, model: modelId })
+    writeCapsule(
+      entry.worktreePath,
+      entry.sessionId,
+      result.level,
+      result.contextUsage,
+      result.tokenCount,
+      result.model,
+      result.recommendation,
+    )
+  } catch (err) {
+    process.stderr.write(`[aiplus-compact] ${err instanceof Error ? err.message : String(err)}\n`)
+  }
+}
 
 // AiPlus worktree lease: fire-and-forget acquire on session create.
 // GC handles release (24h expiry + doctor/lobby cleanup).
@@ -334,6 +362,14 @@ export const layer = Layer.effect(
         void acquireWorktreeLease({
           sessionId: sessionID,
           lane: (input.agent ?? "default").replace(/^aiplus-/, "").toLowerCase(),
+          worktreePath: input.location.directory,
+        })
+        // AiPlus compact handoff: check context pressure on session create.
+        // At create time, token usage is 0 → pressure is SILENT for new sessions.
+        // Full pressure tracking needs session resume hooks (future PR).
+        void checkCompactPressure({
+          sessionId: sessionID,
+          model: input.model,
           worktreePath: input.location.directory,
         })
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
