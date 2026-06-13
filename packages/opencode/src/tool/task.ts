@@ -15,11 +15,7 @@ import { EffectBridge } from "@/effect/bridge"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Database } from "@opencode-ai/core/database/database"
 
-// AiPlus terminal hooks (Fix C/D/E — memory + audit + compact on task completion)
-import { appendMemoryEntry } from "../../../aiplus/memory/append"
-import { verify as auditVerify } from "../../../aiplus/audit/runner"
-import { checkPressure } from "../../../aiplus/compact/monitor"
-import { writeCapsule } from "../../../aiplus/compact/capsule"
+// AiPlus terminal hooks — dynamic imports to avoid pulling node:fs into TUI worker bundle
 import { InstanceState } from "@/effect/instance-state"
 
 export interface TaskPromptOps {
@@ -112,6 +108,7 @@ export const TaskTool = Tool.define(
     }) {
       // Fix C: memory write at terminal state
       try {
+        const { appendMemoryEntry } = require("../../../aiplus/memory/append") as typeof import("../../../aiplus/memory/append")
         appendMemoryEntry({
           projectRoot: aiplusProjectRoot,
           sessionId: input.sessionId,
@@ -125,12 +122,15 @@ export const TaskTool = Tool.define(
 
       // Fix D: audit verify at end (not create)
       try {
-        auditVerify(aiplusProjectRoot, input.sessionId)
+        const { verify } = require("../../../aiplus/audit/runner") as typeof import("../../../aiplus/audit/runner")
+        verify(aiplusProjectRoot, input.sessionId)
       } catch { /* fire-and-forget */ }
 
       // Fix E: compact pressure with actual token usage (not create-time 0)
       if (input.modelId && input.tokensUsed && input.tokensTotal) {
         try {
+          const { checkPressure } = require("../../../aiplus/compact/monitor") as typeof import("../../../aiplus/compact/monitor")
+          const { writeCapsule } = require("../../../aiplus/compact/capsule") as typeof import("../../../aiplus/compact/capsule")
           const pressure = checkPressure({
             used: input.tokensUsed,
             total: input.tokensTotal,

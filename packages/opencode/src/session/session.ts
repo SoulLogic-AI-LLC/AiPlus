@@ -47,13 +47,10 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 
-// AiPlus create-time hooks (Fix A — wire into actual Task tool session lifecycle)
-import { append as appendDispatchLog } from "../../../../aiplus/dispatch/writer"
-import { acquire as acquireWorktreeLease } from "../../../../aiplus/worktree/lease"
+// AiPlus hooks — dynamic imports to avoid pulling node:fs into TUI worker bundle
 import { detectLane } from "./detect-lane"
-// AiPlus terminal hooks (Fix C/D — memory + audit at session end)
-import { appendMemoryEntry } from "../../../../aiplus/memory/append"
-import { verify as auditVerify } from "../../../../aiplus/audit/runner"
+// NOTE: appendDispatchLog, acquireWorktreeLease, appendMemoryEntry, auditVerify
+// are imported dynamically at call sites to prevent TUI RPC crash.
 
 const runtime = makeRuntime(Database.Service, Database.defaultLayer)
 
@@ -586,11 +583,13 @@ export const layer: Layer.Layer<
       yield* events.publish(SessionV1.Event.Created, { sessionID: result.id, info: result })
 
       // AiPlus create-time hooks — fire-and-forget (Fix A)
+      // require() to avoid pulling node:fs into TUI worker bundle
       const projectRoot = ctx.worktree
       const lane = detectLane()
       const role = (result.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
       try {
-        appendDispatchLog(projectRoot, {
+        const { append } = require("../../../../aiplus/dispatch/writer") as typeof import("../../../../aiplus/dispatch/writer")
+        append(projectRoot, {
           dispatchId: `dispatch-${result.id}`,
           role,
           task: result.agent ? `[${result.agent}] session created` : "(session-create)",
@@ -600,7 +599,8 @@ export const layer: Layer.Layer<
         })
       } catch { /* fire-and-forget */ }
       try {
-        acquireWorktreeLease(projectRoot, result.id, lane, projectRoot)
+        const { acquire } = require("../../../../aiplus/worktree/lease") as typeof import("../../../../aiplus/worktree/lease")
+        acquire(projectRoot, result.id, lane, projectRoot)
       } catch { /* fire-and-forget */ }
 
       return result
@@ -689,11 +689,14 @@ export const layer: Layer.Layer<
         }
 
         // AiPlus terminal hooks on session delete (Fix C/D — memory + audit at end)
+        // require() to avoid pulling node:fs into TUI worker bundle
         if (hasInstance) {
           try {
             const delCtxOpt = yield* InstanceState.context.pipe(Effect.option)
             if (delCtxOpt._tag === "Some") {
               const role = (session.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
+              const { appendMemoryEntry } = require("../../../../aiplus/memory/append") as typeof import("../../../../aiplus/memory/append")
+              const { verify } = require("../../../../aiplus/audit/runner") as typeof import("../../../../aiplus/audit/runner")
               appendMemoryEntry({
                 projectRoot: delCtxOpt.value.worktree,
                 sessionId: sessionID,
@@ -703,7 +706,7 @@ export const layer: Layer.Layer<
                 task: session.title ?? "(session-delete)",
                 outcome: "success",
               })
-              auditVerify(delCtxOpt.value.worktree, sessionID)
+              verify(delCtxOpt.value.worktree, sessionID)
             }
           } catch { /* fire-and-forget */ }
         }
