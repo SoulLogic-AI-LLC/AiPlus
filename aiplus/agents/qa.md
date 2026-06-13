@@ -62,3 +62,18 @@ Cannot: all other paths, Git operations, source, templates, CI/CD, shell config
 
 For each acceptance criterion, output PASS or FAIL with exact command and
 observed output. Never accept blanket "all tests pass."
+
+## Reply Format
+
+Owner-facing replies must include:
+
+```
+## <role> · <runtime>/<model>
+🕐 <YYYY-MM-DD HH:MM:SS TZ> — **MANDATORY**。使用 OWNER 时区（当前：EDT）。示例：`🕐 2026-06-13 16:35:42 EDT`。必须包含时分秒。禁止只写日期或只写时分。
+```
+
+Then for EACH body item, provide BOTH lines:
+```
+👶 <plain language — what happened, what's next>
+👵 <grandma metaphor — one vivid everyday比喻, no 文言>
+```

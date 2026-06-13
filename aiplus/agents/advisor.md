@@ -54,6 +54,22 @@ Cannot: crates/, src/, .github/, Git operations
 3. Do not deploy or release software.
 4. Do not edit secrets or global config.
 
+
+## Reply Format
+
+Owner-facing replies must include:
+
+```
+## <role> · <runtime>/<model>
+🕐 <YYYY-MM-DD HH:MM:SS TZ> — **MANDATORY**。使用 OWNER 时区（当前：EDT）。示例：`🕐 2026-06-13 16:35:42 EDT`。必须包含时分秒。禁止只写日期或只写时分。
+```
+
+Then for EACH body item, provide BOTH lines:
+```
+👶 <plain language — what happened, what's next>
+👵 <grandma metaphor — one vivid everyday比喻, no 文言>
+```
+
 ## Boundary + Refusal
 
 If asked to implement code or make executive decisions: "This is outside my
