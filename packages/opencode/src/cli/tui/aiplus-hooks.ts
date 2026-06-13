@@ -23,8 +23,8 @@ export function handleAiplusHookEvent(event: AiplusHookEvent): void {
 }
 
 function handleSessionCreated(event: Extract<AiplusHookEvent, { type: "session.created" }>) {
-  const { append } = require("../../../aiplus/dispatch/writer") as typeof import("../../../aiplus/dispatch/writer")
-  const { acquire } = require("../../../aiplus/worktree/lease") as typeof import("../../../aiplus/worktree/lease")
+  const { append } = require("../../../../../aiplus/dispatch/writer") as typeof import("../../../../../aiplus/dispatch/writer")
+  const { acquire } = require("../../../../../aiplus/worktree/lease") as typeof import("../../../../../aiplus/worktree/lease")
 
   const role = (event.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
   const lane = detectLane()
@@ -46,8 +46,8 @@ function handleSessionCreated(event: Extract<AiplusHookEvent, { type: "session.c
 }
 
 function handleSessionDeleted(event: Extract<AiplusHookEvent, { type: "session.deleted" }>) {
-  const { appendMemoryEntry } = require("../../../aiplus/memory/append") as typeof import("../../../aiplus/memory/append")
-  const { verify } = require("../../../aiplus/audit/runner") as typeof import("../../../aiplus/audit/runner")
+  const { appendMemoryEntry } = require("../../../../../aiplus/memory/append") as typeof import("../../../../../aiplus/memory/append")
+  const { verify } = require("../../../../../aiplus/audit/runner") as typeof import("../../../../../aiplus/audit/runner")
 
   const role = (event.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase()
 
@@ -71,7 +71,7 @@ function handleSessionDeleted(event: Extract<AiplusHookEvent, { type: "session.d
 function handleTaskCompleted(event: Extract<AiplusHookEvent, { type: "task.completed" }>) {
   // Fix C: memory write
   try {
-    const { appendMemoryEntry } = require("../../../aiplus/memory/append") as typeof import("../../../aiplus/memory/append")
+    const { appendMemoryEntry } = require("../../../../../aiplus/memory/append") as typeof import("../../../../../aiplus/memory/append")
     appendMemoryEntry({
       projectRoot: event.worktree,
       sessionId: event.sessionId,
@@ -85,15 +85,15 @@ function handleTaskCompleted(event: Extract<AiplusHookEvent, { type: "task.compl
 
   // Fix D: audit verify
   try {
-    const { verify } = require("../../../aiplus/audit/runner") as typeof import("../../../aiplus/audit/runner")
+    const { verify } = require("../../../../../aiplus/audit/runner") as typeof import("../../../../../aiplus/audit/runner")
     verify(event.worktree, event.sessionId)
   } catch { /* fire-and-forget */ }
 
   // Fix E: compact pressure with actual tokens
   if (event.modelId && event.tokensUsed && event.tokensTotal) {
     try {
-      const { checkPressure } = require("../../../aiplus/compact/monitor") as typeof import("../../../aiplus/compact/monitor")
-      const { writeCapsule } = require("../../../aiplus/compact/capsule") as typeof import("../../../aiplus/compact/capsule")
+      const { checkPressure } = require("../../../../../aiplus/compact/monitor") as typeof import("../../../../../aiplus/compact/monitor")
+      const { writeCapsule } = require("../../../../../aiplus/compact/capsule") as typeof import("../../../../../aiplus/compact/capsule")
       const pressure = checkPressure({
         used: event.tokensUsed,
         total: event.tokensTotal,
