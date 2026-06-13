@@ -1,0 +1,57 @@
+/**
+ * Dispatch Log — Redaction Tests
+ *
+ * Verifies that appendDispatchLog applies redaction to the JSONL line
+ * before writing to .aiplus/agents/dispatch-log.jsonl.
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from "bun:test"
+import * as fs from "node:fs"
+import * as path from "node:path"
+import * as os from "node:os"
+import { appendDispatchLog } from "@opencode-ai/core/session"
+
+describe("appendDispatchLog redaction", () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "aiplus-dispatch-log-test-"))
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it("writes a JSONL line to dispatch-log.jsonl", () => {
+    appendDispatchLog({
+      dispatchId: "dispatch-test-001",
+      role: "engineer-a",
+      sessionId: "ses-1",
+      task: "feat: add persona",
+      worktreePath: tmpDir,
+    })
+
+    const filePath = path.join(tmpDir, ".aiplus/agents/dispatch-log.jsonl")
+    expect(fs.existsSync(filePath)).toBe(true)
+    const content = fs.readFileSync(filePath, "utf-8").trim()
+    const entry = JSON.parse(content)
+    expect(entry.dispatchId).toBe("dispatch-test-001")
+    expect(entry.role).toBe("engineer-a")
+  })
+
+  it("redacts secrets in task field before writing", () => {
+    appendDispatchLog({
+      dispatchId: "dispatch-test-002",
+      role: "engineer-a",
+      sessionId: "ses-1",
+      task: "deploy with token=ghp_secret123456 to prod",
+      worktreePath: tmpDir,
+    })
+
+    const filePath = path.join(tmpDir, ".aiplus/agents/dispatch-log.jsonl")
+    const content = fs.readFileSync(filePath, "utf-8")
+    const entry = JSON.parse(content.trim())
+    expect(entry.task).toContain("[REDACTED_TOKEN]")
+    expect(entry.task).not.toContain("ghp_")
+  })
+})

@@ -28,6 +28,7 @@ import { SessionExecution } from "./session/execution"
 import { logFailure } from "./session/logging"
 import { MessageDecodeError } from "./session/error"
 import { SessionEvent } from "./session/event"
+import { applyRedaction } from "../../../aiplus/memory/redact"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
 import { checkPressure } from "../../../aiplus/compact/monitor"
@@ -113,7 +114,7 @@ async function acquireWorktreeLease(entry: { sessionId: string; lane: string; wo
     process.stderr.write(`[aiplus-worktree] ${err instanceof Error ? err.message : String(err)}\n`)
   }
 }
-function appendDispatchLog(entry: {
+export function appendDispatchLog(entry: {
   dispatchId: string
   role: string
   sessionId: string
@@ -155,7 +156,7 @@ function appendDispatchLog(entry: {
       status: "created",
       timestamp: now,
     }) + "\n"
-    fs.appendFileSync(logFile, line, "utf-8")
+    fs.appendFileSync(logFile, applyRedaction(line), "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-dispatch] ${msg}\n`)

@@ -8,6 +8,7 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { EffectLogEntry, SideEffectClass, RetryPolicy, EffectOutcome } from "./types"
+import { applyRedaction } from "../memory/redact"
 
 const EFFECTS_DIR = ".aiplus/effects"
 const EFFECT_LOG_FILE = "effect-log.jsonl"
@@ -48,7 +49,7 @@ export function appendEffectLog(params: {
     }
 
     const line = JSON.stringify(entry) + "\n"
-    fs.appendFileSync(path.join(dir, EFFECT_LOG_FILE), line, "utf-8")
+    fs.appendFileSync(path.join(dir, EFFECT_LOG_FILE), applyRedaction(line), "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-effects] ${msg}\n`)

@@ -9,6 +9,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import type { MemoryEntry, SessionOutcome } from "./types"
 import { truncateTask } from "./types"
+import { applyRedaction } from "./redact"
 
 const MEMORY_DIR = ".aiplus/agent-memory"
 
@@ -56,7 +57,7 @@ export function appendMemoryEntry(params: {
     const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
 
     const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
-    fs.appendFileSync(memFile, line, "utf-8")
+    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-memory] ${msg}\n`)

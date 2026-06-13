@@ -138,6 +138,24 @@ describe("agent-memory", () => {
         })
       }).not.toThrow()
     })
+
+    it("redacts secrets in task field", () => {
+      appendMemoryEntry({
+        projectRoot: tmpDir,
+        sessionId: "session-secret",
+        role: "engineer-a",
+        startedAt: "2026-06-13T10:00:00Z",
+        endedAt: "2026-06-13T10:30:00Z",
+        task: "deploy with token=ghp_secret123456 to prod",
+        outcome: "success",
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/engineer-a/memory.jsonl")
+      const lines = fs.readFileSync(filePath, "utf-8").trim().split("\n")
+      const entry = JSON.parse(lines[lines.length - 1])
+      expect(entry.task).toContain("[REDACTED_TOKEN]")
+      expect(entry.task).not.toContain("ghp_")
+    })
   })
 
   // ---- Team (V2) -----------------------------------------------------------
