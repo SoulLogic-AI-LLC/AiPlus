@@ -13,6 +13,7 @@ import { makeRuntime } from "@opencode-ai/core/effect/runtime"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { EventV2 } from "@opencode-ai/core/event"
 import { SessionV2 } from "@opencode-ai/core/session"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { SessionExecution } from "@opencode-ai/core/session/execution"
 
 import { NotFoundError } from "@/storage/storage"
@@ -1114,6 +1115,6 @@ export function* listGlobal(input?: {
   }
 }
 
-export const node = LayerNode.make(layer, [BackgroundJob.node, RuntimeFlags.node, Database.node, EventV2Bridge.node])
+export const node = LayerNode.make(layer, [BackgroundJob.node, RuntimeFlags.node, Database.node, EventV2Bridge.node, SessionProjector.node])
 
 export * as Session from "./session"
