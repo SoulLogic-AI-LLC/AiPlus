@@ -33,6 +33,7 @@ import * as fs from "node:fs"
 import { checkPressure } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
+import { verify as auditVerify } from "../../../aiplus/audit/runner"
 
 // AiPlus compact handoff: check context pressure on session create.
 // Model info + token snapshot come from the session context.
@@ -373,6 +374,9 @@ export const layer = Layer.effect(
           model: input.model,
           worktreePath: input.location.directory,
         })
+        // AiPlus audit: run project-level integrity checks on session create.
+        // Covers D1 (dispatch chain), D2 (memory match), D3 (persona permissions).
+        void auditVerify(input.location.directory, sessionID)
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
