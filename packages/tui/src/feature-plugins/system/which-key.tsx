@@ -169,13 +169,11 @@ function layout(value: unknown): Layout {
 }
 
 function HomeHint(props: { api: TuiPluginApi }) {
-  const trigger = commandShortcut(props.api, command.toggle)
   const look = createMemo(() => skin(props.api))
-
   return (
     <box width="100%" maxWidth={75} alignItems="center" paddingTop={1} flexShrink={0}>
       <text fg={look().muted} wrapMode="none">
-        Show keyboard shortcuts with <span style={{ fg: look().subtle }}>{trigger() || command.toggle}</span>
+        AiPlus · F2 lobby · F3 dispatch
       </text>
     </box>
   )
