@@ -21,6 +21,15 @@ bun run dev
 
 Requires **Bun ≥ 1.3.14**.
 
+```bash
+# Optional: one-word launch via alias (replace path with your clone location)
+echo "alias aiplus-native='cd ~/code/AiPlus-Native && bun run dev'" >> ~/.zshrc
+source ~/.zshrc
+aiplus-native
+```
+
+Or add the repo root to your `PATH` — the included `aiplus-native` script wraps `bun run dev`.
+
 ### User (binary release) <sup>[v0.1.0 milestone]</sup>
 
 ```bash
