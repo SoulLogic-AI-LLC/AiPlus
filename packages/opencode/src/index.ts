@@ -29,6 +29,7 @@ import { DbCommand } from "./cli/cmd/db"
 import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { InitCommand } from "./cli/cmd/init"
+import { OverclaimCommand } from "./cli/cmd/overclaim"
 import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
@@ -82,7 +83,8 @@ const cli = yargs(args)
   .command(AcpCommand)
   .command(McpCommand)
   .command(InitCommand)       // before TuiThreadCommand: yargs matches subcommands by registration order.
-  .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init must match first to avoid being
+  .command(OverclaimCommand)  // before TuiThreadCommand: same reason as InitCommand.
+  .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
                               // consumed as a positional project argument.
   .command(AttachCommand)
   .command(RunCommand)
