@@ -3,7 +3,7 @@ set -eu
 
 # ============================================================
 # AiPlus-Native installer — one-line binary install (macOS arm64)
-# Usage: curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
 # ============================================================
 
 REPO="izhiwen/AiPlus-Native"
@@ -12,6 +12,10 @@ NAME="${CMD}-darwin-arm64"
 
 BASE="https://github.com/${REPO}/releases/latest/download"
 URL="${BASE}/${NAME}"
+
+# Note: if the repo is private, GitHub release assets require authentication.
+# Use: GITHUB_TOKEN=$(gh auth token) curl -H "Authorization: Bearer $GITHUB_TOKEN" -L "$URL"
+# Or make the repo public at: https://github.com/izhiwen/AiPlus-Native/settings
 
 echo "AiPlus-Native installer (macOS arm64)"
 echo "  downloading: ${URL}"
