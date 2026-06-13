@@ -100,7 +100,7 @@ function acquireWorktreeLease(entry: { sessionId: string; lane: string; worktree
     // Wait for lock (spin, max 500ms)
     for (let i = 0; i < 10; i++) {
       try { fs.writeFileSync(lockFile, "", { flag: "wx" }); break }
-      catch { if (i === 9) throw new Error("worktree lease lock timeout"); Bun.sleepSync(50) }
+      catch { if (i === 9) throw new Error("worktree lease lock timeout"); const e = Date.now() + 50; while (Date.now() < e) { /* spin 50ms — portable, avoids Bun.sleepSync */ } }
     }
     try {
       fs.writeFileSync(tmpFile, JSON.stringify(state, null, 2), "utf-8")
