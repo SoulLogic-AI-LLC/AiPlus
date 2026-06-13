@@ -14,7 +14,6 @@ import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
 import { createMainProcessRpcClient } from "../main-process-rpc"
-import open from "open"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -26,29 +25,13 @@ function shouldUseDarwinEmergencyWebFallback() {
   return process.platform === "darwin" && process.env.OPENCODE_DARWIN_FORCE_TUI !== "1"
 }
 
-async function runDarwinEmergencyWebFallbackWithoutWorker(network: ReturnType<typeof resolveNetworkOptionsNoConfig>) {
-  const { Server } = await import("../../server/server")
-  const server = await Server.listen(network)
-  const localUrl = network.hostname === "0.0.0.0" ? `http://localhost:${server.port}` : server.url.toString()
-
+async function runDarwinEmergencyNoopFallback(project?: string) {
   UI.empty()
-  UI.println(UI.Style.TEXT_WARNING_BOLD + "!  macOS TUI startup is degraded; opening web fallback instead.")
+  UI.println(UI.Style.TEXT_WARNING_BOLD + "!  macOS TUI startup is degraded; native TUI is temporarily disabled.")
   UI.println(UI.Style.TEXT_INFO_BOLD + "   Set OPENCODE_DARWIN_FORCE_TUI=1 to retry native TUI.")
-  UI.println(UI.Style.TEXT_INFO_BOLD + "   Web interface: ", UI.Style.TEXT_NORMAL, localUrl)
+  UI.println(UI.Style.TEXT_INFO_BOLD + "   Project: ", UI.Style.TEXT_NORMAL, project ?? process.cwd())
+  UI.println(UI.Style.TEXT_INFO_BOLD + "   Temporary status: ", UI.Style.TEXT_NORMAL, "exit cleanly instead of SIGTRAP")
   UI.empty()
-
-  open(localUrl).catch(() => {})
-
-  await new Promise<void>((resolve) => {
-    const done = async () => {
-      process.off("SIGINT", done)
-      process.off("SIGTERM", done)
-      await server.stop(true).catch(() => {})
-      resolve()
-    }
-    process.on("SIGINT", done)
-    process.on("SIGTERM", done)
-  })
 }
 
 function createWorkerFetch(client: RpcClient): typeof fetch {
@@ -156,13 +139,12 @@ export const TuiThreadCommand = cmd({
       }
       const cwd = Filesystem.resolve(process.cwd())
 
-      const network = resolveNetworkOptionsNoConfig(args)
-
       if (shouldUseDarwinEmergencyWebFallback()) {
-        await runDarwinEmergencyWebFallbackWithoutWorker(network)
+        await runDarwinEmergencyNoopFallback(next)
         return
       }
 
+      const network = resolveNetworkOptionsNoConfig(args)
       const file = await target()
       const worker = new Worker(file)
       const client = createMainProcessRpcClient(worker)
