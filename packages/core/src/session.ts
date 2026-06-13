@@ -418,7 +418,12 @@ export const layer = Layer.effect(
         void auditVerify(input.location.directory, sessionID)
         // AiPlus managed blocks: auto-fix missing blocks in markdown body.
         // YAML frontmatter is WARN-only (never auto-modified).
-        void verifyAndFix(input.location.directory)
+        // Fire-and-forget — a single managed-block failure must not crash session create.
+        try {
+          void verifyAndFix(input.location.directory)
+        } catch (err) {
+          console.error("[aiplus] managed-blocks verifyAndFix failed:", err)
+        }
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),

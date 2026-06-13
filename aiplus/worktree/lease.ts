@@ -1,6 +1,6 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { execSync } from "node:child_process"
+import { execFileSync } from "node:child_process"
 import type { WorktreeLease, LeaseState, FencingResult } from "./types"
 
 const LEASE_FILE = ".aiplus/worktree/leases.json"
@@ -39,7 +39,7 @@ function writeState(projectRoot: string, state: LeaseState): void {
 /** Get current HEAD commit SHA for a directory. */
 function getBaseCommit(dir: string): string {
   try {
-    return execSync("git rev-parse HEAD", { cwd: dir, encoding: "utf-8" }).trim()
+    return execFileSync("git", ["rev-parse", "HEAD"], { cwd: dir, encoding: "utf-8" }).trim()
   } catch {
     return "unknown"
   }
@@ -126,7 +126,7 @@ export function garbageCollect(projectRoot: string): string[] {
       const expiry = new Date(lease.expiresAt).getTime()
       if (now - expiry > LEASE_TTL_HOURS * 60 * 60 * 1000) {
         try {
-          execSync(`git worktree remove --force "${lease.worktreePath}"`, {
+          execFileSync("git", ["worktree", "remove", "--force", lease.worktreePath], {
             cwd: projectRoot,
             stdio: "pipe",
           })
