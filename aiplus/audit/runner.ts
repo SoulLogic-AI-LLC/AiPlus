@@ -2,18 +2,22 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { checkDispatchChain } from "./dispatch-integrity"
 import { checkMemoryMatch } from "./memory-match"
-import { checkPersonaPermissions } from "./permission-check"
+import { checkPersonaPermissions, type RuntimeAgentConfig } from "./permission-check"
 import type { AuditReport, AuditVerdict } from "./types"
 
 const CA_DIR = ".aiplus/agent-memory/ca"
 
 /** Run all audit checks and write report. Fire-and-forget. */
-export function verify(projectRoot: string, sessionId: string): void {
+export function verify(
+  projectRoot: string,
+  sessionId: string,
+  runtimeAgents?: RuntimeAgentConfig[],
+): void {
   try {
     const checks = [
       checkDispatchChain(projectRoot),
       checkMemoryMatch(projectRoot),
-      checkPersonaPermissions(projectRoot),
+      checkPersonaPermissions(projectRoot, runtimeAgents),
     ]
 
     const hasBlocked = checks.some(c => c.status === "BLOCKED")
