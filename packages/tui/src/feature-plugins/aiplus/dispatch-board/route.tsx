@@ -7,6 +7,13 @@ import { truncate } from "../shared/components"
 import type { DispatchEntry, FilterState, StatusType } from "./types"
 import { getDisplayStatus, getUniqueRoles } from "./types"
 
+/** External store for dispatch board actions (used by keymap commands). */
+export const dispatchBoardStore = {
+  refresh: () => {},
+  cycleRole: () => {},
+  cycleStatus: () => {},
+}
+
 /** Format duration from timestamp to now. */
 function formatDuration(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -28,7 +35,7 @@ function statusColor(status: StatusType, theme: TuiThemeCurrent) {
     case "canceled":
       return theme.warning
     case "running":
-      return theme.info
+      return theme.warning
     case "created":
     default:
       return theme.textMuted
@@ -151,6 +158,11 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     const next = STATUS_OPTIONS[(idx + 1) % STATUS_OPTIONS.length]
     setFilter(f => ({ ...f, status: next }))
   }
+
+  // Wire up external store for keymap commands
+  dispatchBoardStore.refresh = () => refetch()
+  dispatchBoardStore.cycleRole = cycleRole
+  dispatchBoardStore.cycleStatus = cycleStatus
 
   return (
     <box flexDirection="column" flexGrow={1} paddingTop={1} paddingBottom={1}>
