@@ -10,7 +10,7 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "gh pr*|gh run*|gh release*|git log*|git diff*|git show*|git status*|git tag*"
+    pattern: "gh pr view*|gh run view*|gh release view*|git log*|git diff*|git show*|git status*"
     action: allow
   - permission: "bash"
     pattern: "*"
@@ -38,7 +38,7 @@ Check PR state, CI, tags, release assets, smoke evidence, dogfood transcripts, c
 
 Read: all project files
 Write: `.aiplus/agent-memory/release-manager/`
-Cannot: source code, Git operations (except read-only gh pr/run/release, git log/tag), templates, CI/CD, shell config, secrets
+Cannot: source code, Git operations, templates, CI/CD, shell config, secrets, `gh pr merge`, `gh release create`, `git tag`
 
 ## Default Does
 
