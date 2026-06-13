@@ -11,14 +11,14 @@
 
 ## Quick Start
 
-### One-line install
+### One-line install (macOS Apple Silicon)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/main/install.sh | bash
 aiplus-native
 ```
 
-Downloads a prebuilt binary for your platform (macOS arm64/x64, Linux x64/arm64).
+Downloads a prebuilt binary for macOS arm64. Linux/Windows binaries planned for future releases.
 
 ### Developer (from source)
 
@@ -152,8 +152,8 @@ Roles are grouped by **pillar** — each pillar has distinct permissions and res
 - `GET /aiplus/lobby/status|dispatch|compact/capsule|personas`
 - TUI `home_bottom` lobby widget + F2 full-screen route
 
-### 🚧 v0.1.0 — Binary Distribution (in progress)
-- `bun build --compile` → platform binaries (macOS arm64/x64, Linux x64, Linux arm64)
+### ✅ v0.1.0 — Binary Distribution
+- `bun build --compile` → macOS arm64 standalone binary
 - `install.sh` one-liner installer
 - GitHub Actions release pipeline (tag → build → upload)
 
