@@ -3,7 +3,7 @@ import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { COMPACT_THRESHOLDS } from "@opencode-ai/core/compact/thresholds"
+import { COMPACT_THRESHOLDS } from "../../../../../../../../aiplus/compact/thresholds"
 
 // ===== File Read Utilities =====
 
