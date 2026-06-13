@@ -1,129 +1,145 @@
-<p align="center">
-  <a href="https://opencode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
-    </picture>
-  </a>
-</p>
-<p align="center">The open source AI coding agent.</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
-  <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
+# AiPlus-Native
 
-<p align="center">
-  <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
-  <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.bs.md">Bosanski</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
-  <a href="README.br.md">Português (Brasil)</a> |
-  <a href="README.th.md">ไทย</a> |
-  <a href="README.tr.md">Türkçe</a> |
-  <a href="README.uk.md">Українська</a> |
-  <a href="README.bn.md">বাংলা</a> |
-  <a href="README.gr.md">Ελληνικά</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
-</p>
+**OpenCode, augmented with the AiPlus agent team layer.**
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+![v0.0.2](https://img.shields.io/badge/version-v0.0.2-blue)
+![7/7 capabilities](https://img.shields.io/badge/capabilities-7%2F7-green)
+![20 personas](https://img.shields.io/badge/personas-20-orange)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
 
 ---
 
-### Installation
+## Quick Start
 
 ```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
-
-# Package managers
-npm i -g opencode-ai@latest        # or bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS and Linux (recommended, always up to date)
-brew install opencode              # macOS and Linux (official brew formula, updated less)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # Any OS
-nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev branch
+git clone git@github.com:izhiwen/AiPlus-Native.git
+cd AiPlus-Native && bun install
+bun run dev
 ```
-
-> [!TIP]
-> Remove versions older than 0.1.x before installing.
-
-### Desktop App (BETA)
-
-OpenCode is also available as a desktop application. Download directly from the [releases page](https://github.com/anomalyco/opencode/releases) or [opencode.ai/download](https://opencode.ai/download).
-
-| Platform              | Download                           |
-| --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
-| Linux                 | `.deb`, `.rpm`, or `.AppImage`     |
-
-```bash
-# macOS (Homebrew)
-brew install --cask opencode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
-```
-
-#### Installation Directory
-
-The install script respects the following priority order for the installation path:
-
-1. `$OPENCODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if it exists or can be created)
-4. `$HOME/.opencode/bin` - Default fallback
-
-```bash
-# Examples
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
-```
-
-### Agents
-
-OpenCode includes two built-in agents you can switch between with the `Tab` key.
-
-- **build** - Default, full-access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
-
-Also included is a **general** subagent for complex searches and multistep tasks.
-This is used internally and can be invoked using `@general` in messages.
-
-Learn more about [agents](https://opencode.ai/docs/agents).
-
-### Documentation
-
-For more info on how to configure OpenCode, [**head over to our docs**](https://opencode.ai/docs).
-
-### Contributing
-
-If you're interested in contributing to OpenCode, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
-
-### Building on OpenCode
-
-If you are working on a project that's related to OpenCode and is using "opencode" as part of its name, for example "opencode-dashboard" or "opencode-mobile", please add a note to your README to clarify that it is not built by the OpenCode team and is not affiliated with us in any way.
 
 ---
 
-**Join our community** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+## 7/7 Core Capabilities
+
+| # | Capability | Description |
+|---|------------|-------------|
+| 1 | **Persona System** | 20 roles with pillar-based permissions (YAML frontmatter) |
+| 2 | **Dispatch Log** | JSONL tamper-evident task tracking with hash chain |
+| 3 | **Worktree Lease** | Lane fencing + auto GC (24h expiry) |
+| 4 | **Compact Handoff** | Per-model thresholds + pressure gauge |
+| 5 | **Agent Memory** | Session end → persistent memory hook (JSONL) |
+| 6 | **Audit Hook** | D1/D2/D3 automated integrity checks |
+| 7 | **Effect Gateway** | 4-level side-effect classification + idempotency blocking |
+
+---
+
+## 20 Personas
+
+Roles are grouped by **pillar** — each pillar has distinct permissions and responsibilities.
+
+### 🟢 Strategist
+
+| Role | Description |
+|------|-------------|
+| Advisor | Frames decisions, challenges premises, distinguishes reversible from irreversible |
+
+### 🔵 Coordinator
+
+| Role | Description |
+|------|-------------|
+| CEO | Execution coordinator — task scoping, role staffing, sequencing |
+
+### 🟡 Builder
+
+| Role | Description |
+|------|-------------|
+| PM | Scope cuts, acceptance criteria, definition of done |
+| Architect | Data flow, coupling, failure modes, long-term reversibility |
+| Engineer A | Primary implementation — code, tests, clean branches |
+| Engineer B | Secondary implementation — parallel builder with file-ownership boundaries |
+| DevOps | CI/CD, deploy, rollback, monitoring, SLOs |
+| Tech Writer | README, docs, error messages, onboarding flow |
+| Researcher | Best-practice hunter, benchmark methodology, dissenting opinions |
+| AI Integration | LLM workflows, prompts, model choice, tool calling, evals, fallbacks |
+| Integration Manager | Neutral lane integration — discovery, dry-run, merge order |
+| UI Designer | User paths, interaction flow, states, recovery, usability |
+
+### 🔴 Verifier
+
+| Role | Description |
+|------|-------------|
+| Reviewer | Adversarial code review — PASS/REVISE/BLOCKED verdicts |
+| QA | Behavior validator — reproducible tests per acceptance criterion |
+| Security Reviewer | Secrets, auth, privacy, billing, automation side effects |
+| Chief Auditor | Read-only verification coordinator |
+| Evidence Auditor | Claims vs git diff/CI/artifacts/dogfood comparison |
+| Release Manager | PR status, CI/checks, release checklist, tag/release/smoke |
+| CQO | Quality-chain judge — cross-verifies AC/implementation/reviewer |
+| Performance Auditor | Velocity data, agent performance, quantitative reports |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│  OpenCode (TypeScript, Effect, SQLite)      │
+│  └─ packages/core/src/session/runner/       │
+│       └─ tool registry (tool calls)         │
+└────────────────┬────────────────────────────┘
+                 │ hook onto session lifecycle
+┌────────────────▼────────────────────────────┐
+│  aiplus/ layer                              │
+│  ├─ agents/     (20 persona .md files)      │
+│  ├─ dispatch/   (dispatch-log.jsonl)        │
+│  ├─ worktree/   (leases.json)               │
+│  ├─ compact/    (pressure gauge)            │
+│  ├─ memory/     (session → JSONL)           │
+│  ├─ audit/      (D1/D2/D3 checks)          │
+│  └─ effects/    (side-effect gateway)       │
+└─────────────────────────────────────────────┘
+```
+
+**One sentence**: OpenCode fork + `aiplus/` layer → hook onto session lifecycle.
+
+---
+
+## AiPlus-Native vs AiPlus-Source
+
+| | AiPlus-Source | AiPlus-Native |
+|---|---------------|---------------|
+| **Language** | Rust | TypeScript |
+| **Runtime** | Current production | Next-gen (OpenCode fork) |
+| **Status** | Maintenance-only | Under active development |
+| **CLI** | `aiplus` binary | `opencode` + `aiplus/` layer |
+| **Persona delivery** | Embedded in binary | `.md` files in `aiplus/agents/` |
+| **Hook model** | Subprocess dispatch | In-process session lifecycle |
+
+---
+
+## Roadmap
+
+### v0.0.3 — Lobby CLI + Hash Chain + IdempotencyKey
+- `aiplus lobby status|bind|resume` — role dashboard
+- Hash chain for dispatch-log and memory
+- IdempotencyKey in effect gateway
+
+### v1.0 — Memory 3-Layer + Token Cost + Velocity
+- 3-layer memory: session → project → global
+- Token cost tracking per role/session
+- Velocity estimation (p50/p90)
+- Secret broker integration
+
+### Phase B — GUI Panels
+- Lobby dashboard (web UI)
+- Dispatch kanban board
+- Compact pressure gauge
+- Effect gateway monitor
+
+---
+
+## License
+
+OpenCode is licensed under [Apache 2.0](LICENSE).
+
+AiPlus additions (the `aiplus/` layer) are also licensed under Apache 2.0.
