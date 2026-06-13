@@ -2,10 +2,13 @@
 
 **OpenCode, augmented with the AiPlus agent team layer.**
 
-![v0.0.4](https://img.shields.io/badge/version-v0.0.4-blue)
+![v0.2.0](https://img.shields.io/badge/version-v0.2.0-blue)
 ![7/7 capabilities](https://img.shields.io/badge/capabilities-7%2F7-green)
 ![20 personas](https://img.shields.io/badge/personas-20-orange)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
+
+> **Forked from [OpenCode](https://github.com/anomalyco/opencode) at commit f884766.**
+> Diverged at v0.1.0 — AiPlus-Native tracks its own semver, independent of upstream.
 
 ---
 
@@ -153,20 +156,36 @@ Roles are grouped by **pillar** — each pillar has distinct permissions and res
 - GAP-3/4 audit module fixes
 - GAP-10 secret broker
 
-### ✅ v0.0.3 — B0 REST API + B1 Lobby Dashboard
-- `GET /aiplus/lobby/status|dispatch|compact/capsule|personas`
-- TUI `home_bottom` lobby widget + F2 full-screen route
+### ✅ v0.0.4 — Compact v2 + TUI Panels (B12 gate)
+- Compact v2 dual-axis strategy (CompactProfile + Action Matrix)
+- B1 Lobby Dashboard — `home_bottom` widget + F2 route
+- B2 Dispatch kanban board — F3 route + R/F/S/Esc filters
+- B3 Compact pressure gauge — sidebar slot (order=110)
+- CA 3-bug fix (RESET_BOUND×HARD, profile normalize, bump after success)
 
 ### ✅ v0.1.0 — Binary Distribution
 - `bun build --compile` → macOS arm64 standalone binary
 - `install.sh` one-liner installer
 - GitHub Actions release pipeline (tag → build → upload)
 
-### 📋 v1.0
-- 3-layer memory: session → project → global
-- B2 Dispatch kanban board (TUI route)
-- B3 Compact pressure gauge (TUI sidebar)
-- Effect gateway monitor
+### ✅ v0.1.1 — Full Stack Delivery
+- `aiplus-native init` — 20 personas + agent-team.toml + .aiplus/ skeleton
+- execution.backend=opencode (native task tool, no external CLI)
+- Root bun test (guard removed, bunfig.toml fixed)
+- Memory V2: appendTeamEntry/appendProjectEntry + JSON-safe redact
+- Session hooks wired to SessionV1.Event.Created projector (CLI + TUI + task tool)
+- TUI branding: AiPlus title, MCP footer removed, hint bar
+
+### 🚧 v0.2.0 — Hook Wiring + C.4 Delivery
+- SessionProjector.node in CLI/TUI runtime layer (hooks fire on all paths)
+- C.4 doctor — unified health check CLI
+- C.4 secret-broker run — alias→env→spawn
+- TUI crash fix + dogfood PASS gate
+
+### 📋 v0.3.0 — Lobby Redesign + Overclaim
+- Lobby UI redesign (F2 route rewrite)
+- overclaim rerun v1 (9-allowlist + 8-gate + --json/--gate)
+- Agent inbox state machine
 
 ---
 
