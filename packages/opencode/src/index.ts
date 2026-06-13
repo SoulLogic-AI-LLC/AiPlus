@@ -89,7 +89,7 @@ const cli = yargs(args)
   .command(ConsoleCommand)
   .command(ProvidersCommand)
   .command(AgentCommand)
-  .command(UpgradeCommand)
+  // .command(UpgradeCommand) — disabled: AiPlus-Native does not track upstream OpenCode
   .command(UninstallCommand)
   .command(ServeCommand)
   .command(WebCommand)

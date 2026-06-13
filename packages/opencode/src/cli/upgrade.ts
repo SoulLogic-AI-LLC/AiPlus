@@ -6,6 +6,8 @@ import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { GlobalBus } from "@/bus/global"
 
 export async function upgrade() {
+  return // AiPlus-Native: permanently disable upstream version check (fork does not track OpenCode)
+  /*
   const config = await AppRuntime.runPromise(Config.Service.use((cfg) => cfg.getGlobal()))
   if (config.autoupdate === false || Flag.OPENCODE_DISABLE_AUTOUPDATE) return
   const method = await Installation.method()
@@ -50,4 +52,5 @@ export async function upgrade() {
       }),
     )
     .catch(() => {})
+  */
 }
