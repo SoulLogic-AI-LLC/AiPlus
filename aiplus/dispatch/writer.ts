@@ -7,6 +7,11 @@ const LOG_FILE = ".aiplus/agents/dispatch-log.jsonl"
 /**
  * Append a dispatch entry to the JSONL log file.
  * Fire-and-forget: write failure is logged to stderr but never throws.
+ *
+ * NOTE: session lifecycle dispatch writes go through session.ts's inline
+ * appendDispatchLog() — this module is for external (CLI/tool) dispatch use.
+ * The two implementations are intentionally independent to avoid cross-package
+ * import complexity in the core session module.
  */
 export function append(projectRoot: string, entry: DispatchEntry): void {
   try {

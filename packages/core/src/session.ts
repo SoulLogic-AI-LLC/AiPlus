@@ -31,9 +31,10 @@ import { SessionEvent } from "./session/event"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
 
-// AiPlus dispatch log: append a "created" entry to .aiplus/agents/dispatch-log.jsonl.
-// Fire-and-forget — write failure logs to stderr but never blocks session startup.
-function appendDispatchLogEntry(entry: {
+// AiPlus dispatch log: append a "created" entry via fire-and-forget JSONL write.
+// Dedup note: this is the canonical dispatch writer. aiplus/dispatch/writer.ts
+// is kept for external (CLI/tool) use but session lifecycle goes through here.
+function appendDispatchLog(entry: {
   dispatchId: string
   role: string
   sessionId: string
@@ -41,14 +42,12 @@ function appendDispatchLogEntry(entry: {
   worktreePath: string
 }) {
   try {
-    const projectRoot = entry.worktreePath
-    const logDir = `${projectRoot}/.aiplus/agents`
+    const logDir = `${entry.worktreePath}/.aiplus/agents`
     fs.mkdirSync(logDir, { recursive: true })
     const line = JSON.stringify({
       ...entry,
       status: "created",
       timestamp: new Date().toISOString(),
-      // OBS-1: gh release create on ceo.md has no Owner gate annotation yet
     }) + "\n"
     fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, line, "utf-8")
   } catch (err) {
@@ -277,11 +276,11 @@ export const layer = Layer.effect(
           )
         if (projected.type === "existing") return projected.session
         // AiPlus dispatch log: fire-and-forget append on session creation.
-        // Import is at module top; write failure is non-blocking (stderr only).
-        void appendDispatchLogEntry({
+        // CA audit: role stripped of "aiplus-" prefix, task carries agent context.
+        void appendDispatchLog({
           dispatchId: `dispatch-${sessionID}`,
-          role: input.agent ?? "unknown",
-          task: "(pending)",
+          role: (input.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+          task: input.agent ? `[${input.agent}] session created` : "(session-create)",
           sessionId: sessionID,
           worktreePath: input.location.directory,
         })
