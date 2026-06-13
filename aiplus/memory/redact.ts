@@ -40,31 +40,31 @@ const RULES: RedactionRule[] = [
     replacement: "[REDACTED_KEY]",
     description: "PEM-encoded private key block",
   },
-  // r5: api_key = value
+  // r5: api_key = value (backreference prevents eating JSON structural quotes)
   {
     name: "api_key_assignment",
-    pattern: /api_key\s*[:=]\s*["']?[^\s"',}]+["']?/gi,
+    pattern: /api_key\s*[:=]\s*(["']?)([^\s"',}]+)\1/gi,
     replacement: "api_key=[REDACTED_API_KEY]",
     description: "api_key in config/env/code",
   },
-  // r6: token = value
+  // r6: token = value (backreference prevents eating JSON structural quotes)
   {
     name: "token_assignment",
-    pattern: /(?:access_)?token\s*[:=]\s*["']?[^\s"',}]+["']?/gi,
+    pattern: /(?:access_)?token\s*[:=]\s*(["']?)([^\s"',}]+)\1/gi,
     replacement: "token=[REDACTED_TOKEN]",
     description: "access_token / token in config",
   },
-  // r7: secret = value
+  // r7: secret = value (backreference prevents eating JSON structural quotes)
   {
     name: "secret_assignment",
-    pattern: /(?:client_)?secret\s*[:=]\s*["']?[^\s"',}]+["']?/gi,
+    pattern: /(?:client_)?secret\s*[:=]\s*(["']?)([^\s"',}]+)\1/gi,
     replacement: "secret=[REDACTED_SECRET]",
     description: "secret / client_secret field",
   },
-  // r8: password = value
+  // r8: password = value (backreference prevents eating JSON structural quotes)
   {
     name: "password_assignment",
-    pattern: /password\s*[:=]\s*["']?[^\s"',}]+["']?/gi,
+    pattern: /password\s*[:=]\s*(["']?)([^\s"',}]+)\1/gi,
     replacement: "password=[REDACTED_PW]",
     description: "password field in config",
   },

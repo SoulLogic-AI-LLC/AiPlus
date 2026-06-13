@@ -7,7 +7,7 @@
 
 import * as fs from "node:fs"
 import * as path from "node:path"
-import type { MemoryEntry, SessionOutcome } from "./types"
+import type { MemoryEntry, SessionOutcome, TeamEntry, TeamConfidence, TeamStatus, ProjectEntry } from "./types"
 import { truncateTask } from "./types"
 import { applyRedaction } from "./redact"
 
@@ -45,6 +45,103 @@ export function appendMemoryEntry(params: {
 
     const memFile = path.join(roleDir, "memory.jsonl")
     // GAP-2: hash chain
+    let prevHash = "genesis"
+    if (fs.existsSync(memFile)) {
+      const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
+      if (lines.length > 0) {
+        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
+        catch { /* corrupt */ }
+      }
+    }
+    const entryBody = JSON.stringify(entry)
+    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
+
+    const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
+    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    process.stderr.write(`[aiplus-memory] ${msg}\n`)
+  }
+}
+
+/**
+ * Append a team-level memory entry (decisions, blockers, gates).
+ *
+ * Writes to .aiplus/agent-memory/_team/memory.jsonl.
+ * Fire-and-forget: errors are logged, never thrown.
+ */
+export function appendTeamEntry(params: {
+  projectRoot: string
+  id: string
+  subject: string
+  summary: string
+  source: string
+  confidence?: TeamConfidence
+  status?: TeamStatus
+  tags?: string[]
+}): void {
+  try {
+    const teamDir = path.join(params.projectRoot, MEMORY_DIR, "_team")
+    fs.mkdirSync(teamDir, { recursive: true })
+
+    const entry: TeamEntry = {
+      id: params.id,
+      subject: params.subject,
+      summary: params.summary,
+      source: params.source,
+      confidence: params.confidence ?? "owner_asserted",
+      status: params.status ?? "active",
+      tags: params.tags ?? [],
+      schemaVersion: "0.2.0",
+      timestamp: new Date().toISOString(),
+      redaction: "none",
+    }
+
+    const memFile = path.join(teamDir, "memory.jsonl")
+    let prevHash = "genesis"
+    if (fs.existsSync(memFile)) {
+      const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
+      if (lines.length > 0) {
+        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
+        catch { /* corrupt */ }
+      }
+    }
+    const entryBody = JSON.stringify(entry)
+    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
+
+    const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
+    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    process.stderr.write(`[aiplus-memory] ${msg}\n`)
+  }
+}
+
+/**
+ * Append a project-level memory entry (constraints, preferences).
+ *
+ * Writes to .aiplus/agent-memory/project/memory.jsonl.
+ * Fire-and-forget: errors are logged, never thrown.
+ */
+export function appendProjectEntry(params: {
+  projectRoot: string
+  key: string
+  value: string
+  source: string
+}): void {
+  try {
+    const projectDir = path.join(params.projectRoot, MEMORY_DIR, "project")
+    fs.mkdirSync(projectDir, { recursive: true })
+
+    const entry: ProjectEntry = {
+      key: params.key,
+      value: params.value,
+      source: params.source,
+      schemaVersion: "0.2.0",
+      timestamp: new Date().toISOString(),
+    }
+
+    const memFile = path.join(projectDir, "memory.jsonl")
     let prevHash = "genesis"
     if (fs.existsSync(memFile)) {
       const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
