@@ -26,9 +26,10 @@ function shouldUseDarwinEmergencyWebFallback() {
   return process.platform === "darwin" && process.env.OPENCODE_DARWIN_FORCE_TUI !== "1"
 }
 
-async function runDarwinEmergencyWebFallback(client: RpcClient, network: ReturnType<typeof resolveNetworkOptionsNoConfig>) {
-  const { url } = await client.call("server", network)
-  const localUrl = network.hostname === "0.0.0.0" ? `http://localhost:${new URL(url).port}` : url
+async function runDarwinEmergencyWebFallbackWithoutWorker(network: ReturnType<typeof resolveNetworkOptionsNoConfig>) {
+  const { Server } = await import("../../server/server")
+  const server = await Server.listen(network)
+  const localUrl = network.hostname === "0.0.0.0" ? `http://localhost:${server.port}` : server.url.toString()
 
   UI.empty()
   UI.println(UI.Style.TEXT_WARNING_BOLD + "!  macOS TUI startup is degraded; opening web fallback instead.")
@@ -39,9 +40,10 @@ async function runDarwinEmergencyWebFallback(client: RpcClient, network: ReturnT
   open(localUrl).catch(() => {})
 
   await new Promise<void>((resolve) => {
-    const done = () => {
+    const done = async () => {
       process.off("SIGINT", done)
       process.off("SIGTERM", done)
+      await server.stop(true).catch(() => {})
       resolve()
     }
     process.on("SIGINT", done)
@@ -146,7 +148,6 @@ export const TuiThreadCommand = cmd({
       // Resolve relative --project paths from PWD, then use the real cwd after
       // chdir so the thread and worker share the same directory key.
       const next = resolveThreadDirectory(args.project)
-      const file = await target()
       try {
         process.chdir(next)
       } catch {
@@ -155,6 +156,14 @@ export const TuiThreadCommand = cmd({
       }
       const cwd = Filesystem.resolve(process.cwd())
 
+      const network = resolveNetworkOptionsNoConfig(args)
+
+      if (shouldUseDarwinEmergencyWebFallback()) {
+        await runDarwinEmergencyWebFallbackWithoutWorker(network)
+        return
+      }
+
+      const file = await target()
       const worker = new Worker(file)
       const client = createMainProcessRpcClient(worker)
 
@@ -174,17 +183,6 @@ export const TuiThreadCommand = cmd({
 
       const prompt = await input(args.prompt)
       const config = await TuiConfig.get()
-
-      const network = resolveNetworkOptionsNoConfig(args)
-
-      if (shouldUseDarwinEmergencyWebFallback()) {
-        try {
-          await runDarwinEmergencyWebFallback(client, network)
-        } finally {
-          await stop()
-        }
-        return
-      }
 
       const external =
         process.argv.includes("--port") ||
