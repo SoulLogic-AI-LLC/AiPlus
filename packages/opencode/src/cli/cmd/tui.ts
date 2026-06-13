@@ -129,10 +129,10 @@ export const TuiThreadCommand = cmd({
       const worker = new Worker(file)
       const client = Rpc.client<typeof rpc>(worker)
 
-      // AiPlus: load hook handler in main process (has node:fs), not in worker callback
-      const { handleAiplusHookEvent } = require("../tui/aiplus-hooks") as typeof import("../tui/aiplus-hooks")
+      // AiPlus: listen for hook events from worker — require() inside callback (lazy, main process only)
       client.on<import("../../session/aiplus-hook-events").AiplusHookEvent>("aiplus.hook", (event) => {
         try {
+          const { handleAiplusHookEvent } = require("../tui/aiplus-hooks") as typeof import("../tui/aiplus-hooks")
           handleAiplusHookEvent(event)
         } catch { /* fire-and-forget */ }
       })
