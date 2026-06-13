@@ -31,7 +31,7 @@ import { SessionEvent } from "./session/event"
 import { applyRedaction } from "../../../aiplus/memory/redact"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
-import { checkPressure, bumpCompactionGeneration, shouldForceFresh, initSessionCompactState } from "../../../aiplus/compact/monitor"
+import { checkPressure, initSessionCompactState } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
@@ -569,23 +569,9 @@ export const layer = Layer.effect(
       }),
       compact: Effect.fn("V2Session.compact")(function* (input) {
         const session = yield* result.get(input.sessionID)
-        // AiPlus compact tracking: bump generation and check force-fresh threshold.
-        const gen = bumpCompactionGeneration(session.directory, input.sessionID)
-        if (shouldForceFresh(session.directory, input.sessionID)) {
-          process.stderr.write(
-            `[aiplus-compact] session ${input.sessionID} compacted ${gen}× — consider /new with checkpoint instead of further compacts\n`,
-          )
-        }
-        // AiPlus memory hook: record session end on compact.
-        void appendMemoryEntry({
-          projectRoot: session.directory,
-          sessionId: input.sessionID,
-          role: (session.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
-          startedAt: new Date(session.time.created).toISOString(),
-          endedAt: new Date().toISOString(),
-          task: session.title ?? "(compact)",
-          outcome: "success",
-        })
+        // TODO: implement actual compact logic (V2 gate — current stub always errors).
+        // Post-compact hooks (bump generation, force-fresh check, memory append)
+        // must only execute after successful compaction — do not bump before stub returns error.
         return yield* new OperationUnavailableError({ operation: "compact" })
       }),
       wait: Effect.fn("V2Session.wait")(function* (sessionID) {

@@ -52,5 +52,6 @@ export const ROLE_COMPACT_PROFILES: Record<string, CompactProfile> = {
 
 /** Lookup compact profile for a role ID, with TASK_BOUND fallback for unknown roles. */
 export function getCompactProfile(role: string): CompactProfile {
-  return ROLE_COMPACT_PROFILES[role] ?? CompactProfile.TASK_BOUND
+  const normalized = role.replace(/^aiplus-/, "")
+  return ROLE_COMPACT_PROFILES[normalized] ?? CompactProfile.TASK_BOUND
 }

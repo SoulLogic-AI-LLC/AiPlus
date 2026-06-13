@@ -47,7 +47,7 @@ const COMPACT_ACTION_MATRIX: ActionMatrix = {
     TASK_BOUND:   { silent: true,  writeCapsule: false, message: "" },
   },
   hard: {
-    RESET_BOUND:  { silent: false, writeCapsule: true,  message: "Context near limit — save findings and /new (do not compact)" },
+    RESET_BOUND:  { silent: true,  writeCapsule: false, message: "" },
     CONTINUOUS:   { silent: false, writeCapsule: true,  message: "Context near limit — compact strongly recommended now" },
     TASK_BOUND:   { silent: false, writeCapsule: true,  message: "Context nearing limit — wrap current task and /new" },
   },
