@@ -65,7 +65,7 @@ function checkCompactPressure(entry: {
 
 // AiPlus worktree lease: fire-and-forget acquire on session create.
 // GC handles release (24h expiry + doctor/lobby cleanup).
-function acquireWorktreeLease(entry: { sessionId: string; lane: string; worktreePath: string }) {
+async function acquireWorktreeLease(entry: { sessionId: string; lane: string; worktreePath: string }) {
   try {
     const leaseFile = `${entry.worktreePath}/.aiplus/worktree/leases.json`
     const dir = leaseFile.slice(0, leaseFile.lastIndexOf("/"))
@@ -100,7 +100,7 @@ function acquireWorktreeLease(entry: { sessionId: string; lane: string; worktree
     // Wait for lock (spin, max 500ms)
     for (let i = 0; i < 10; i++) {
       try { fs.writeFileSync(lockFile, "", { flag: "wx" }); break }
-      catch { if (i === 9) throw new Error("worktree lease lock timeout"); const e = Date.now() + 50; while (Date.now() < e) { /* spin 50ms — portable, avoids Bun.sleepSync */ } }
+      catch { if (i === 9) throw new Error("worktree lease lock timeout"); await new Promise(r => setTimeout(r, 50)) }
     }
     try {
       fs.writeFileSync(tmpFile, JSON.stringify(state, null, 2), "utf-8")
