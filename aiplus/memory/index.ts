@@ -1,10 +1,21 @@
 /**
- * Agent Memory Hook — Module Index
+ * Agent Memory — Module Index (V2)
  *
- * Session lifecycle memory: records task + outcome on session end.
- * V1: Pure JSONL append, no hash chain.
+ * Three-layer memory: personal, team, project.
+ * Redaction pipeline on every write.
  */
 
-export { appendMemoryEntry } from "./append"
-export type { MemoryEntry, SessionOutcome } from "./types"
+export { appendMemoryEntry, appendTeamEntry, appendProjectEntry } from "./append"
+export { applyRedaction, detectFirstSensitive, getRedactionRules } from "./redact"
+export { resolveLayerPath } from "./layers"
+export type {
+  MemoryLayer,
+  MemoryEntry,
+  TeamEntry,
+  ProjectEntry,
+  TeamConfidence,
+  TeamStatus,
+  SessionOutcome,
+  RedactionRule,
+} from "./types"
 export { truncateTask } from "./types"

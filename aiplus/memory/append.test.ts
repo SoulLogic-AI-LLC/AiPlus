@@ -1,12 +1,12 @@
 /**
- * Agent Memory Hook — Tests (V1)
+ * Agent Memory — Tests (V2)
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as os from "node:os"
-import { appendMemoryEntry } from "./append"
+import { appendMemoryEntry, appendTeamEntry, appendProjectEntry } from "./append"
 import { truncateTask } from "./types"
 
 describe("agent-memory", () => {
@@ -137,6 +137,94 @@ describe("agent-memory", () => {
           outcome: "success",
         })
       }).not.toThrow()
+    })
+  })
+
+  // ---- Team (V2) -----------------------------------------------------------
+
+  describe("appendTeamEntry", () => {
+    it("creates _team/memory.jsonl with correct fields", () => {
+      appendTeamEntry({
+        projectRoot: tmpDir,
+        id: "team-001",
+        subject: "blocker",
+        summary: "OOM on 16GB Mac when 4+ opencode sessions active",
+        source: "ceo",
+        tags: ["oom", "16gb", "sessions"],
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/_team/memory.jsonl")
+      expect(fs.existsSync(filePath)).toBe(true)
+
+      const entry = JSON.parse(fs.readFileSync(filePath, "utf-8").trim())
+      expect(entry.id).toBe("team-001")
+      expect(entry.subject).toBe("blocker")
+      expect(entry.source).toBe("ceo")
+      expect(entry.confidence).toBe("owner_asserted")
+      expect(entry.status).toBe("active")
+      expect(entry.tags).toEqual(["oom", "16gb", "sessions"])
+      expect(entry.schemaVersion).toBe("0.2.0")
+    })
+
+    it("appends multiple team entries", () => {
+      appendTeamEntry({ projectRoot: tmpDir, id: "t1", subject: "s1", summary: "a", source: "ceo" })
+      appendTeamEntry({ projectRoot: tmpDir, id: "t2", subject: "s2", summary: "b", source: "advisor" })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/_team/memory.jsonl")
+      const lines = fs.readFileSync(filePath, "utf-8").trim().split("\n")
+      expect(lines.length).toBe(2)
+    })
+
+    it("redacts secrets in team summaries", () => {
+      appendTeamEntry({
+        projectRoot: tmpDir,
+        id: "team-secret",
+        subject: "leak",
+        summary: "api_key=sk-live-abc123 was exposed in dispatch log",
+        source: "security-reviewer",
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/_team/memory.jsonl")
+      const entry = JSON.parse(fs.readFileSync(filePath, "utf-8").trim())
+      expect(entry.summary).toContain("[REDACTED")
+      expect(entry.summary).not.toContain("sk-live")
+    })
+  })
+
+  // ---- Project (V2) --------------------------------------------------------
+
+  describe("appendProjectEntry", () => {
+    it("creates project/memory.jsonl", () => {
+      appendProjectEntry({
+        projectRoot: tmpDir,
+        key: "preferred_runtime",
+        value: "opencode",
+        source: "owner",
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/project/memory.jsonl")
+      expect(fs.existsSync(filePath)).toBe(true)
+
+      const entry = JSON.parse(fs.readFileSync(filePath, "utf-8").trim())
+      expect(entry.key).toBe("preferred_runtime")
+      expect(entry.value).toBe("opencode")
+      expect(entry.source).toBe("owner")
+      expect(entry.schemaVersion).toBe("0.2.0")
+    })
+
+    it("redacts secrets in project values", () => {
+      appendProjectEntry({
+        projectRoot: tmpDir,
+        key: "deploy_token",
+        value: "token=ghp_secret123456",
+        source: "owner",
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/project/memory.jsonl")
+      const lines = fs.readFileSync(filePath, "utf-8").trim().split("\n")
+      const entry = JSON.parse(lines[lines.length - 1])
+      expect(entry.value).toContain("[REDACTED_TOKEN]")
+      expect(entry.value).not.toContain("ghp_")
     })
   })
 })

@@ -1,33 +1,30 @@
 /**
- * Agent Memory Hook — Entry Types (V1)
+ * Agent Memory — Entry Types (V2)
  *
- * Session lifecycle memory: records task + outcome on session end.
- * V1: Pure JSONL append, no hash chain (stabilize 2 days first).
- * decisions/filesChanged/commitShas written by AI via `aiplus memory add` (not hook).
+ * Three-layer memory: personal, team, project.
+ * V2 adds team + project layers + 12 redaction rules.
+ * V1 personal layer preserved, backward-compatible.
  */
+
+// ---- Layers ---------------------------------------------------------------
+
+export type MemoryLayer = "personal" | "team" | "project"
+
+// ---- Personal (V1 — unchanged) -------------------------------------------
 
 /** Outcome of a session. */
 export type SessionOutcome = "success" | "failed" | "canceled"
 
 /** Memory entry written on session end. */
 export interface MemoryEntry {
-  /** OpenCode session ID */
   sessionId: string
-  /** Role name (stripped of `aiplus-` prefix) */
   role: string
-  /** ISO 8601 timestamp — session create */
   startedAt: string
-  /** ISO 8601 timestamp — session end/compact/interrupt */
   endedAt: string
-  /** Duration in milliseconds */
   durationMs: number
-  /** Last user prompt (truncated to 200 chars) */
   task: string
-  /** Session outcome */
   outcome: SessionOutcome
-  /** Schema version */
   schemaVersion: "0.1.0"
-  /** ISO 8601 timestamp — entry written */
   timestamp: string
 }
 
@@ -35,4 +32,48 @@ export interface MemoryEntry {
 export function truncateTask(task: string, maxLen = 200): string {
   if (task.length <= maxLen) return task
   return task.slice(0, maxLen - 3) + "..."
+}
+
+// ---- Team (V2) -----------------------------------------------------------
+
+export type TeamConfidence = "owner_asserted" | "verified" | "speculative"
+export type TeamStatus = "active" | "superseded" | "resolved"
+
+/** A shared decision / blocker / gate visible to all roles. */
+export interface TeamEntry {
+  id: string
+  subject: string
+  summary: string
+  /** Who created this entry (role name or "owner") */
+  source: string
+  confidence: TeamConfidence
+  status: TeamStatus
+  tags: string[]
+  schemaVersion: "0.2.0"
+  timestamp: string
+  /** Redaction level: "none" | "partial" | "full". Set by redact pipeline. */
+  redaction: "none" | "partial" | "full"
+}
+
+// ---- Project (V2) --------------------------------------------------------
+
+/** A project-level constraint or preference, shared across CEO lanes. */
+export interface ProjectEntry {
+  key: string
+  value: string
+  source: string
+  schemaVersion: "0.2.0"
+  timestamp: string
+}
+
+// ---- Redaction (V2) ------------------------------------------------------
+
+export interface RedactionRule {
+  name: string
+  /** Pattern to match. Order matters: earlier rules fire first. */
+  pattern: RegExp
+  /** Replacement for matched text. */
+  replacement: string
+  /** Brief description for audit/log. */
+  description: string
 }
