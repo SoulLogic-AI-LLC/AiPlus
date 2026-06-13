@@ -11,6 +11,7 @@ import { getDisplayStatus, getUniqueRoles } from "./types"
 export const dispatchBoardStore = {
   refresh: () => {},
   cycleRole: () => {},
+  cycleLane: () => {},
   cycleStatus: () => {},
 }
 
@@ -76,8 +77,11 @@ function EntryRow(props: { entry: DispatchEntry; theme: TuiThemeCurrent }) {
       <text fg={t.info} width={14}>
         {truncate(props.entry.role, 14)}
       </text>
-      <text fg={t.text} width={30}>
-        {truncate(props.entry.task ?? "—", 30)}
+      <text fg={t.textMuted} width={8}>
+        {props.entry.lane ?? "—"}
+      </text>
+      <text fg={t.text} width={26}>
+        {truncate(props.entry.task ?? "—", 26)}
       </text>
       <text fg={color} width={10}>
         {status}
@@ -107,7 +111,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
   const [data, { refetch }] = createResource(() => client.dispatchList())
 
   // Filters
-  const [filter, setFilter] = createSignal<FilterState>({ role: null, status: null })
+  const [filter, setFilter] = createSignal<FilterState>({ role: null, lane: null, status: null })
 
   // Filtered entries
   const filtered = createMemo(() => {
@@ -115,6 +119,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     const f = filter()
     return entries.filter((e) => {
       if (f.role && e.role !== f.role) return false
+      if (f.lane && (e.lane ?? "—") !== f.lane) return false
       if (f.status && getDisplayStatus(e) !== f.status) return false
       return true
     }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -131,6 +136,13 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
 
   // Available roles for filter
   const roles = createMemo(() => getUniqueRoles(data() ?? []))
+
+  // Available lanes for filter
+  const lanes = createMemo(() => {
+    const entries = data() ?? []
+    const laneSet = new Set(entries.map(e => e.lane ?? "—"))
+    return Array.from(laneSet).sort()
+  })
 
   // Cycle role filter
   function cycleRole() {
@@ -149,6 +161,23 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     }
   }
 
+  // Cycle lane filter
+  function cycleLane() {
+    const l = lanes()
+    if (l.length === 0) return
+    const current = filter().lane
+    if (!current) {
+      setFilter(f => ({ ...f, lane: l[0] }))
+    } else {
+      const idx = l.indexOf(current)
+      if (idx === l.length - 1) {
+        setFilter(f => ({ ...f, lane: null }))
+      } else {
+        setFilter(f => ({ ...f, lane: l[idx + 1] }))
+      }
+    }
+  }
+
   // Cycle status filter
   const STATUS_OPTIONS: (string | null)[] = [null, "running", "completed", "failed", "created"]
 
@@ -162,6 +191,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
   // Wire up external store for keymap commands
   dispatchBoardStore.refresh = () => refetch()
   dispatchBoardStore.cycleRole = cycleRole
+  dispatchBoardStore.cycleLane = cycleLane
   dispatchBoardStore.cycleStatus = cycleStatus
 
   return (
@@ -174,7 +204,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
         <text fg={theme().textMuted}>— Session Dispatch Status</text>
         <box flexGrow={1} />
         <text fg={theme().textMuted}>
-          [R refresh] [F role filter] [S status filter] [Esc back]
+          [R refresh] [F role] [L lane] [S status] [Esc back]
         </text>
       </box>
 
@@ -186,6 +216,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
       {/* Filters */}
       <box flexDirection="row" paddingLeft={2} paddingRight={2} paddingTop={1} gap={3}>
         <FilterLabel label="Role" value={filter().role} theme={theme()} />
+        <FilterLabel label="Lane" value={filter().lane} theme={theme()} />
         <FilterLabel label="Status" value={filter().status} theme={theme()} />
         <box flexGrow={1} />
         <text fg={theme().textMuted}>
@@ -202,7 +233,10 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
         <text fg={theme().textMuted} width={14}>
           <b>Role</b>
         </text>
-        <text fg={theme().textMuted} width={30}>
+        <text fg={theme().textMuted} width={8}>
+          <b>Lane</b>
+        </text>
+        <text fg={theme().textMuted} width={26}>
           <b>Task</b>
         </text>
         <text fg={theme().textMuted} width={10}>

@@ -3,6 +3,7 @@ export interface DispatchEntry {
   dispatchId: string
   sessionId: string
   role: string
+  lane?: string
   tier?: "LIGHT" | "MEDIUM" | "HEAVY"
   outcome?: "success" | "failed" | "canceled"
   timestamp: string
@@ -14,6 +15,7 @@ export interface DispatchEntry {
 /** Filter state for dispatch board. */
 export interface FilterState {
   role: string | null  // null = all
+  lane: string | null  // null = all
   status: string | null  // null = all
 }
 

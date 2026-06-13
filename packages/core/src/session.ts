@@ -38,6 +38,17 @@ import { verify as auditVerify } from "../../../aiplus/audit/runner"
 import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier"
 import { interceptToolCall } from "../../../aiplus/effects/gateway"
 
+// C.1 Multi-Lane: detect CEO lane from environment or agent name.
+// AIPLUS_CEO_LANE env takes priority (ceo-1, ceo-2, ceo-3).
+// Falls back to agent name (e.g., "ceo" → "ceo").
+function detectLane(agentName: string): string {
+  const envLane = process.env.AIPLUS_CEO_LANE
+  if (envLane && /^(ceo-[123]|default)$/.test(envLane)) {
+    return envLane
+  }
+  return agentName.replace(/^aiplus-/, "").toLowerCase() || "default"
+}
+
 // AiPlus compact handoff: check context pressure on session create/resume.
 // GAP-6: tokensUsed is 0 on create (empty session); populated from session info on resume.
 function checkCompactPressure(entry: {
@@ -393,6 +404,7 @@ export const layer = Layer.effect(
         void appendDispatchLog({
           dispatchId: `dispatch-${sessionID}`,
           role: (input.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+          lane: detectLane(input.agent ?? "default"),
           task: input.agent ? `[${input.agent}] session created` : "(session-create)",
           sessionId: sessionID,
           worktreePath: input.location.directory,
@@ -401,7 +413,7 @@ export const layer = Layer.effect(
         // Release is handled by GC (24h expiry) — OpenCode has no explicit session.destroy().
         void acquireWorktreeLease({
           sessionId: sessionID,
-          lane: (input.agent ?? "default").replace(/^aiplus-/, "").toLowerCase(),
+          lane: detectLane(input.agent ?? "default"),
           worktreePath: input.location.directory,
         })
         // AiPlus compact handoff: check context pressure on session create.

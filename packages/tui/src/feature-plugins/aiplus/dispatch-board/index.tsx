@@ -53,6 +53,14 @@ const tui: TuiPlugin = async (api) => {
         },
       },
       {
+        name: "aiplus.dispatch.cycle-lane",
+        title: "AiPlus: Cycle Lane Filter",
+        category: "AiPlus",
+        run() {
+          dispatchBoardStore.cycleLane()
+        },
+      },
+      {
         name: "aiplus.dispatch.back",
         title: "AiPlus: Back to Home",
         category: "AiPlus",
@@ -66,6 +74,7 @@ const tui: TuiPlugin = async (api) => {
       { command: "aiplus.dispatch.refresh", key: "r" },
       { command: "aiplus.dispatch.cycle-role", key: "f" },
       { command: "aiplus.dispatch.cycle-status", key: "s" },
+      { command: "aiplus.dispatch.cycle-lane", key: "l" },
       { command: "aiplus.dispatch.back", key: "escape" },
     ],
   })

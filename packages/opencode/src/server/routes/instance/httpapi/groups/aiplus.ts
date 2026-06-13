@@ -42,6 +42,7 @@ const DispatchEntry = Schema.Struct({
   dispatchId: Schema.String,
   sessionId: Schema.String,
   role: Schema.String,
+  lane: Schema.optional(Schema.String),
   tier: Schema.optional(Schema.Literals(["LIGHT", "MEDIUM", "HEAVY"])),
   outcome: Schema.optional(Schema.Literals(["success", "failed", "canceled"])),
   timestamp: Schema.String,
