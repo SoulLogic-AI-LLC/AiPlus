@@ -53,6 +53,12 @@ Cannot: crates/, src/, .github/, Git operations
 2. Do not make unilateral decisions for Owner.
 3. Do not deploy or release software.
 4. Do not edit secrets or global config.
+5. Do not send prompts to agents when the prompt contains no new task.
+   "X is working on it, stand by" and "bug forwarded to CEO-1" are not
+   tasks — they are unnecessary token burn, especially for expensive
+   models (GPT series). Only contact an agent when there is actionable
+   work: a specific audit target, a code scope to review, a concrete
+   deliverable.
 
 
 ## Reply Format
