@@ -1,4 +1,5 @@
 import type { LobbyStatusResponse } from "../lobby/types"
+import type { DispatchEntry } from "../dispatch-board/types"
 
 /** Fetch wrapper for AiPlus B0 REST endpoints. */
 export function createAiPlusClient(baseUrl: string) {
@@ -8,6 +9,26 @@ export function createAiPlusClient(baseUrl: string) {
         const res = await fetch(`${baseUrl}/aiplus/lobby/status`)
         if (!res.ok) return null
         return (await res.json()) as LobbyStatusResponse
+      } catch {
+        return null
+      }
+    },
+
+    async dispatchList(): Promise<DispatchEntry[]> {
+      try {
+        const res = await fetch(`${baseUrl}/aiplus/dispatch/list`)
+        if (!res.ok) return []
+        return (await res.json()) as DispatchEntry[]
+      } catch {
+        return []
+      }
+    },
+
+    async dispatchGet(sessionId: string): Promise<DispatchEntry | null> {
+      try {
+        const res = await fetch(`${baseUrl}/aiplus/dispatch/${sessionId}`)
+        if (!res.ok) return null
+        return (await res.json()) as DispatchEntry
       } catch {
         return null
       }
