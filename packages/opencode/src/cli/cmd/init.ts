@@ -33,7 +33,56 @@ export const InitCommand = cmd({
     console.log(`Wrote ${count} persona files → ${agentsDir}`)
 
     // Write .aiplus/ skeleton
+    const agentTeamToml = `schema_version = "1.0"
+
+[team]
+project_name = "<your-project>"
+core_roles = [
+  "advisor", "ceo",
+  "architect", "pm",
+  "ui-designer", "ai-integration",
+  "engineer-a", "engineer-b",
+  "integration-manager",
+  "reviewer", "security-reviewer", "qa",
+]
+active_experts = []
+
+[advisor_review_bench]
+purpose = "Independent review, verification, challenge, and gate readiness support for Advisor."
+bench_roles = ["release-manager", "evidence-auditor", "qa"]
+default_capabilities = ["read", "verify", "report", "recommend"]
+forbidden_by_default = ["implement", "merge", "tag", "release", "push", "edit_secrets", "change_repo_settings"]
+owner_gates = ["merge", "tag", "release", "publish", "deploy", "external_accounts", "secrets", "global_config"]
+
+[chief_auditor]
+purpose = "Read-only verification coordinator for Advisor CA-verdict packets."
+role = "chief-auditor"
+aliases = ["ca", "chief-auditor", "chief auditor", "chief-audit", "ca-verification"]
+default_capabilities = ["read", "plan_verification", "route_verifiers", "report", "recommend"]
+forbidden_by_default = ["implement", "merge", "tag", "release", "push", "edit_secrets", "change_repo_settings"]
+owner_gates = ["merge", "tag", "release", "publish", "deploy", "external_accounts", "secrets", "global_config"]
+
+[coordinator.light]
+complexity_max = 2
+fire_consultant = false
+
+[coordinator.medium]
+complexity_min = 3
+complexity_max = 4
+fire_consultant = true
+
+[coordinator.heavy]
+complexity_min = 5
+risk_threshold = 0.7
+fire_consultant = true
+
+[owner_interface]
+default_visible = ["advisor", "ceo"]
+allow_direct_talk_to_others = true
+`
+
     const skeleton: Record<string, string> = {
+      "agents/agent-team.toml": agentTeamToml,
       "agents/dispatch-log.jsonl": "",
       "agents/execution-state.json": JSON.stringify({ schemaVersion: "0.1.0", roles: [], dispatches: [] }, null, 2),
       "agent-memory/_team/memory.jsonl": "",
