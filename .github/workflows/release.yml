@@ -1,0 +1,88 @@
+name: release
+run-name: "Release ${{ github.ref_name }}"
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: darwin-arm64
+          - os: macos-13
+            target: darwin-x64
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build binary
+        run: |
+          bun run packages/opencode/script/build.ts \
+            --single \
+            --skip-embed-web-ui \
+            --skip-install
+
+      - name: Rename and verify
+        run: |
+          BINARY_NAME="aiplus-native-${{ matrix.target }}"
+          # Find built binary (opencode-* is the dist directory pattern)
+          BUILT=$(find packages/opencode/dist -name "opencode" -type f | head -1)
+          if [ -z "$BUILT" ]; then
+            echo "ERROR: built binary not found"
+            find packages/opencode/dist -type f
+            exit 1
+          fi
+          echo "Built: $BUILT"
+          cp "$BUILT" "$BINARY_NAME"
+          chmod +x "$BINARY_NAME"
+          echo "Binary: $BINARY_NAME ($(du -h "$BINARY_NAME" | cut -f1))"
+
+      - name: Smoke test
+        if: matrix.os != 'macos-13'
+        run: |
+          ./aiplus-native-${{ matrix.target }} --version || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aiplus-native-${{ matrix.target }}
+          path: aiplus-native-${{ matrix.target }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: aiplus-native-*
+          merge-multiple: true
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ASSETS=$(ls aiplus-native-* 2>/dev/null)
+          echo "Assets to upload:"
+          echo "$ASSETS"
+          gh release upload "${{ github.ref_name }}" $ASSETS --clobber --repo "${{ github.repository }}"

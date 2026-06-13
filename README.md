@@ -2,7 +2,7 @@
 
 **OpenCode, augmented with the AiPlus agent team layer.**
 
-![v0.0.3](https://img.shields.io/badge/version-v0.0.3-blue)
+![v0.0.4](https://img.shields.io/badge/version-v0.0.4-blue)
 ![7/7 capabilities](https://img.shields.io/badge/capabilities-7%2F7-green)
 ![20 personas](https://img.shields.io/badge/personas-20-orange)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
@@ -10,6 +10,15 @@
 ---
 
 ## Quick Start
+
+### One-line install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/main/install.sh | bash
+aiplus-native
+```
+
+Downloads a prebuilt binary for your platform (macOS arm64/x64, Linux x64/arm64).
 
 ### Developer (from source)
 
@@ -27,18 +36,6 @@ echo "alias aiplus-native='cd ~/code/AiPlus-Native && bun run dev'" >> ~/.zshrc
 source ~/.zshrc
 aiplus-native
 ```
-
-Or add the repo root to your `PATH` — the included `aiplus-native` script wraps `bun run dev`.
-
-### User (binary release) <sup>[v0.1.0 milestone]</sup>
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/main/install.sh | bash
-```
-
-The binary release pipeline is **not yet built**. The install script above will be available
-once platform binaries are produced via `bun build --compile`. Until then, use the developer
-flow above.
 
 ---
 
@@ -155,10 +152,10 @@ Roles are grouped by **pillar** — each pillar has distinct permissions and res
 - `GET /aiplus/lobby/status|dispatch|compact/capsule|personas`
 - TUI `home_bottom` lobby widget + F2 full-screen route
 
-### 🚧 v0.1.0 — Binary Distribution
-- `bun build --compile` → platform binaries (macOS arm64/x64, Linux x64, Windows x64)
+### 🚧 v0.1.0 — Binary Distribution (in progress)
+- `bun build --compile` → platform binaries (macOS arm64/x64, Linux x64, Linux arm64)
 - `install.sh` one-liner installer
-- Release pipeline (GitHub Actions → build matrix → upload assets)
+- GitHub Actions release pipeline (tag → build → upload)
 
 ### 📋 v1.0
 - 3-layer memory: session → project → global
