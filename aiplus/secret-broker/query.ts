@@ -122,3 +122,55 @@ export function resolveAlias(name: string): AliasEntry | null {
   const normalized = name.toUpperCase()
   return listAliases().find((a) => a.alias === normalized) ?? null
 }
+
+/**
+ * Resolve a secret value by alias name.
+ *
+ * Reads the actual key from auth.json (never from credential_db —
+ * credential_db is read-only and may be locked). Returns the raw
+ * secret value for env injection; caller must not log or persist it.
+ *
+ * Returns null if alias not found or source unreadable.
+ */
+export function resolveSecret(aliasName: string): string | null {
+  const entry = resolveAlias(aliasName)
+  if (!entry) return null
+
+  // Only auth.json exposes raw key values
+  if (entry.source === "auth.json") {
+    return readSecretFromAuthJson(entry.provider)
+  }
+
+  // credential_db — try reading value column
+  return readSecretFromCredentialDb(entry.provider)
+}
+
+/** Read a single secret value from auth.json by provider ID. */
+function readSecretFromAuthJson(provider: string): string | null {
+  try {
+    const raw = fs.readFileSync(authJsonPath(), "utf-8")
+    const data = JSON.parse(raw) as Record<string, unknown>
+    const entry = data[provider]
+    if (entry && typeof entry === "object" && "key" in (entry as Record<string, unknown>)) {
+      const key = (entry as Record<string, unknown>).key
+      return typeof key === "string" ? key : null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** Read a single secret value from credential_db by provider label. */
+function readSecretFromCredentialDb(provider: string): string | null {
+  try {
+    const db = new Database(opencodeDbPath(), { readonly: true })
+    const row = db
+      .query(`SELECT value FROM credential WHERE label = ? AND active = 1`)
+      .get(provider) as { value: string } | undefined
+    db.close()
+    return row?.value ?? null
+  } catch {
+    return null
+  }
+}
