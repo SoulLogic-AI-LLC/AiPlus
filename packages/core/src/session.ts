@@ -32,6 +32,7 @@ import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
 import { checkPressure } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
+import { appendMemoryEntry } from "../../../aiplus/memory/append"
 
 // AiPlus compact handoff: check context pressure on session create.
 // Model info + token snapshot come from the session context.
@@ -516,7 +517,17 @@ export const layer = Layer.effect(
         })
       }),
       compact: Effect.fn("V2Session.compact")(function* (input) {
-        yield* result.get(input.sessionID)
+        const session = yield* result.get(input.sessionID)
+        // AiPlus memory hook: record session end on compact.
+        void appendMemoryEntry({
+          projectRoot: session.directory,
+          sessionId: input.sessionID,
+          role: (session.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+          startedAt: new Date(session.time.created).toISOString(),
+          endedAt: new Date().toISOString(),
+          task: session.title ?? "(compact)",
+          outcome: "success",
+        })
         return yield* new OperationUnavailableError({ operation: "compact" })
       }),
       wait: Effect.fn("V2Session.wait")(function* (sessionID) {
@@ -539,6 +550,16 @@ export const layer = Layer.effect(
             if (event.seq === undefined)
               return yield* Effect.die("Interrupt request event is missing aggregate sequence")
             yield* execution.interrupt(sessionID, event.seq)
+            // AiPlus memory hook: record session end on interrupt.
+            void appendMemoryEntry({
+              projectRoot: session.directory,
+              sessionId: sessionID,
+              role: (session.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+              startedAt: new Date(session.time.created).toISOString(),
+              endedAt: new Date().toISOString(),
+              task: session.title ?? "(interrupt)",
+              outcome: "canceled",
+            })
           }),
         ),
       ),
