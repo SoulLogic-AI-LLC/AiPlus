@@ -34,6 +34,7 @@ import { checkPressure } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
+import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier" (feat(aiplus): PR #12 — managed blocks auto-injection + 20 persona sync)
 
 // AiPlus compact handoff: check context pressure on session create.
 // Model info + token snapshot come from the session context.
@@ -377,6 +378,9 @@ export const layer = Layer.effect(
         // AiPlus audit: run project-level integrity checks on session create.
         // Covers D1 (dispatch chain), D2 (memory match), D3 (persona permissions).
         void auditVerify(input.location.directory, sessionID)
+        // AiPlus managed blocks: auto-fix missing blocks in markdown body.
+        // YAML frontmatter is WARN-only (never auto-modified).
+        void verifyAndFix(input.location.directory) (feat(aiplus): PR #12 — managed blocks auto-injection + 20 persona sync)
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
