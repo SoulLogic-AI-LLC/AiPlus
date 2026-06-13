@@ -16,6 +16,13 @@ import { SessionContextEpoch } from "./context-epoch"
 import { MessageTable, PartTable, SessionMessageTable, SessionTable } from "./sql"
 import type { DeepMutable } from "../schema"
 
+// AiPlus hooks: wired as event subscribers so they fire from any session lifecycle path (CLI, TUI, API).
+import { appendDispatchLog } from "../session"
+import { checkPressure } from "../../../../aiplus/compact/monitor"
+import { writeCapsule } from "../../../../aiplus/compact/capsule"
+import { verify as auditVerify } from "../../../../aiplus/audit/runner"
+import { verifyAndFix } from "../../../../aiplus/managed-blocks/verifier"
+
 type DatabaseService = Database.Interface["db"]
 
 const decodeMessage = Schema.decodeUnknownSync(SessionMessage.Message)
@@ -87,6 +94,47 @@ function partData(part: (typeof SessionV1.Event.PartUpdated.Type)["data"]["part"
   const { id: _, messageID: __, sessionID: ___, ...rest } = part
   return rest as DeepMutable<typeof rest>
 }
+
+// ---- AiPlus Hook Helpers ---------------------------------------------------
+
+/** Fire-and-forget: log dispatch on session create. Never throws. */
+function aiplusDispatchLog(sessionID: string, info: SessionV1.SessionInfo) {
+  try {
+    void appendDispatchLog({
+      dispatchId: `dispatch-${sessionID}`,
+      role: (info.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+      sessionId: sessionID,
+      task: info.agent ? `[${info.agent}] session created` : "(session-create)",
+      worktreePath: info.directory,
+    })
+  } catch { /* fire-and-forget */ }
+}
+
+/** Fire-and-forget: compact pressure check on session create. */
+function aiplusCompactCheck(sessionID: string, info: SessionV1.SessionInfo) {
+  try {
+    const modelId = info.model?.id ?? "unknown"
+    const tokensUsed = (info.tokens?.input ?? 0) + (info.tokens?.output ?? 0)
+    const result = checkPressure(info.directory, sessionID, {
+      used: tokensUsed,
+      total: 200_000,
+      model: modelId,
+    }, (info.agent ?? "unknown").replace(/^aiplus-/, ""))
+    writeCapsule(info.directory, result)
+  } catch { /* fire-and-forget */ }
+}
+
+/** Fire-and-forget: audit verify on session create. */
+function aiplusAudit(directory: string, sessionID: string) {
+  try { void auditVerify(directory, sessionID) } catch { /* fire-and-forget */ }
+}
+
+/** Fire-and-forget: managed blocks on session create. */
+function aiplusManagedBlocks(directory: string) {
+  try { void verifyAndFix(directory) } catch { /* fire-and-forget */ }
+}
+
+// ---- End AiPlus Hook Helpers -----------------------------------------------
 
 function applyUsage(
   db: DatabaseService,
@@ -232,6 +280,13 @@ export const layer = Layer.effectDiscard(
             .run()
             .pipe(Effect.orDie)
         }
+        // AiPlus hooks: fire on every session create (CLI dispatch + TUI native).
+        const info = event.data.info
+        const sid = event.data.sessionID
+        aiplusDispatchLog(sid, info)
+        aiplusCompactCheck(sid, info)
+        aiplusAudit(info.directory, sid)
+        aiplusManagedBlocks(info.directory)
       }),
     )
     yield* events.project(SessionV1.Event.Updated, (event) =>
