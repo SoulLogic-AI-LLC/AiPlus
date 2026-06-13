@@ -24,6 +24,37 @@ const PROGRAM_ALLOWLIST = new Set([
   "grep", "rg", "git", "cat", "head", "tail", "wc", "test", "python3",
 ])
 
+// ---- Absolute path cache (prevents PATH hijack) ----------------------------
+
+/** Map program name → absolute path, resolved at module init via `Bun.which`. */
+const PROGRAM_PATHS: Map<string, string> = new Map()
+
+function resolveProgramPaths(): void {
+  // Use a deterministic PATH that matches the sandboxed env in rerun.ts
+  const searchPath = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  const originalPath = process.env.PATH
+  try {
+    process.env.PATH = searchPath
+    for (const prog of PROGRAM_ALLOWLIST) {
+      const resolved = Bun.which(prog)
+      if (resolved) {
+        PROGRAM_PATHS.set(prog, resolved)
+      }
+    }
+  } finally {
+    if (originalPath !== undefined) {
+      process.env.PATH = originalPath
+    } else {
+      delete process.env.PATH
+    }
+  }
+  // Fail-closed: if any allowlisted program is missing, the deny-flag scan
+  // will reject its bare name — classify() returns Reject.
+}
+
+// Resolve paths eagerly at module load
+resolveProgramPaths()
+
 const DENY_FLAGS = new Set([
   "-w", "--write", "-o", "--output", "-i", "--in-place", "--force",
   "-d", "--delete", "-D", "--hard", "--soft", "-rf", "-fr",
@@ -144,7 +175,7 @@ function rejectEnvAssignment(argv: string[]): string | null {
   return null
 }
 
-// ---- Step 7: Program allowlist --------------------------------------------
+// ---- Step 7: Program allowlist (absolute path enforcement) -----------------
 
 function rejectProgram(argv: string[]): string | null {
   if (argv.length === 0) return "empty command"
@@ -154,6 +185,11 @@ function rejectProgram(argv: string[]): string | null {
   if (!PROGRAM_ALLOWLIST.has(prog)) {
     return `program '${prog}' not in allowlist: [${[...PROGRAM_ALLOWLIST].join(", ")}]`
   }
+  // Resolve to absolute path (prevents PATH hijack)
+  const resolved = PROGRAM_PATHS.get(prog)
+  if (!resolved) return `program '${prog}' not found on PATH`
+  // Rewrite argv[0] in-place so exec uses the absolute path
+  argv[0] = resolved
   return null
 }
 

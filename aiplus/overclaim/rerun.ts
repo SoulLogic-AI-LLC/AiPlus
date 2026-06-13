@@ -128,7 +128,13 @@ export async function rerunClaim(
     }
   }
 
-  const execResult = await execSandboxed(classification.argv, root)
+  // Security: python3 — isolated mode + disable site-packages
+  const argv = [...classification.argv]
+  if (argv[0] === "python3" || argv[0]?.endsWith("/python3")) {
+    argv.splice(1, 0, "-I", "-S")
+  }
+
+  const execResult = await execSandboxed(argv, root)
 
   if (execResult.error && execResult.stdout.length === 0 && execResult.stderr.length === 0) {
     return {
