@@ -1,1 +1,0 @@
-../../aiplus/agents/ceo.md
