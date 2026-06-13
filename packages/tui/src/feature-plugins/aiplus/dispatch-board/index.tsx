@@ -1,7 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 
 import type { TuiPlugin, TuiPluginApi } from "@opencode-ai/plugin/tui"
-import type { BuiltinTuiPlugin } from "../builtins"
+import type { BuiltinTuiPlugin } from "../../builtins"
 import { DispatchBoardRoute, dispatchBoardStore } from "./route"
 
 const id = "internal:aiplus-dispatch"
@@ -57,7 +57,7 @@ const tui: TuiPlugin = async (api) => {
         title: "AiPlus: Back to Home",
         category: "AiPlus",
         run() {
-          api.route.navigate({ type: "home" })
+          api.route.navigate("home")
         },
       },
     ],
