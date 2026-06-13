@@ -14,12 +14,40 @@ import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
 import { createMainProcessRpcClient } from "../main-process-rpc"
+import open from "open"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
 }
 
 type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
+
+function shouldUseDarwinEmergencyWebFallback() {
+  return process.platform === "darwin" && process.env.OPENCODE_DARWIN_FORCE_TUI !== "1"
+}
+
+async function runDarwinEmergencyWebFallback(client: RpcClient, network: ReturnType<typeof resolveNetworkOptionsNoConfig>) {
+  const { url } = await client.call("server", network)
+  const localUrl = network.hostname === "0.0.0.0" ? `http://localhost:${new URL(url).port}` : url
+
+  UI.empty()
+  UI.println(UI.Style.TEXT_WARNING_BOLD + "!  macOS TUI startup is degraded; opening web fallback instead.")
+  UI.println(UI.Style.TEXT_INFO_BOLD + "   Set OPENCODE_DARWIN_FORCE_TUI=1 to retry native TUI.")
+  UI.println(UI.Style.TEXT_INFO_BOLD + "   Web interface: ", UI.Style.TEXT_NORMAL, localUrl)
+  UI.empty()
+
+  open(localUrl).catch(() => {})
+
+  await new Promise<void>((resolve) => {
+    const done = () => {
+      process.off("SIGINT", done)
+      process.off("SIGTERM", done)
+      resolve()
+    }
+    process.on("SIGINT", done)
+    process.on("SIGTERM", done)
+  })
+}
 
 function createWorkerFetch(client: RpcClient): typeof fetch {
   const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -148,6 +176,16 @@ export const TuiThreadCommand = cmd({
       const config = await TuiConfig.get()
 
       const network = resolveNetworkOptionsNoConfig(args)
+
+      if (shouldUseDarwinEmergencyWebFallback()) {
+        try {
+          await runDarwinEmergencyWebFallback(client, network)
+        } finally {
+          await stop()
+        }
+        return
+      }
+
       const external =
         process.argv.includes("--port") ||
         process.argv.includes("--hostname") ||
