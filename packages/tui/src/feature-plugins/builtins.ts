@@ -9,6 +9,7 @@ import SidebarMcp from "./sidebar/mcp"
 import SidebarTodo from "./sidebar/todo"
 import AiPlusLobby from "./aiplus/index"
 import AiPlusDispatch from "./aiplus/dispatch-board/index"
+import SidebarCompactGauge from "./sidebar/compact-gauge"
 import DiffViewer from "./system/diff-viewer"
 import Notifications from "./system/notifications"
 import PluginManager from "./system/plugins"
@@ -32,6 +33,7 @@ export function createBuiltinPlugins(options: { experimentalEventSystem: boolean
     SidebarFooter,
     AiPlusLobby,
     AiPlusDispatch,
+    SidebarCompactGauge,
     Notifications,
     PluginManager,
     WhichKey,
