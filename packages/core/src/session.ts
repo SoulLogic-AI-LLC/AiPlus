@@ -31,9 +31,55 @@ import { SessionEvent } from "./session/event"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
 
-// AiPlus dispatch log: append a "created" entry via fire-and-forget JSONL write.
-// Dedup note: this is the canonical dispatch writer. aiplus/dispatch/writer.ts
-// is kept for external (CLI/tool) use but session lifecycle goes through here.
+// AiPlus worktree lease: fire-and-forget acquire on session create.
+// GC handles release (24h expiry + doctor/lobby cleanup).
+function acquireWorktreeLease(entry: { sessionId: string; lane: string; worktreePath: string }) {
+  try {
+    const leaseFile = `${entry.worktreePath}/.aiplus/worktree/leases.json`
+    const dir = leaseFile.slice(0, leaseFile.lastIndexOf("/"))
+    fs.mkdirSync(dir, { recursive: true })
+
+    let state = { leases: [] as { leaseId: string; sessionId: string; worktreePath: string; lane: string; status: string; acquiredAt: string; expiresAt: string; baseCommit: string }[] }
+    if (fs.existsSync(leaseFile)) {
+      try { state = JSON.parse(fs.readFileSync(leaseFile, "utf-8")) } catch { /* reset on corruption */ }
+    }
+
+    // Fencing: reject if same lane has active lease
+    const expired = state.leases.filter(l => l.expiresAt && Date.now() - new Date(l.expiresAt).getTime() > 24 * 60 * 60 * 1000)
+    const active = state.leases.filter(l => l.status === "active" && !expired.includes(l))
+    if (active.some(l => l.lane === entry.lane)) return // lane busy, skip
+
+    state.leases = state.leases.filter(l => !expired.includes(l))
+    state.leases.push({
+      leaseId: `lease-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      sessionId: entry.sessionId,
+      worktreePath: entry.worktreePath,
+      lane: entry.lane,
+      status: "active",
+      acquiredAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      baseCommit: "unknown",
+    })
+
+    // Write state with lockfile to prevent concurrent corruption.
+    // Atomic: write to .tmp, then rename (same-filesystem atomic).
+    const tmpFile = leaseFile + ".tmp"
+    const lockFile = leaseFile + ".lock"
+    // Wait for lock (spin, max 500ms)
+    for (let i = 0; i < 10; i++) {
+      try { fs.writeFileSync(lockFile, "", { flag: "wx" }); break }
+      catch { if (i === 9) throw new Error("worktree lease lock timeout"); Bun.sleepSync(50) }
+    }
+    try {
+      fs.writeFileSync(tmpFile, JSON.stringify(state, null, 2), "utf-8")
+      fs.renameSync(tmpFile, leaseFile)
+    } finally {
+      try { fs.unlinkSync(lockFile) } catch { /* best-effort */ }
+    }
+  } catch (err) {
+    process.stderr.write(`[aiplus-worktree] ${err instanceof Error ? err.message : String(err)}\n`)
+  }
+}
 function appendDispatchLog(entry: {
   dispatchId: string
   role: string
@@ -276,12 +322,18 @@ export const layer = Layer.effect(
           )
         if (projected.type === "existing") return projected.session
         // AiPlus dispatch log: fire-and-forget append on session creation.
-        // CA audit: role stripped of "aiplus-" prefix, task carries agent context.
         void appendDispatchLog({
           dispatchId: `dispatch-${sessionID}`,
           role: (input.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
           task: input.agent ? `[${input.agent}] session created` : "(session-create)",
           sessionId: sessionID,
+          worktreePath: input.location.directory,
+        })
+        // AiPlus worktree lease: acquire on session create.
+        // Release is handled by GC (24h expiry) — OpenCode has no explicit session.destroy().
+        void acquireWorktreeLease({
+          sessionId: sessionID,
+          lane: (input.agent ?? "default").replace(/^aiplus-/, "").toLowerCase(),
           worktreePath: input.location.directory,
         })
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
