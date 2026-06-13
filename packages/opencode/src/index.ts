@@ -81,7 +81,9 @@ const cli = yargs(args)
   .completion("completion", "generate shell completion script")
   .command(AcpCommand)
   .command(McpCommand)
-  .command(TuiThreadCommand)
+  .command(InitCommand)       // before TuiThreadCommand: yargs matches subcommands by registration order.
+  .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init must match first to avoid being
+                              // consumed as a positional project argument.
   .command(AttachCommand)
   .command(RunCommand)
   .command(GenerateCommand)
@@ -102,7 +104,6 @@ const cli = yargs(args)
   .command(SessionCommand)
   .command(PluginCommand)
   .command(DbCommand)
-  .command(InitCommand)
   .fail((msg, err) => {
     if (
       msg?.startsWith("Unknown argument") ||
