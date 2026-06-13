@@ -96,6 +96,7 @@ import { tuiHandlers } from "./handlers/tui"
 import { handlers } from "@opencode-ai/server/handlers"
 import { schemaErrorLayer as v2SchemaErrorLayer } from "@opencode-ai/server/middleware/schema-error"
 import { workspaceHandlers } from "./handlers/workspace"
+import { aiplusHandlers } from "./handlers/aiplus"
 import { instanceContextLayer } from "./middleware/instance-context"
 import { workspaceRoutingLayer } from "./middleware/workspace-routing"
 import { disposeMiddleware } from "./lifecycle"
@@ -158,6 +159,7 @@ const instanceApiRoutes = HttpApiBuilder.layer(InstanceHttpApi).pipe(
     syncHandlers,
     tuiHandlers,
     workspaceHandlers,
+    aiplusHandlers,
   ]),
 )
 
