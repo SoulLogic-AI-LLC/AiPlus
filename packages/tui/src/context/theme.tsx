@@ -81,6 +81,10 @@ export {
 
 const THEME_REFRESH_DELAYS = [250, 1000] as const
 
+function useSafeOpenTuiStartup() {
+  return process.platform === "darwin"
+}
+
 type State = {
   themes: Record<string, ThemeJson>
   mode: "dark" | "light"
@@ -144,6 +148,11 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
     }
 
     onMount(() => {
+      if (useSafeOpenTuiStartup()) {
+        if (store.active === "system") setStore("active", "opencode")
+        setStore("ready", true)
+        return
+      }
       void Promise.allSettled([resolveSystemTheme(store.mode), syncCustomThemes()]).finally(() => {
         setStore("ready", true)
       })

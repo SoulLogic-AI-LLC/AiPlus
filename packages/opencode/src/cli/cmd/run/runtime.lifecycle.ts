@@ -9,7 +9,14 @@
 // Also wires SIGINT so Ctrl-c clears a live prompt draft first, then falls
 // back to the usual two-press exit sequence through RunFooter.requestExit().
 import path from "path"
-import { CliRenderEvents, createCliRenderer, type CliRenderer, type ScrollbackWriter } from "@opentui/core"
+import {
+  CliRenderer as OpenTuiCliRenderer,
+  CliRenderEvents,
+  createCliRenderer,
+  type CliRenderer,
+  type CliRendererConfig,
+  type ScrollbackWriter,
+} from "@opentui/core"
 import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui"
 import { Global } from "@opencode-ai/core/global"
 import { openEditor } from "@opencode-ai/tui/editor"
@@ -36,6 +43,29 @@ const FOOTER_HEIGHT = 4
 
 function useSafeOpenTuiStartup() {
   return process.platform === "darwin"
+}
+
+async function createOpencodeCliRenderer(config: CliRendererConfig): Promise<CliRenderer> {
+  if (!useSafeOpenTuiStartup()) {
+    return createCliRenderer(config)
+  }
+
+  const stdout = config.stdout ?? process.stdout
+  const stdin = config.stdin ?? process.stdin
+  const width = stdout.columns || config.width || 80
+  const height = stdout.rows || config.height || 24
+  const renderer = new OpenTuiCliRenderer(stdin, stdout, width, height, config)
+  const internal = renderer as any
+
+  if (!internal._terminalIsSetup) {
+    internal._terminalIsSetup = true
+    internal.lib.setupTerminal(internal.rendererPtr, internal._screenMode === "alternate-screen")
+    internal._capabilities = internal.lib.getTerminalCapabilities(internal.rendererPtr)
+    if (internal._useMouse) internal.enableMouse()
+    if (internal._feed?.isBackpressured()) await internal._feed.idle()
+  }
+
+  return renderer
 }
 
 type SplashState = {
@@ -182,7 +212,7 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
   let unregisterKeymap: (() => void) | undefined
 
   try {
-    const renderer = await createCliRenderer({
+    const renderer = await createOpencodeCliRenderer({
       stdin: source.stdin,
       targetFps: 30,
       maxFps: 60,

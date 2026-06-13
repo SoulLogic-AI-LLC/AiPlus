@@ -8,7 +8,7 @@ import { ClipboardProvider, useClipboard } from "./context/clipboard"
 import { ExitProvider, useExit } from "./context/exit"
 import { EpilogueProvider } from "./context/epilogue"
 import * as Selection from "./util/selection"
-import { createCliRenderer, MouseButton, type CliRenderer } from "@opentui/core"
+import { CliRenderer as OpenTuiCliRenderer, createCliRenderer, MouseButton, type CliRenderer, type CliRendererConfig } from "@opentui/core"
 import { RouteProvider, useRoute } from "./context/route"
 import {
   Switch,
@@ -179,6 +179,29 @@ function useSafeOpenTuiStartup() {
   return process.platform === "darwin"
 }
 
+async function createOpencodeCliRenderer(config: CliRendererConfig): Promise<CliRenderer> {
+  if (!useSafeOpenTuiStartup()) {
+    return createCliRenderer(config)
+  }
+
+  const stdout = config.stdout ?? process.stdout
+  const stdin = config.stdin ?? process.stdin
+  const width = stdout.columns || config.width || 80
+  const height = stdout.rows || config.height || 24
+  const renderer = new OpenTuiCliRenderer(stdin, stdout, width, height, config)
+  const internal = renderer as any
+
+  if (!internal._terminalIsSetup) {
+    internal._terminalIsSetup = true
+    internal.lib.setupTerminal(internal.rendererPtr, internal._screenMode === "alternate-screen")
+    internal._capabilities = internal.lib.getTerminalCapabilities(internal.rendererPtr)
+    if (internal._useMouse) internal.enableMouse()
+    if (internal._feed?.isBackpressured()) await internal._feed.idle()
+  }
+
+  return renderer
+}
+
 export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
   const global = yield* Global.Service
   const exit = { epilogue: undefined as string | undefined, reason: undefined as unknown }
@@ -186,7 +209,7 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
     Effect.gen(function* () {
       const renderer = yield* Effect.acquireRelease(
         Effect.tryPromise(() =>
-          createCliRenderer({
+          createOpencodeCliRenderer({
             externalOutputMode: "passthrough",
             targetFps: 60,
             gatherStats: false,
@@ -232,9 +255,11 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
       const pluginRuntime = createPluginRuntime()
 
       yield* Effect.tryPromise(async () => {
-        // Prewarm palette before ThemeProvider mounts so `system` theme avoids a first-paint fallback flash.
-        void renderer.getPalette({ size: 16 }).catch(() => undefined)
-        const mode = (await renderer.waitForThemeMode(1000)) ?? "dark"
+        if (!useSafeOpenTuiStartup()) {
+          // Prewarm palette before ThemeProvider mounts so `system` theme avoids a first-paint fallback flash.
+          void renderer.getPalette({ size: 16 }).catch(() => undefined)
+        }
+        const mode = useSafeOpenTuiStartup() ? "dark" : ((await renderer.waitForThemeMode(1000)) ?? "dark")
         if (renderer.isDestroyed) return
 
         await render(() => {

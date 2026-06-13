@@ -654,6 +654,10 @@ export const RUN_THEME_FALLBACK: RunTheme = {
 }
 
 export async function resolveRunTheme(renderer: CliRenderer): Promise<RunTheme> {
+  if (process.platform === "darwin") {
+    return RUN_THEME_FALLBACK
+  }
+
   try {
     const colors = await renderer.getPalette({
       size: 256,
