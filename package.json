@@ -19,7 +19,7 @@
     "prepare": "husky",
     "random": "echo 'Random script'",
     "sso": "aws sso login --sso-session=opencode --no-browser",
-    "test": "echo 'do not run tests from root' && exit 1"
+    "test": "bun test --filter 'packages/' --filter 'aiplus/'"
   },
   "workspaces": {
     "packages": [
