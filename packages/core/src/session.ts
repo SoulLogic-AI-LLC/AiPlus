@@ -35,6 +35,7 @@ import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
 import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier" (feat(aiplus): PR #12 — managed blocks auto-injection + 20 persona sync)
+import { interceptToolCall } from "../../../aiplus/effects/gateway"
 
 // AiPlus compact handoff: check context pressure on session create.
 // Model info + token snapshot come from the session context.
