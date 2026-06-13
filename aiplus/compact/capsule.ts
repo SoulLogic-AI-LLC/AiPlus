@@ -1,39 +1,37 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
-import type { ContextCapsule, PressureLevel } from "./types"
+import type { ContextCapsule, CompactAction } from "./types"
+import type { PressureResult } from "./monitor"
 
 const CAPSULE_DIR = ".aiplus/compact"
 
-/** Write a context capsule for session pressure tracking. */
+/** Write a context capsule for session pressure tracking (v2: profile-aware). */
 export function writeCapsule(
   projectRoot: string,
-  sessionId: string,
-  level: PressureLevel,
-  contextUsage: number,
-  tokenCount: { used: number; total: number },
-  model: string,
-  recommendation: string,
+  result: PressureResult,
 ): void {
-  if (level === "silent") return
+  if (result.action.silent) return
   try {
     const dir = path.join(projectRoot, CAPSULE_DIR)
     fs.mkdirSync(dir, { recursive: true })
     const capsule: ContextCapsule = {
-      sessionId,
-      contextUsage,
-      pressureLevel: level,
-      tokenCount,
-      model,
+      sessionId: "", // filled below
+      contextUsage: result.contextUsage,
+      pressureLevel: result.level,
+      tokenCount: result.tokenCount,
+      model: result.model,
       writtenAt: new Date().toISOString(),
-      recommendation,
+      recommendation: result.recommendation,
+      action: result.action,
     }
     fs.writeFileSync(
       path.join(dir, "context-capsule.json"),
       JSON.stringify(capsule, null, 2),
       "utf-8",
     )
+    const pct = (result.contextUsage * 100).toFixed(1)
     process.stderr.write(
-      `[aiplus-compact] PRESSURE=${level.toUpperCase()} usage=${(contextUsage * 100).toFixed(1)}% model=${model} — ${recommendation}\n`,
+      `[aiplus-compact] PRESSURE=${result.level.toUpperCase()} usage=${pct}% model=${result.model} profile=${result.profile} — ${result.recommendation}\n`,
     )
   } catch (err) {
     process.stderr.write(`[aiplus-compact] ${err instanceof Error ? err.message : String(err)}\n`)

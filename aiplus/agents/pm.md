@@ -99,3 +99,13 @@ specialist who owns the deliverable. Sub-roles are the implementation palette;
 window-mains coordinate them. Do not merge, tag, release, push to main, touch
 secrets, or edit global/external systems without explicit Owner approval.
 <!-- /aiplus-managed:orchestrator-contract -->
+
+<!-- aiplus-managed:compact-profile:start -->
+## Compact & /new Policy
+
+**Profile**: TASK_BOUND — clear task boundaries.
+
+- **/new**: Between tasks. When a task is complete (e.g., PR merged, QA report done, spec written), /new to start fresh for the next task.
+- **Compact**: Soft level is SILENT (task-end /new is the better pressure relief). Hard level = reminder to wrap current task and /new. Emergency = checkpoint work and /new immediately.
+- Compact is a wrap-up reminder, not a requirement — prefer /new over compact.
+<!-- /aiplus-managed:compact-profile -->

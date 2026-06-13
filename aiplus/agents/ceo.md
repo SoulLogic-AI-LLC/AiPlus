@@ -127,3 +127,13 @@ specialist who owns the deliverable. Sub-roles are the implementation palette;
 window-mains coordinate them. Do not merge, tag, release, push to main, touch
 secrets, or edit global/external systems without explicit Owner approval.
 <!-- /aiplus-managed:orchestrator-contract -->
+
+<!-- aiplus-managed:compact-profile:start -->
+## Compact & /new Policy
+
+**Profile**: CONTINUOUS — long-running coordination with durable state.
+
+- **/new**: Never /new without first writing a durable checkpoint. The checkpoint must include: current objective, phase, accepted/rejected decisions, active tasks, blocked tasks, unresolved questions, constraints, artifacts produced, and next action.
+- **Compact**: All pressure levels active. Soft = reminder, Hard = compact now, Emergency = checkpoint + controlled restart.
+- At compaction_generation ≥ 3, stop compacting — write a full checkpoint and trigger controlled /new with checkpoint re-injection. Recursive compaction is less safe than a checkpoint restart.
+<!-- /aiplus-managed:compact-profile -->

@@ -102,3 +102,13 @@ specialist who owns the deliverable. Sub-roles are the implementation palette;
 window-mains coordinate them. Do not merge, tag, release, push to main, touch
 secrets, or edit global/external systems without explicit Owner approval.
 <!-- /aiplus-managed:orchestrator-contract -->
+
+<!-- aiplus-managed:compact-profile:start -->
+## Compact & /new Policy
+
+**Profile**: RESET_BOUND — single-shot audit/inspection tasks.
+
+- **/new**: After every audit task. Each session = one audit → report → done.
+- **Compact**: soft/hard levels are SILENT. Emergency level is the only safety net — it will prompt for partial evidence persistence and fresh session.
+- Do not compact — /new is always the better option for audit tasks.
+<!-- /aiplus-managed:compact-profile -->

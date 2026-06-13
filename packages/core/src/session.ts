@@ -31,7 +31,7 @@ import { SessionEvent } from "./session/event"
 import { applyRedaction } from "../../../aiplus/memory/redact"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
-import { checkPressure } from "../../../aiplus/compact/monitor"
+import { checkPressure, bumpCompactionGeneration, shouldForceFresh, initSessionCompactState } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
@@ -45,20 +45,17 @@ function checkCompactPressure(entry: {
   model?: { id: string; providerID: string; variant?: string }
   worktreePath: string
   tokensUsed?: number // GAP-6: from session info on resume (input+output tokens)
+  role?: string
 }) {
   try {
     const modelId = entry.model?.id ?? "unknown"
     const used = entry.tokensUsed ?? 0
-    const result = checkPressure({ used, total: 200_000, model: modelId })
-    writeCapsule(
-      entry.worktreePath,
-      entry.sessionId,
-      result.level,
-      result.contextUsage,
-      result.tokenCount,
-      result.model,
-      result.recommendation,
-    )
+    const result = checkPressure(entry.worktreePath, entry.sessionId, {
+      used,
+      total: 200_000,
+      model: modelId,
+    }, entry.role)
+    writeCapsule(entry.worktreePath, result)
   } catch (err) {
     process.stderr.write(`[aiplus-compact] ${err instanceof Error ? err.message : String(err)}\n`)
   }
@@ -340,6 +337,7 @@ export const layer = Layer.effect(
             model: input.model,
             worktreePath: input.location.directory,
             tokensUsed: (recorded.tokens?.input ?? 0) + (recorded.tokens?.output ?? 0),
+            role: input.agent,
           })
           return recorded
         }
@@ -413,6 +411,7 @@ export const layer = Layer.effect(
           sessionId: sessionID,
           model: input.model,
           worktreePath: input.location.directory,
+          role: input.agent,
         })
         // AiPlus audit: run project-level integrity checks on session create.
         // Covers D1 (dispatch chain), D2 (memory match), D3 (persona permissions).
@@ -570,6 +569,13 @@ export const layer = Layer.effect(
       }),
       compact: Effect.fn("V2Session.compact")(function* (input) {
         const session = yield* result.get(input.sessionID)
+        // AiPlus compact tracking: bump generation and check force-fresh threshold.
+        const gen = bumpCompactionGeneration(session.directory, input.sessionID)
+        if (shouldForceFresh(session.directory, input.sessionID)) {
+          process.stderr.write(
+            `[aiplus-compact] session ${input.sessionID} compacted ${gen}× — consider /new with checkpoint instead of further compacts\n`,
+          )
+        }
         // AiPlus memory hook: record session end on compact.
         void appendMemoryEntry({
           projectRoot: session.directory,
