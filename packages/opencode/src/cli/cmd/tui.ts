@@ -13,6 +13,7 @@ import type { EventSource } from "@opencode-ai/tui/context/sdk"
 import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
+import { createMainProcessRpcClient } from "../main-process-rpc"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -127,15 +128,7 @@ export const TuiThreadCommand = cmd({
       const cwd = Filesystem.resolve(process.cwd())
 
       const worker = new Worker(file)
-      const client = Rpc.client<typeof rpc>(worker)
-
-      // AiPlus: listen for hook events from worker — require() inside callback (lazy, main process only)
-      client.on<import("../../session/aiplus-hook-events").AiplusHookEvent>("aiplus.hook", (event) => {
-        try {
-          const { handleAiplusHookEvent } = require("../tui/aiplus-hooks") as typeof import("../tui/aiplus-hooks")
-          handleAiplusHookEvent(event)
-        } catch { /* fire-and-forget */ }
-      })
+      const client = createMainProcessRpcClient(worker)
 
       const reload = () => {
         client.call("reload", undefined).catch(() => {})
