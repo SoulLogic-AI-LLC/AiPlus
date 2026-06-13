@@ -34,21 +34,21 @@ import { checkPressure } from "../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../aiplus/compact/capsule"
 import { appendMemoryEntry } from "../../../aiplus/memory/append"
 import { verify as auditVerify } from "../../../aiplus/audit/runner"
-import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier" (feat(aiplus): PR #12 — managed blocks auto-injection + 20 persona sync)
+import { verifyAndFix } from "../../../aiplus/managed-blocks/verifier"
 import { interceptToolCall } from "../../../aiplus/effects/gateway"
 
-// AiPlus compact handoff: check context pressure on session create.
-// Model info + token snapshot come from the session context.
+// AiPlus compact handoff: check context pressure on session create/resume.
+// GAP-6: tokensUsed is 0 on create (empty session); populated from session info on resume.
 function checkCompactPressure(entry: {
   sessionId: string
   model?: { id: string; providerID: string; variant?: string }
   worktreePath: string
+  tokensUsed?: number // GAP-6: from session info on resume (input+output tokens)
 }) {
   try {
     const modelId = entry.model?.id ?? "unknown"
-    // At session create, token usage is ~0 (empty session).
-    // Full tracking via session resume hooks — future PR.
-    const result = checkPressure({ used: 0, total: 200_000, model: modelId })
+    const used = entry.tokensUsed ?? 0
+    const result = checkPressure({ used, total: 200_000, model: modelId })
     writeCapsule(
       entry.worktreePath,
       entry.sessionId,
@@ -304,7 +304,16 @@ export const layer = Layer.effect(
       create: Effect.fn("V2Session.create")(function* (input) {
         const sessionID = input.id ?? SessionSchema.ID.create()
         const recorded = yield* store.get(sessionID)
-        if (recorded) return recorded
+        // GAP-6: compact pressure check on resume (recorded session has real token usage)
+        if (recorded) {
+          void checkCompactPressure({
+            sessionId: sessionID,
+            model: input.model,
+            worktreePath: input.location.directory,
+            tokensUsed: (recorded.tokens?.input ?? 0) + (recorded.tokens?.output ?? 0),
+          })
+          return recorded
+        }
         const project = yield* projects.resolve(input.location.directory)
         yield* db
           .insert(ProjectTable)
@@ -381,7 +390,7 @@ export const layer = Layer.effect(
         void auditVerify(input.location.directory, sessionID)
         // AiPlus managed blocks: auto-fix missing blocks in markdown body.
         // YAML frontmatter is WARN-only (never auto-modified).
-        void verifyAndFix(input.location.directory) (feat(aiplus): PR #12 — managed blocks auto-injection + 20 persona sync)
+        void verifyAndFix(input.location.directory)
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
