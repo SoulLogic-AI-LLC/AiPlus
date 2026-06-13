@@ -121,13 +121,40 @@ function appendDispatchLog(entry: {
 }) {
   try {
     const logDir = `${entry.worktreePath}/.aiplus/agents`
+    const logFile = `${logDir}/dispatch-log.jsonl`
     fs.mkdirSync(logDir, { recursive: true })
+
+    // GAP-1: idempotencyKey = SHA-256(dispatchId + sessionId + timestamp)[0:8]
+    const now = new Date().toISOString()
+    const rawKey = `${entry.dispatchId}:${entry.sessionId}:${now}`
+    const idempotencyKey = Bun.SHA256.hash(rawKey, "hex").slice(0, 8)
+
+    // GAP-2: hash chain — read last entry_hash, compute new
+    let prevHash = "genesis"
+    if (fs.existsSync(logFile)) {
+      const lines = fs.readFileSync(logFile, "utf-8").split("\n").filter(l => l.trim())
+      if (lines.length > 0) {
+        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
+        catch { /* corrupt line, treat as genesis */ }
+      }
+    }
+    const entryBody = JSON.stringify({
+      ...entry,
+      idempotencyKey,
+      status: "created",
+      timestamp: now,
+    })
+    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
+
     const line = JSON.stringify({
       ...entry,
+      idempotencyKey,
+      prev_hash: prevHash,
+      entry_hash: entryHash,
       status: "created",
-      timestamp: new Date().toISOString(),
+      timestamp: now,
     }) + "\n"
-    fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, line, "utf-8")
+    fs.appendFileSync(logFile, line, "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-dispatch] ${msg}\n`)
