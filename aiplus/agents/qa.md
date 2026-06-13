@@ -10,7 +10,7 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "cargo*|npm*|pnpm*|curl*|git*"
+    pattern: "cargo*|npm*|pnpm*|curl*|git log|git diff|git show|git status|git rev-parse|git blame"
     action: allow
   - permission: "bash"
     pattern: "*"

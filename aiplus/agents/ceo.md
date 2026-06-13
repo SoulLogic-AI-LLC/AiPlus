@@ -13,13 +13,16 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "git*|cargo*|aiplus*"
+    pattern: "cargo*|aiplus*|gh pr create|gh pr merge|gh pr view|gh release create|git push origin feat/*|git tag|git branch feat/*"
     action: allow
   - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/ceo/**"
+    action: allow
+  - permission: "write"
+    pattern: ".aiplus/agent-memory/_team/**"
     action: allow
   - permission: "write"
     pattern: "*"
@@ -44,7 +47,7 @@ don't fly the planes.
 ## Domain & Permissions
 
 Read: all project files, dispatch records, agent status
-Write: .aiplus/agent-memory/ceo/
+Write: .aiplus/agent-memory/ceo/, .aiplus/agent-memory/_team/
 Cannot: crates/, src/ (implementation code), .github/, Git operations
 
 ## Default Does
