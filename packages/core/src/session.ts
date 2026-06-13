@@ -29,6 +29,33 @@ import { logFailure } from "./session/logging"
 import { MessageDecodeError } from "./session/error"
 import { SessionEvent } from "./session/event"
 import { SessionInput } from "./session/input"
+import * as fs from "node:fs"
+
+// AiPlus dispatch log: append a "created" entry to .aiplus/agents/dispatch-log.jsonl.
+// Fire-and-forget — write failure logs to stderr but never blocks session startup.
+function appendDispatchLogEntry(entry: {
+  dispatchId: string
+  role: string
+  sessionId: string
+  task: string
+  worktreePath: string
+}) {
+  try {
+    const projectRoot = entry.worktreePath
+    const logDir = `${projectRoot}/.aiplus/agents`
+    fs.mkdirSync(logDir, { recursive: true })
+    const line = JSON.stringify({
+      ...entry,
+      status: "created",
+      timestamp: new Date().toISOString(),
+      // OBS-1: gh release create on ceo.md has no Owner gate annotation yet
+    }) + "\n"
+    fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, line, "utf-8")
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    process.stderr.write(`[aiplus-dispatch] ${msg}\n`)
+  }
+}
 
 // get project -> project.locations
 //
@@ -249,6 +276,15 @@ export const layer = Layer.effect(
             }),
           )
         if (projected.type === "existing") return projected.session
+        // AiPlus dispatch log: fire-and-forget append on session creation.
+        // Import is at module top; write failure is non-blocking (stderr only).
+        void appendDispatchLogEntry({
+          dispatchId: `dispatch-${sessionID}`,
+          role: input.agent ?? "unknown",
+          task: "(pending)",
+          sessionId: sessionID,
+          worktreePath: input.location.directory,
+        })
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
