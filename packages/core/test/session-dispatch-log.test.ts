@@ -10,6 +10,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import * as os from "node:os"
 import { appendDispatchLog } from "@opencode-ai/core/session"
+import { readCanonicalEvents } from "../../../aiplus/canonical-events"
 
 describe("appendDispatchLog redaction", () => {
   let tmpDir: string
@@ -44,6 +45,13 @@ describe("appendDispatchLog redaction", () => {
     expect(canonical.eventType).toBe("dispatch.created")
     expect(canonical.dispatchId).toBe("dispatch-test-001")
     expect(canonical.provenance.shadowMode).toBe(true)
+
+    const byDispatch = readCanonicalEvents(tmpDir, { dispatchId: "dispatch-test-001" })
+    expect(byDispatch).toHaveLength(1)
+    expect(byDispatch[0].eventType).toBe("dispatch.created")
+
+    const byType = readCanonicalEvents(tmpDir, { eventType: "dispatch.created" })
+    expect(byType).toHaveLength(1)
   })
 
   it("redacts secrets in task field before writing", () => {
