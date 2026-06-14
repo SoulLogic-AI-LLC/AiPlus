@@ -1,6 +1,7 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { DispatchEntry } from "./types"
+import { appendCanonicalEvent } from "../canonical-events"
 
 const LOG_FILE = ".aiplus/agents/dispatch-log.jsonl"
 
@@ -34,6 +35,26 @@ export function append(projectRoot: string, entry: DispatchEntry): void {
     const chain = hashEntry(entry, logPath)
     const line = JSON.stringify({ ...entry, ...chain }) + "\n"
     fs.appendFileSync(logPath, line, "utf-8")
+    appendCanonicalEvent(projectRoot, {
+      eventType: "dispatch.appended",
+      timestamp: entry.timestamp,
+      dispatchId: entry.dispatchId,
+      sessionId: entry.sessionId,
+      role: entry.role,
+      source: "native-cli-dispatch",
+      status: entry.status,
+      provenance: {
+        transport: "cli",
+        emitter: "aiplus/dispatch/writer.ts",
+        shadowMode: true,
+      },
+      payload: {
+        task: entry.task,
+        worktreePath: entry.worktreePath,
+        durationMs: entry.durationMs,
+        error: entry.error,
+      },
+    })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-dispatch] failed to write dispatch log: ${msg}\n`)

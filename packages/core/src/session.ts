@@ -30,6 +30,8 @@ import { MessageDecodeError } from "./session/error"
 import { SessionEvent } from "./session/event"
 import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
+import { appendCanonicalEvent } from "../../../aiplus/canonical-events"
+import { applyRedaction } from "../../../aiplus/memory/redact"
 
 // AiPlus dispatch log: append a "created" entry to .aiplus/agents/dispatch-log.jsonl.
 // Fire-and-forget — write failure logs to stderr but never blocks session startup.
@@ -50,7 +52,24 @@ function appendDispatchLogEntry(entry: {
       timestamp: new Date().toISOString(),
       // OBS-1: gh release create on ceo.md has no Owner gate annotation yet
     }) + "\n"
-    fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, line, "utf-8")
+    fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, applyRedaction(line), "utf-8")
+    appendCanonicalEvent(projectRoot, {
+      eventType: "dispatch.created",
+      dispatchId: entry.dispatchId,
+      sessionId: entry.sessionId,
+      role: entry.role,
+      source: "native-session-hook",
+      status: "created",
+      provenance: {
+        transport: "native",
+        emitter: "packages/core/src/session.ts",
+        shadowMode: true,
+      },
+      payload: {
+        task: entry.task,
+        worktreePath: entry.worktreePath,
+      },
+    })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-dispatch] ${msg}\n`)

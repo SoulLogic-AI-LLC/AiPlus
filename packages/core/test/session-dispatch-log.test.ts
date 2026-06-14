@@ -37,6 +37,13 @@ describe("appendDispatchLog redaction", () => {
     const entry = JSON.parse(content)
     expect(entry.dispatchId).toBe("dispatch-test-001")
     expect(entry.role).toBe("engineer-a")
+
+    const canonicalPath = path.join(tmpDir, ".aiplus/agents/canonical-events.jsonl")
+    expect(fs.existsSync(canonicalPath)).toBe(true)
+    const canonical = JSON.parse(fs.readFileSync(canonicalPath, "utf-8").trim())
+    expect(canonical.eventType).toBe("dispatch.created")
+    expect(canonical.dispatchId).toBe("dispatch-test-001")
+    expect(canonical.provenance.shadowMode).toBe(true)
   })
 
   it("redacts secrets in task field before writing", () => {
