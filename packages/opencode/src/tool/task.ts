@@ -14,6 +14,7 @@ import { Effect, Exit, Schema, Scope } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Database } from "@opencode-ai/core/database/database"
+import os from "os"
 
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): Effect.Effect<void>
@@ -39,6 +40,50 @@ const BACKGROUND_UPDATED = [
   "DO NOT sleep, poll for progress, ask the task for status, or duplicate this task's work — avoid working with the same files or topics it is using.",
   "Work on non-overlapping tasks, or briefly tell the user what you sent and end your response.",
 ].join("\n")
+
+const SUBAGENT_MEMORY_GB = 0.65
+const SUBAGENT_SOFT_RESERVE_GB = 1.5
+const SUBAGENT_HARD_FLOOR_GB = 0.75
+const activeSubagentSlots = new Set<string>()
+
+function currentFreeMemoryGb() {
+  return os.freemem() / (1024 * 1024 * 1024)
+}
+
+function subagentCapacity(freeGb: number) {
+  return Math.max(0, Math.floor(((freeGb - SUBAGENT_SOFT_RESERVE_GB) / SUBAGENT_MEMORY_GB) + 1e-9))
+}
+
+function reserveSubagentSlot() {
+  const freeGb = currentFreeMemoryGb()
+  if (freeGb < SUBAGENT_HARD_FLOOR_GB) {
+    return {
+      ok: false as const,
+      message: `Free memory is only ${freeGb.toFixed(2)}GB, below the hard floor of ${SUBAGENT_HARD_FLOOR_GB.toFixed(2)}GB. Starting a new subagent is blocked.`,
+    }
+  }
+  if (freeGb < SUBAGENT_SOFT_RESERVE_GB) {
+    return {
+      ok: false as const,
+      message: `Free memory is ${freeGb.toFixed(2)}GB, below the safety reserve of ${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)}GB. Do not start a new subagent yet.`,
+    }
+  }
+  const capacity = subagentCapacity(freeGb)
+  const active = activeSubagentSlots.size
+  if (active >= capacity) {
+    return {
+      ok: false as const,
+      message: `Subagent capacity reached (${active} active >= ${capacity} allowed). free_gb=${freeGb.toFixed(2)} reserve_gb=${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)} per_agent_gb=${SUBAGENT_MEMORY_GB.toFixed(2)}.`,
+    }
+  }
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  activeSubagentSlots.add(token)
+  return { ok: true as const, token }
+}
+
+function releaseSubagentSlot(token: string) {
+  activeSubagentSlots.delete(token)
+}
 
 const BaseParameterFields = {
   description: Schema.String.annotate({ description: "A short (3-5 words) description of the task" }),
@@ -182,6 +227,8 @@ export const TaskTool = Tool.define(
 
       const ops = ctx.extra?.promptOps as TaskPromptOps
       if (!ops) return yield* Effect.fail(new Error("TaskTool requires promptOps in ctx.extra"))
+      const slot = reserveSubagentSlot()
+      if (!slot.ok) return yield* Effect.fail(new Error(slot.message))
 
       const runTask = Effect.fn("TaskTool.runTask")(function* () {
         const parts = yield* ops.resolvePromptParts(params.prompt)
@@ -240,6 +287,7 @@ export const TaskTool = Tool.define(
       })
 
       if (yield* background.extend({ id: nextSession.id, run: runTask() })) {
+        releaseSubagentSlot(slot.token)
         return {
           title: params.description,
           metadata: {
@@ -268,7 +316,10 @@ export const TaskTool = Tool.define(
           }),
           notify(nextSession.id),
         ]),
-        run: runTask().pipe(Effect.onInterrupt(() => ops.cancel(nextSession.id))),
+        run: runTask().pipe(
+          Effect.onInterrupt(() => ops.cancel(nextSession.id)),
+          Effect.ensuring(Effect.sync(() => releaseSubagentSlot(slot.token))),
+        ),
       })
 
       function backgroundResult() {
