@@ -1,8 +1,11 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { applyRedaction } from "../memory/redact"
-
-const CANONICAL_EVENTS_FILE = ".aiplus/agents/canonical-events.jsonl"
+import {
+  CANONICAL_EVENT_SCHEMA_VERSION,
+  CANONICAL_EVENTS_FILE,
+  CANONICAL_REDACTION_TOKEN,
+} from "./contract"
 
 export interface CanonicalEvent {
   schemaVersion: string
@@ -47,7 +50,7 @@ export interface CanonicalEventInput {
 export function appendCanonicalEvent(projectRoot: string, input: CanonicalEventInput): void {
   try {
     const event: CanonicalEvent = {
-      schemaVersion: "0.1.0",
+      schemaVersion: CANONICAL_EVENT_SCHEMA_VERSION,
       eventType: input.eventType,
       eventId: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       timestamp: input.timestamp ?? new Date().toISOString(),
@@ -61,7 +64,7 @@ export function appendCanonicalEvent(projectRoot: string, input: CanonicalEventI
     }
     const logPath = path.join(projectRoot, CANONICAL_EVENTS_FILE)
     fs.mkdirSync(path.dirname(logPath), { recursive: true })
-    fs.appendFileSync(logPath, applyRedaction(JSON.stringify(event)) + "\n", "utf-8")
+    fs.appendFileSync(logPath, applyRedaction(JSON.stringify(event)).replaceAll("[REDACTED_TOKEN]", CANONICAL_REDACTION_TOKEN) + "\n", "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-canonical-events] ${msg}\n`)
