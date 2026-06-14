@@ -32,3 +32,8 @@ UPCOMING_CHANGELOG.md
 logs/
 *.bun-build
 tsconfig.tsbuildinfo
+
+# Local AiPlus runtime state
+.aiplus/agent-memory/
+.aiplus/agents/
+.aiplus/compact/
