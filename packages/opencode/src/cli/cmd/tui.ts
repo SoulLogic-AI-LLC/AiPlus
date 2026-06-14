@@ -13,26 +13,12 @@ import type { EventSource } from "@opencode-ai/tui/context/sdk"
 import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
-import { createMainProcessRpcClient } from "../main-process-rpc"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
 }
 
 type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
-
-function shouldUseDarwinEmergencyWebFallback() {
-  return process.platform === "darwin" && process.env.OPENCODE_DARWIN_FORCE_TUI !== "1"
-}
-
-async function runDarwinEmergencyNoopFallback(project?: string) {
-  UI.empty()
-  UI.println(UI.Style.TEXT_WARNING_BOLD + "!  macOS TUI startup is degraded; native TUI is temporarily disabled.")
-  UI.println(UI.Style.TEXT_INFO_BOLD + "   Set OPENCODE_DARWIN_FORCE_TUI=1 to retry native TUI.")
-  UI.println(UI.Style.TEXT_INFO_BOLD + "   Project: ", UI.Style.TEXT_NORMAL, project ?? process.cwd())
-  UI.println(UI.Style.TEXT_INFO_BOLD + "   Temporary status: ", UI.Style.TEXT_NORMAL, "exit cleanly instead of SIGTRAP")
-  UI.empty()
-}
 
 function createWorkerFetch(client: RpcClient): typeof fetch {
   const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -131,6 +117,7 @@ export const TuiThreadCommand = cmd({
       // Resolve relative --project paths from PWD, then use the real cwd after
       // chdir so the thread and worker share the same directory key.
       const next = resolveThreadDirectory(args.project)
+      const file = await target()
       try {
         process.chdir(next)
       } catch {
@@ -139,16 +126,8 @@ export const TuiThreadCommand = cmd({
       }
       const cwd = Filesystem.resolve(process.cwd())
 
-      if (shouldUseDarwinEmergencyWebFallback()) {
-        await runDarwinEmergencyNoopFallback(next)
-        return
-      }
-
-      const network = resolveNetworkOptionsNoConfig(args)
-      const file = await target()
       const worker = new Worker(file)
-      const client = createMainProcessRpcClient(worker)
-
+      const client = Rpc.client<typeof rpc>(worker)
       const reload = () => {
         client.call("reload", undefined).catch(() => {})
       }
@@ -166,6 +145,7 @@ export const TuiThreadCommand = cmd({
       const prompt = await input(args.prompt)
       const config = await TuiConfig.get()
 
+      const network = resolveNetworkOptionsNoConfig(args)
       const external =
         process.argv.includes("--port") ||
         process.argv.includes("--hostname") ||

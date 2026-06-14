@@ -13,7 +13,6 @@ import { makeRuntime } from "@opencode-ai/core/effect/runtime"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { EventV2 } from "@opencode-ai/core/event"
 import { SessionV2 } from "@opencode-ai/core/session"
-import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { SessionExecution } from "@opencode-ai/core/session/execution"
 
 import { NotFoundError } from "@/storage/storage"
@@ -46,10 +45,6 @@ import { NonNegativeInt, optionalOmitUndefined } from "@opencode-ai/core/schema"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
-
-// AiPlus hooks — RPC emit to main process (0 node:fs in worker)
-import { Rpc } from "@/util/rpc"
-import type { AiplusHookEvent } from "./aiplus-hook-events"
 
 const runtime = makeRuntime(Database.Service, Database.defaultLayer)
 
@@ -581,16 +576,6 @@ export const layer: Layer.Layer<
 
       yield* events.publish(SessionV1.Event.Created, { sessionID: result.id, info: result })
 
-      // AiPlus create-time hooks — RPC emit to main process (Fix A)
-      try {
-        Rpc.emit("aiplus.hook", {
-          type: "session.created",
-          sessionId: result.id,
-          agent: result.agent,
-          worktree: ctx.worktree,
-        } satisfies AiplusHookEvent)
-      } catch { /* fire-and-forget */ }
-
       return result
     })
 
@@ -674,23 +659,6 @@ export const layer: Layer.Layer<
         const kids = yield* children(sessionID)
         for (const child of kids) {
           yield* remove(child.id)
-        }
-
-        // AiPlus terminal hooks on session delete — RPC emit to main process (Fix C/D)
-        if (hasInstance) {
-          try {
-            const delCtxOpt = yield* InstanceState.context.pipe(Effect.option)
-            if (delCtxOpt._tag === "Some") {
-              Rpc.emit("aiplus.hook", {
-                type: "session.deleted",
-                sessionId: sessionID,
-                agent: session.agent,
-                title: session.title,
-                createdAt: session.time.created,
-                worktree: delCtxOpt.value.worktree,
-              } satisfies AiplusHookEvent)
-            }
-          } catch { /* fire-and-forget */ }
         }
 
         yield* events.publish(SessionV1.Event.Deleted, { sessionID, info: session })
@@ -1146,6 +1114,6 @@ export function* listGlobal(input?: {
   }
 }
 
-export const node = LayerNode.make(layer, [BackgroundJob.node, RuntimeFlags.node, Database.node, EventV2Bridge.node, SessionProjector.node])
+export const node = LayerNode.make(layer, [BackgroundJob.node, RuntimeFlags.node, Database.node, EventV2Bridge.node])
 
 export * as Session from "./session"

@@ -15,11 +15,6 @@ import { EffectBridge } from "@/effect/bridge"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Database } from "@opencode-ai/core/database/database"
 
-// AiPlus terminal hooks — RPC emit to main process (0 node:fs in worker)
-import { Rpc } from "@/util/rpc"
-import type { AiplusHookEvent } from "../session/aiplus-hook-events"
-import { InstanceState } from "@/effect/instance-state"
-
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): Effect.Effect<void>
   resolvePromptParts(template: string): Effect.Effect<SessionPrompt.PromptInput["parts"]>
@@ -93,35 +88,6 @@ export const TaskTool = Tool.define(
     const scope = yield* Scope.Scope
     const flags = yield* RuntimeFlags.Service
     const database = yield* Database.Service
-
-    // AiPlus: get project root once for all hooks
-    const instanceCtx = yield* InstanceState.context
-    const aiplusProjectRoot = instanceCtx.worktree
-
-    /** AiPlus terminal hooks — RPC emit to main process (Fix C/D/E). */
-    function aiplusFireTerminalHooks(input: {
-      sessionId: string
-      role: string
-      task: string
-      outcome: "success" | "failed" | "canceled"
-      modelId?: string
-      tokensUsed?: number
-      tokensTotal?: number
-    }) {
-      try {
-        Rpc.emit("aiplus.hook", {
-          type: "task.completed",
-          sessionId: input.sessionId,
-          role: input.role,
-          task: input.task,
-          outcome: input.outcome,
-          modelId: input.modelId,
-          tokensUsed: input.tokensUsed,
-          tokensTotal: input.tokensTotal,
-          worktree: aiplusProjectRoot,
-        } satisfies AiplusHookEvent)
-      } catch { /* fire-and-forget */ }
-    }
 
     const run = Effect.fn("TaskTool.execute")(function* (
       params: Schema.Schema.Type<typeof Parameters>,
@@ -265,15 +231,6 @@ export const TaskTool = Tool.define(
       const notify = Effect.fn("TaskTool.notifyBackgroundResult")(function* (jobID: string) {
         yield* background.wait({ id: jobID }).pipe(
           Effect.flatMap((result) => {
-            // Fix C/D/E: fire terminal hooks on background task completion
-            const bgOutcome = result.info?.status === "completed" ? "success" : result.info?.status === "error" ? "failed" : "canceled"
-            aiplusFireTerminalHooks({
-              sessionId: nextSession.id,
-              role: next.name,
-              task: params.description,
-              outcome: bgOutcome as "success" | "failed" | "canceled",
-              modelId: model.modelID,
-            })
             if (result.info?.status === "completed") return inject("completed", result.info.output ?? "")
             if (result.info?.status === "error") return inject("error", result.info.error ?? "")
             return Effect.void
@@ -354,17 +311,6 @@ export const TaskTool = Tool.define(
               background.waitForPromotion(nextSession.id),
             )
             if (result?.metadata?.background === true) return backgroundResult()
-            const outcome = result?.status === "error" ? "failed" : result?.status === "cancelled" ? "canceled" : "success"
-            // Fix C/D/E: fire terminal hooks on foreground task completion
-            aiplusFireTerminalHooks({
-              sessionId: nextSession.id,
-              role: next.name,
-              task: params.description,
-              outcome,
-              modelId: model.modelID,
-              tokensUsed: (result as Record<string, unknown>)?.tokens as number | undefined,
-              tokensTotal: 200_000,
-            })
             if (result?.status === "error") return yield* Effect.fail(new Error(result.error ?? "Task failed"))
             if (result?.status === "cancelled") return yield* Effect.fail(new Error("Task cancelled"))
             return {
@@ -375,17 +321,8 @@ export const TaskTool = Tool.define(
           }),
         (_, exit) =>
           Effect.gen(function* () {
-            if (Exit.hasInterrupts(exit)) {
+            if (Exit.hasInterrupts(exit))
               yield* Effect.all([cancel, background.cancel(nextSession.id)], { discard: true })
-              // Fix C: fire memory hook on cancel/interrupt
-              aiplusFireTerminalHooks({
-                sessionId: nextSession.id,
-                role: next.name,
-                task: params.description,
-                outcome: "canceled",
-                modelId: model.modelID,
-              })
-            }
           }).pipe(
             Effect.ensuring(
               Effect.sync(() => {

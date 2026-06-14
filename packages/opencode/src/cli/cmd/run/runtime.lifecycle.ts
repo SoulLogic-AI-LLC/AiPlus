@@ -9,14 +9,7 @@
 // Also wires SIGINT so Ctrl-c clears a live prompt draft first, then falls
 // back to the usual two-press exit sequence through RunFooter.requestExit().
 import path from "path"
-import {
-  CliRenderer as OpenTuiCliRenderer,
-  CliRenderEvents,
-  createCliRenderer,
-  type CliRenderer,
-  type CliRendererConfig,
-  type ScrollbackWriter,
-} from "@opentui/core"
+import { CliRenderEvents, createCliRenderer, type CliRenderer, type ScrollbackWriter } from "@opentui/core"
 import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui"
 import { Global } from "@opencode-ai/core/global"
 import { openEditor } from "@opencode-ai/tui/editor"
@@ -40,33 +33,6 @@ import type {
 import { formatModelLabel } from "./variant.shared"
 
 const FOOTER_HEIGHT = 4
-
-function useSafeOpenTuiStartup() {
-  return process.platform === "darwin"
-}
-
-async function createOpencodeCliRenderer(config: CliRendererConfig): Promise<CliRenderer> {
-  if (!useSafeOpenTuiStartup()) {
-    return createCliRenderer(config)
-  }
-
-  const stdout = config.stdout ?? process.stdout
-  const stdin = config.stdin ?? process.stdin
-  const width = stdout.columns || config.width || 80
-  const height = stdout.rows || config.height || 24
-  const renderer = new OpenTuiCliRenderer(stdin, stdout, width, height, config)
-  const internal = renderer as any
-
-  if (!internal._terminalIsSetup) {
-    internal._terminalIsSetup = true
-    internal.lib.setupTerminal(internal.rendererPtr, internal._screenMode === "alternate-screen")
-    internal._capabilities = internal.lib.getTerminalCapabilities(internal.rendererPtr)
-    if (internal._useMouse) internal.enableMouse()
-    if (internal._feed?.isBackpressured()) await internal._feed.idle()
-  }
-
-  return renderer
-}
 
 type SplashState = {
   entry: boolean
@@ -212,7 +178,7 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
   let unregisterKeymap: (() => void) | undefined
 
   try {
-    const renderer = await createOpencodeCliRenderer({
+    const renderer = await createCliRenderer({
       stdin: source.stdin,
       targetFps: 30,
       maxFps: 60,
@@ -220,8 +186,7 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
       autoFocus: false,
       openConsoleOnError: false,
       exitOnCtrlC: false,
-      useKittyKeyboard: useSafeOpenTuiStartup() ? null : { events: process.platform === "win32" },
-      ...(useSafeOpenTuiStartup() ? { useThread: false } : {}),
+      useKittyKeyboard: { events: process.platform === "win32" },
       screenMode: "split-footer",
       footerHeight: FOOTER_HEIGHT,
       externalOutputMode: "capture-stdout",
