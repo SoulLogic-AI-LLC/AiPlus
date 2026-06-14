@@ -1,5 +1,14 @@
 import { cmd } from "./cmd"
-import { capsuleCommand, checkCommand, statusCommand, thresholdsCommand } from "../../../../../aiplus/compact"
+import {
+  CompactProfile,
+  bumpCompactionGeneration,
+  capsuleCommand,
+  checkCommand,
+  initSessionCompactState,
+  shouldForceFresh,
+  statusCommand,
+  thresholdsCommand,
+} from "../../../../../aiplus/compact"
 
 export const CompactCommand = cmd({
   command: "compact",
@@ -75,6 +84,67 @@ export const CompactCommand = cmd({
           console.log(capsuleCommand(process.cwd()))
         },
       )
-      .demandCommand(1, "subcommand required: status | check | thresholds | capsule"),
+      .command(
+        "init <sessionId> <profile>",
+        "initialize compact generation state for a session",
+        (yargs) =>
+          yargs
+            .positional("sessionId", {
+              type: "string",
+              demandOption: true,
+              describe: "session id to initialize",
+            })
+            .positional("profile", {
+              type: "string",
+              choices: Object.values(CompactProfile),
+              demandOption: true,
+              describe: "compact profile to assign",
+            }),
+        async (args) => {
+          initSessionCompactState(process.cwd(), args.sessionId as string, args.profile as CompactProfile)
+          console.log([
+            "AiPlus Compact Init",
+            `  sessionId: ${args.sessionId as string}`,
+            `  profile: ${args.profile as string}`,
+          ].join("\n"))
+        },
+      )
+      .command(
+        "bump <sessionId>",
+        "increment compaction generation after a successful compact",
+        (yargs) =>
+          yargs.positional("sessionId", {
+            type: "string",
+            demandOption: true,
+            describe: "session id whose generation should be incremented",
+          }),
+        async (args) => {
+          const generation = bumpCompactionGeneration(process.cwd(), args.sessionId as string)
+          console.log([
+            "AiPlus Compact Bump",
+            `  sessionId: ${args.sessionId as string}`,
+            `  generation: ${generation}`,
+          ].join("\n"))
+        },
+      )
+      .command(
+        "force-fresh <sessionId>",
+        "check whether a session should be forced to /new after repeated compactions",
+        (yargs) =>
+          yargs.positional("sessionId", {
+            type: "string",
+            demandOption: true,
+            describe: "session id to inspect",
+          }),
+        async (args) => {
+          const forceFresh = shouldForceFresh(process.cwd(), args.sessionId as string)
+          console.log([
+            "AiPlus Compact Force Fresh",
+            `  sessionId: ${args.sessionId as string}`,
+            `  forceFresh: ${forceFresh}`,
+          ].join("\n"))
+        },
+      )
+      .demandCommand(1, "subcommand required: status | check | thresholds | capsule | init | bump | force-fresh"),
   async handler() {},
 })

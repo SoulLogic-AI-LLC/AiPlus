@@ -1,5 +1,5 @@
 import { cmd } from "./cmd"
-import { listAliases, runWithSecrets, writeAliasRegistry } from "../../../../../aiplus/secret-broker"
+import { listAliases, resolveAlias, resolveSecret, runWithSecrets, writeAliasRegistry } from "../../../../../aiplus/secret-broker"
 
 function formatStatus(projectRoot: string): string {
   const aliases = listAliases()
@@ -46,6 +46,50 @@ export const SecretBrokerCommand = cmd({
         },
       )
       .command(
+        "resolve <alias>",
+        "show metadata for a single alias without printing the secret value",
+        (yargs) =>
+          yargs.positional("alias", {
+            type: "string",
+            demandOption: true,
+            describe: "alias name to inspect",
+          }),
+        async (args) => {
+          const alias = args.alias as string
+          const entry = resolveAlias(alias)
+          if (!entry) {
+            console.log(`AiPlus Secret Broker\n  alias not found: ${alias}`)
+            return
+          }
+          const available = resolveSecret(alias) !== null
+          console.log([
+            "AiPlus Secret Broker Resolve",
+            `  alias: ${entry.alias}`,
+            `  provider: ${entry.provider}`,
+            `  source: ${entry.source}`,
+            `  resolvable: ${available}`,
+          ].join("\n"))
+        },
+      )
+      .command(
+        "registry",
+        "refresh the local alias registry file and report the result",
+        () => {},
+        async () => {
+          const registry = writeAliasRegistry(process.cwd())
+          if (!registry) {
+            process.exitCode = 1
+            console.log("AiPlus Secret Broker\n  registry write failed")
+            return
+          }
+          console.log([
+            "AiPlus Secret Broker Registry",
+            `  aliases: ${registry.aliases.length}`,
+            "  path: .aiplus/secret-broker/aliases.json",
+          ].join("\n"))
+        },
+      )
+      .command(
         "run",
         "inject one or more aliases into a child process environment",
         (yargs) =>
@@ -75,6 +119,6 @@ export const SecretBrokerCommand = cmd({
           if (exitCode !== 0) process.exitCode = exitCode
         },
       )
-      .demandCommand(1, "subcommand required: status | list | run"),
+      .demandCommand(1, "subcommand required: status | list | resolve | registry | run"),
   async handler() {},
 })
