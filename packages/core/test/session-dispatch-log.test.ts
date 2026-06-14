@@ -10,7 +10,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import * as os from "node:os"
 import { appendDispatchLog } from "@opencode-ai/core/session"
-import { readCanonicalEvents } from "../../../aiplus/canonical-events"
+import { appendCanonicalEvent, readCanonicalEvents } from "../../../aiplus/canonical-events"
 
 describe("appendDispatchLog redaction", () => {
   let tmpDir: string
@@ -95,5 +95,27 @@ describe("appendDispatchLog redaction", () => {
     const entries = readCanonicalEvents(tmpDir, { dispatchId: "dispatch-test-003" })
     expect(entries).toHaveLength(1)
     expect(entries[0].eventId).toBe("evt-1")
+  })
+
+  it("fails open and records divergence when canonical shadow write fails", () => {
+    const canonicalPath = path.join(tmpDir, ".aiplus/agents/canonical-events.jsonl")
+    fs.mkdirSync(canonicalPath, { recursive: true })
+
+    appendCanonicalEvent(tmpDir, {
+      eventType: "dispatch.created",
+      dispatchId: "dispatch-test-004",
+      sessionId: "ses-4",
+      role: "engineer-a",
+      source: "test",
+      status: "created",
+      provenance: { transport: "native", emitter: "test", shadowMode: true },
+      payload: { task: "should degrade" },
+    })
+
+    const divergencePath = path.join(tmpDir, ".aiplus/agents/canonical-divergence.jsonl")
+    expect(fs.existsSync(divergencePath)).toBe(true)
+    const divergence = JSON.parse(fs.readFileSync(divergencePath, "utf-8").trim())
+    expect(divergence.eventType).toBe("dispatch.created")
+    expect(divergence.policy).toBe("fail-open-shadow-write")
   })
 })

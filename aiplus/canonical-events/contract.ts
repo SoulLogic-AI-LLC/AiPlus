@@ -1,5 +1,6 @@
 export const CANONICAL_EVENT_SCHEMA_VERSION = "0.1.0"
 export const CANONICAL_EVENTS_FILE = ".aiplus/agents/canonical-events.jsonl"
+export const CANONICAL_DIVERGENCE_FILE = ".aiplus/agents/canonical-divergence.jsonl"
 
 export const CANONICAL_DISPATCH_EVENT_TYPES = [
   "dispatch.created",

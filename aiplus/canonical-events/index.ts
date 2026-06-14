@@ -2,6 +2,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { applyRedaction } from "../memory/redact"
 import {
+  CANONICAL_DIVERGENCE_FILE,
   CANONICAL_EVENT_SCHEMA_VERSION,
   CANONICAL_EVENTS_FILE,
   CANONICAL_REDACTION_TOKEN,
@@ -47,6 +48,31 @@ export interface CanonicalEventInput {
   payload: Record<string, unknown>
 }
 
+function recordCanonicalDivergence(projectRoot: string, input: CanonicalEventInput, reason: string) {
+  try {
+    const logPath = path.join(projectRoot, CANONICAL_DIVERGENCE_FILE)
+    fs.mkdirSync(path.dirname(logPath), { recursive: true })
+    fs.appendFileSync(
+      logPath,
+      JSON.stringify({
+        schemaVersion: CANONICAL_EVENT_SCHEMA_VERSION,
+        timestamp: new Date().toISOString(),
+        eventType: input.eventType,
+        dispatchId: input.dispatchId,
+        sessionId: input.sessionId,
+        role: input.role,
+        source: input.source,
+        status: input.status,
+        policy: "fail-open-shadow-write",
+        reason,
+      }) + "\n",
+      "utf-8",
+    )
+  } catch {
+    // best-effort only
+  }
+}
+
 export function appendCanonicalEvent(projectRoot: string, input: CanonicalEventInput): void {
   try {
     const event: CanonicalEvent = {
@@ -67,6 +93,7 @@ export function appendCanonicalEvent(projectRoot: string, input: CanonicalEventI
     fs.appendFileSync(logPath, applyRedaction(JSON.stringify(event)).replaceAll("[REDACTED_TOKEN]", CANONICAL_REDACTION_TOKEN) + "\n", "utf-8")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
+    recordCanonicalDivergence(projectRoot, input, msg)
     process.stderr.write(`[aiplus-canonical-events] ${msg}\n`)
   }
 }
