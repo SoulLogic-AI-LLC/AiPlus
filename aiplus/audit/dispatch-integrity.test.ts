@@ -92,4 +92,52 @@ describe("canonical dispatch audit consumer", () => {
       expect(result.detail).toContain("duplicate canonical dispatch start")
     })
   })
+
+  it("accepts source-style legacy start plus complete rows with same dispatchId", () => {
+    withTempProject((root) => {
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "dispatch-log.jsonl"),
+        [
+          JSON.stringify({
+            dispatchId: "dispatch-legacy-1",
+            role: "engineer-a",
+            task: "one",
+            timestamp: "2026-06-14T18:00:00.000Z",
+          }),
+          JSON.stringify({
+            dispatchId: "dispatch-legacy-1",
+            role: "engineer-a",
+            task: "",
+            event: "complete",
+            timestamp: "2026-06-14T18:01:00.000Z",
+          }),
+        ].join("\n") + "\n",
+        "utf-8",
+      )
+
+      const result = checkDispatchChain(root)
+      expect(result.status).toBe("PASS")
+      expect(result.detail).toContain("legacy dispatch lifecycles verified")
+    })
+  })
+
+  it("flags a legacy complete row without a start row", () => {
+    withTempProject((root) => {
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "dispatch-log.jsonl"),
+        JSON.stringify({
+          dispatchId: "dispatch-legacy-2",
+          role: "engineer-a",
+          task: "",
+          event: "complete",
+          timestamp: "2026-06-14T18:01:00.000Z",
+        }) + "\n",
+        "utf-8",
+      )
+
+      const result = checkDispatchChain(root)
+      expect(result.status).toBe("REVISE")
+      expect(result.detail).toContain("complete without start")
+    })
+  })
 })

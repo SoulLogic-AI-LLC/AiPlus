@@ -5,6 +5,11 @@ import { readCanonicalEvents } from "../canonical-events"
 
 const START_EVENT_TYPES = new Set(["dispatch.created", "dispatch.recorded", "dispatch.appended"])
 
+type LegacyDispatchLifecycle = {
+  startSeen: boolean
+  completeSeen: boolean
+}
+
 function verifyCanonicalDispatchEvents(projectRoot: string): AuditCheck | null {
   const events = readCanonicalEvents(projectRoot).filter((event) => event.eventType.startsWith("dispatch."))
   if (events.length === 0) return null
@@ -54,27 +59,44 @@ export function checkDispatchChain(projectRoot: string): AuditCheck {
   if (!fs.existsSync(dispatchLog)) {
     return { id: "D1", name: "dispatch-chain", status: "PASS", detail: "no dispatch log — nothing to verify" }
   }
-  // V1 verification: check dispatchId uniqueness + time ordering
+  // Legacy fallback verification: tolerate source-style multi-row dispatch
+  // lifecycles where the same dispatchId appears once for the start row and
+  // once again for `event=complete`.
   const lines = fs.readFileSync(dispatchLog, "utf-8").split("\n").filter(l => l.trim())
-  const ids = new Set<string>()
+  const lifecycle = new Map<string, LegacyDispatchLifecycle>()
   let lastTime = 0
   for (const line of lines) {
     try {
       const entry = JSON.parse(line)
-      if (ids.has(entry.dispatchId)) {
-        return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate dispatchId: ${entry.dispatchId}` }
+      const dispatchId = typeof entry.dispatchId === "string" ? entry.dispatchId : undefined
+      if (!dispatchId) continue
+      const event = typeof entry.event === "string" ? entry.event : undefined
+      const state = lifecycle.get(dispatchId) ?? { startSeen: false, completeSeen: false }
+      if (event === "complete") {
+        if (!state.startSeen) {
+          return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `complete without start: ${dispatchId}` }
+        }
+        if (state.completeSeen) {
+          return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate dispatch complete: ${dispatchId}` }
+        }
+        state.completeSeen = true
+      } else {
+        if (state.startSeen) {
+          return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate dispatch start: ${dispatchId}` }
+        }
+        state.startSeen = true
       }
-      ids.add(entry.dispatchId)
+      lifecycle.set(dispatchId, state)
       const ts = new Date(entry.timestamp).getTime()
       if (isNaN(ts)) continue
       if (ts < lastTime) {
-        return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `time disorder at ${entry.dispatchId}` }
+        return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `time disorder at ${dispatchId}` }
       }
       lastTime = ts
     } catch { continue }
   }
   return {
     id: "D1", name: "dispatch-chain", status: "PASS",
-    detail: `${ids.size} entries verified — hash-chain-not-yet-implemented (KNOWN_GAP)`,
+    detail: `${lifecycle.size} legacy dispatch lifecycles verified — hash-chain-not-yet-implemented (KNOWN_GAP)`,
   }
 }
