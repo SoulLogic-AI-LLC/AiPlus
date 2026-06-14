@@ -5,6 +5,21 @@ import type { PressureResult } from "./monitor"
 
 const CAPSULE_DIR = ".aiplus/compact"
 
+function isContextCapsule(value: unknown): value is ContextCapsule {
+  if (!value || typeof value !== "object") return false
+  const candidate = value as Partial<ContextCapsule>
+  return (
+    typeof candidate.contextUsage === "number" &&
+    typeof candidate.pressureLevel === "string" &&
+    typeof candidate.model === "string" &&
+    typeof candidate.writtenAt === "string" &&
+    typeof candidate.recommendation === "string" &&
+    !!candidate.tokenCount &&
+    typeof candidate.tokenCount.used === "number" &&
+    typeof candidate.tokenCount.total === "number"
+  )
+}
+
 /** Write a context capsule for session pressure tracking (v2: profile-aware). */
 export function writeCapsule(
   projectRoot: string,
@@ -43,7 +58,8 @@ export function readCapsule(projectRoot: string): ContextCapsule | null {
   try {
     const filePath = path.join(projectRoot, CAPSULE_DIR, "context-capsule.json")
     if (!fs.existsSync(filePath)) return null
-    return JSON.parse(fs.readFileSync(filePath, "utf-8")) as ContextCapsule
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as unknown
+    return isContextCapsule(parsed) ? parsed : null
   } catch {
     return null
   }
