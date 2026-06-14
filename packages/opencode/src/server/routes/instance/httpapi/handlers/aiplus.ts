@@ -1,5 +1,6 @@
 import { Effect } from "effect"
-import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
+import { HttpApiBuilder } from "effect/unstable/httpapi"
+import { HttpServerResponse } from "effect/unstable/http"
 import { InstanceHttpApi } from "../api"
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -55,8 +56,9 @@ interface DispatchEntry {
   dispatchId: string
   sessionId?: string
   role: string
-  tier?: string
-  outcome?: string
+  lane?: string
+  tier?: "LIGHT" | "MEDIUM" | "HEAVY"
+  outcome?: "success" | "failed" | "canceled"
   timestamp: string
   task?: string
   reversibility?: string
@@ -66,7 +68,7 @@ interface DispatchEntry {
 interface ContextCapsule {
   sessionId: string
   contextUsage: number
-  pressureLevel: string
+  pressureLevel: "silent" | "soft" | "hard" | "emergency"
   tokenCount: { used: number; total: number }
   model: string
   writtenAt: string
@@ -219,7 +221,7 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
       })
 
       if (!entry) {
-        return yield* new HttpApiError.NotFound({})
+        return HttpServerResponse.empty({ status: 404 })
       }
 
       // Extract sessionId from dispatchId if not present

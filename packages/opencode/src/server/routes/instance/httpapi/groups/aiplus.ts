@@ -177,6 +177,5 @@ export const AiplusApi = HttpApi.make("aiplus")
             description: "Retrieve all AiPlus Agent Team personas with their permissions.",
           }),
         ),
-      )
-      .annotate(OpenApi.annotations({ identifier: "AiplusApi" })),
+      ),
   )

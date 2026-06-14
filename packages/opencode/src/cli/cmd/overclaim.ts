@@ -35,4 +35,5 @@ export const OverclaimCommand = cmd({
         },
       )
       .demandCommand(1, "subcommand required: rerun"),
+  async handler() {},
 })

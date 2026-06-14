@@ -63,7 +63,7 @@ const registryLayer = Layer.effect(
       // AiPlus effect gateway: intercept tool call for idempotency check.
       const interceptResult = interceptToolCall({
         toolName: input.call.name,
-        toolArgs: (input.call.arguments as Record<string, unknown>) ?? {},
+        toolArgs: (input.call.input as Record<string, unknown>) ?? {},
         sessionId: input.sessionID,
         role: input.agent ?? "unknown",
         projectRoot: process.cwd(),
