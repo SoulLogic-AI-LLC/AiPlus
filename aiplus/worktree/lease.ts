@@ -6,6 +6,10 @@ import type { WorktreeLease, LeaseState, FencingResult } from "./types"
 const LEASE_FILE = ".aiplus/worktree/leases.json"
 const LEASE_TTL_HOURS = 24
 
+type FlockCapableFs = typeof fs & {
+  flockSync?: (fd: number, operation: number) => void
+}
+
 /** Read all leases from the lease file. Returns empty state if file doesn't exist. */
 function readState(projectRoot: string): LeaseState {
   const filePath = path.join(projectRoot, LEASE_FILE)
@@ -28,7 +32,7 @@ function writeState(projectRoot: string, state: LeaseState): void {
   try {
     // flock exclusive lock (macOS/BSD compatible via fcntl)
     const LOCK_EX = 0x2
-    fs.flockSync(fd, LOCK_EX)
+    ;(fs as FlockCapableFs).flockSync?.(fd, LOCK_EX)
     fs.writeFileSync(fd, JSON.stringify(state, null, 2), "utf-8")
     fs.fsyncSync(fd)
   } finally {

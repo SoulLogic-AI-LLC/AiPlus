@@ -39,6 +39,8 @@ import { TokenCostCommand } from "./cli/cmd/token-cost"
 import { VelocityCommand } from "./cli/cmd/velocity"
 import { AuditCommand } from "./cli/cmd/audit"
 import { ManagedBlocksCommand } from "./cli/cmd/managed-blocks"
+import { DispatchCommand } from "./cli/cmd/dispatch"
+import { WorktreeCommand } from "./cli/cmd/worktree"
 import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
@@ -102,6 +104,8 @@ const cli = yargs(args)
   .command(VelocityCommand)
   .command(AuditCommand)
   .command(ManagedBlocksCommand)
+  .command(DispatchCommand)
+  .command(WorktreeCommand)
   .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
                                // consumed as a positional project argument.
   .command(AttachCommand)
