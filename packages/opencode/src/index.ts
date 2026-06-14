@@ -30,6 +30,11 @@ import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { InitCommand } from "./cli/cmd/init"
 import { OverclaimCommand } from "./cli/cmd/overclaim"
+import { LobbyCommand } from "./cli/cmd/lobby"
+import { VerifyCommand } from "./cli/cmd/verify"
+import { CompactCommand } from "./cli/cmd/compact"
+import { DoctorCommand } from "./cli/cmd/doctor"
+import { SecretBrokerCommand } from "./cli/cmd/secret-broker"
 import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
@@ -84,8 +89,13 @@ const cli = yargs(args)
   .command(McpCommand)
   .command(InitCommand)       // before TuiThreadCommand: yargs matches subcommands by registration order.
   .command(OverclaimCommand)  // before TuiThreadCommand: same reason as InitCommand.
+  .command(LobbyCommand)      // before TuiThreadCommand: avoid positional project capture.
+  .command(VerifyCommand)     // before TuiThreadCommand: avoid positional project capture.
+  .command(CompactCommand)    // before TuiThreadCommand: avoid positional project capture.
+  .command(DoctorCommand)     // before TuiThreadCommand: avoid positional project capture.
+  .command(SecretBrokerCommand)
   .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
-                              // consumed as a positional project argument.
+                               // consumed as a positional project argument.
   .command(AttachCommand)
   .command(RunCommand)
   .command(GenerateCommand)

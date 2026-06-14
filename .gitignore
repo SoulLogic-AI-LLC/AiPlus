@@ -37,3 +37,4 @@ tsconfig.tsbuildinfo
 .aiplus/agent-memory/
 .aiplus/agents/
 .aiplus/compact/
+packages/opencode/.aiplus/

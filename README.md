@@ -10,8 +10,10 @@ AiPlus-Native is an AiPlus-flavored build of OpenCode.
 
 ## Install
 
+This repo is currently **private**, so use `gh` to fetch the installer:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
 ```
 
 ```bash
@@ -24,6 +26,12 @@ That is the main user path.
 The installer downloads the latest GitHub release asset for **macOS Apple Silicon** and installs `aiplus-native` into `~/.local/bin/`.
 
 If `~/.local/bin` is not in your `PATH`, the installer will show the exact command to add it.
+
+### Important
+
+- The **release binary** may lag behind the current `dev` branch.
+- If you want the newest TUI fixes from `dev`, use the source path below until a newer release is cut.
+- If this repo becomes public later, the raw GitHub installer URL can be used again.
 
 ## From source
 

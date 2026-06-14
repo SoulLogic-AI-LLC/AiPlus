@@ -4,14 +4,14 @@ set -eu
 # ============================================================
 # AiPlus-Native installer (latest release, macOS arm64)
 #
-# Public repo:
-#   curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+# Private repo:
+#   gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
 #
 # Optional pinned version:
-#   curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash -s -- v0.1.0
+#   gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash -s -- v0.1.0
 #
-# Private repo fallback:
-#   gh release download <tag> -R izhiwen/AiPlus-Native -p install.sh -O - | bash
+# Public repo fallback (if the repo is opened later):
+#   curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
 # ============================================================
 
 REPO="izhiwen/AiPlus-Native"

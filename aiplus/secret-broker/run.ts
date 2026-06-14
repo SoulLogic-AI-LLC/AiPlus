@@ -103,13 +103,15 @@ export async function runWithSecrets(
 
 // ---- Main ------------------------------------------------------------------
 
-const { aliases, command } = parseArgs(process.argv)
+if (import.meta.main) {
+  const { aliases, command } = parseArgs(process.argv)
 
-if (aliases.length === 0) {
-  process.stderr.write("[secret-broker] usage: --alias NAME -- command\n")
-  process.stderr.write("  or: --aliases NAME1,NAME2 -- command\n")
-  process.exit(1)
+  if (aliases.length === 0) {
+    process.stderr.write("[secret-broker] usage: --alias NAME -- command\n")
+    process.stderr.write("  or: --aliases NAME1,NAME2 -- command\n")
+    process.exit(1)
+  }
+
+  const exitCode = await runWithSecrets(aliases, command)
+  process.exit(exitCode)
 }
-
-const exitCode = await runWithSecrets(aliases, command)
-process.exit(exitCode)
