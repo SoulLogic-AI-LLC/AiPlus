@@ -35,6 +35,8 @@ import { VerifyCommand } from "./cli/cmd/verify"
 import { CompactCommand } from "./cli/cmd/compact"
 import { DoctorCommand } from "./cli/cmd/doctor"
 import { SecretBrokerCommand } from "./cli/cmd/secret-broker"
+import { TokenCostCommand } from "./cli/cmd/token-cost"
+import { VelocityCommand } from "./cli/cmd/velocity"
 import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
@@ -94,6 +96,8 @@ const cli = yargs(args)
   .command(CompactCommand)    // before TuiThreadCommand: avoid positional project capture.
   .command(DoctorCommand)     // before TuiThreadCommand: avoid positional project capture.
   .command(SecretBrokerCommand)
+  .command(TokenCostCommand)
+  .command(VelocityCommand)
   .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
                                // consumed as a positional project argument.
   .command(AttachCommand)
