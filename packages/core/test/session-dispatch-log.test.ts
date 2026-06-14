@@ -69,4 +69,31 @@ describe("appendDispatchLog redaction", () => {
     expect(entry.task).toContain("[REDACTED_TOKEN]")
     expect(entry.task).not.toContain("ghp_")
   })
+
+  it("skips malformed canonical lines when reading", () => {
+    const canonicalPath = path.join(tmpDir, ".aiplus/agents/canonical-events.jsonl")
+    fs.mkdirSync(path.dirname(canonicalPath), { recursive: true })
+    fs.writeFileSync(
+      canonicalPath,
+      'not-json\n' +
+        JSON.stringify({
+          schemaVersion: "0.1.0",
+          eventType: "dispatch.created",
+          eventId: "evt-1",
+          timestamp: new Date().toISOString(),
+          dispatchId: "dispatch-test-003",
+          role: "engineer-a",
+          source: "test",
+          status: "created",
+          provenance: { transport: "native", emitter: "test", shadowMode: true },
+          payload: {},
+        }) +
+        "\n",
+      "utf-8",
+    )
+
+    const entries = readCanonicalEvents(tmpDir, { dispatchId: "dispatch-test-003" })
+    expect(entries).toHaveLength(1)
+    expect(entries[0].eventId).toBe("evt-1")
+  })
 })

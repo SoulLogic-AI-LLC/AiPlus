@@ -75,7 +75,13 @@ export function readCanonicalEvents(projectRoot: string, query: CanonicalEventQu
     .readFileSync(logPath, "utf-8")
     .split("\n")
     .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as CanonicalEvent)
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line) as CanonicalEvent]
+      } catch {
+        return []
+      }
+    })
     .filter((event) => {
       if (query.eventType && event.eventType !== query.eventType) return false
       if (query.dispatchId && event.dispatchId !== query.dispatchId) return false
