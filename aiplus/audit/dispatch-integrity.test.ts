@@ -18,6 +18,17 @@ describe("canonical dispatch audit consumer", () => {
   it("prefers canonical shadow events when present", () => {
     withTempProject((root) => {
       fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "dispatch-log.jsonl"),
+        JSON.stringify({
+          dispatchId: "dispatch-1",
+          role: "engineer-a",
+          task: "one",
+          timestamp: "2026-06-14T18:00:00.000Z",
+        }) + "\n",
+        "utf-8",
+      )
+
+      fs.writeFileSync(
         path.join(root, ".aiplus", "agents", "canonical-events.jsonl"),
         [
           JSON.stringify({
@@ -51,6 +62,7 @@ describe("canonical dispatch audit consumer", () => {
       const result = checkDispatchChain(root)
       expect(result.status).toBe("PASS")
       expect(result.detail).toContain("canonical dispatch events")
+      expect(result.detail).toContain("parity=1")
     })
   })
 
@@ -90,6 +102,83 @@ describe("canonical dispatch audit consumer", () => {
       const result = checkDispatchChain(root)
       expect(result.status).toBe("REVISE")
       expect(result.detail).toContain("duplicate canonical dispatch start")
+    })
+  })
+
+  it("flags canonical parity mismatch against legacy dispatch starts", () => {
+    withTempProject((root) => {
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "dispatch-log.jsonl"),
+        JSON.stringify({
+          dispatchId: "dispatch-legacy-only",
+          role: "engineer-a",
+          task: "one",
+          timestamp: "2026-06-14T18:00:00.000Z",
+        }) + "\n",
+        "utf-8",
+      )
+
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "canonical-events.jsonl"),
+        JSON.stringify({
+          schemaVersion: "0.1.0",
+          eventType: "dispatch.created",
+          eventId: "evt-1",
+          timestamp: "2026-06-14T18:00:00.000Z",
+          dispatchId: "dispatch-canonical-only",
+          role: "engineer-a",
+          source: "native-session-hook",
+          status: "created",
+          provenance: { transport: "native", emitter: "test", shadowMode: true },
+          payload: {},
+        }) + "\n",
+        "utf-8",
+      )
+
+      const result = checkDispatchChain(root)
+      expect(result.status).toBe("REVISE")
+      expect(result.detail).toContain("canonical/legacy dispatch parity mismatch")
+      expect(result.detail).toContain("dispatch-legacy-only")
+      expect(result.detail).toContain("dispatch-canonical-only")
+    })
+  })
+
+  it("flags canonical divergence records before trusting parity", () => {
+    withTempProject((root) => {
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "canonical-events.jsonl"),
+        JSON.stringify({
+          schemaVersion: "0.1.0",
+          eventType: "dispatch.created",
+          eventId: "evt-1",
+          timestamp: "2026-06-14T18:00:00.000Z",
+          dispatchId: "dispatch-1",
+          role: "engineer-a",
+          source: "native-session-hook",
+          status: "created",
+          provenance: { transport: "native", emitter: "test", shadowMode: true },
+          payload: {},
+        }) + "\n",
+        "utf-8",
+      )
+      fs.writeFileSync(
+        path.join(root, ".aiplus", "agents", "canonical-divergence.jsonl"),
+        JSON.stringify({
+          schemaVersion: "0.1.0",
+          timestamp: "2026-06-14T18:00:01.000Z",
+          eventType: "dispatch.created",
+          dispatchId: "dispatch-1",
+          source: "test",
+          status: "created",
+          policy: "fail-open-shadow-write",
+          reason: "EISDIR",
+        }) + "\n",
+        "utf-8",
+      )
+
+      const result = checkDispatchChain(root)
+      expect(result.status).toBe("REVISE")
+      expect(result.detail).toContain("canonical divergence recorded")
     })
   })
 
