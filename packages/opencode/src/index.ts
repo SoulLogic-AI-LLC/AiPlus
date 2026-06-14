@@ -41,6 +41,8 @@ import { AuditCommand } from "./cli/cmd/audit"
 import { ManagedBlocksCommand } from "./cli/cmd/managed-blocks"
 import { DispatchCommand } from "./cli/cmd/dispatch"
 import { WorktreeCommand } from "./cli/cmd/worktree"
+import { EffectsCommand } from "./cli/cmd/effects"
+import { MemoryCommand } from "./cli/cmd/memory"
 import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
@@ -106,6 +108,8 @@ const cli = yargs(args)
   .command(ManagedBlocksCommand)
   .command(DispatchCommand)
   .command(WorktreeCommand)
+  .command(EffectsCommand)
+  .command(MemoryCommand)
   .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
                                // consumed as a positional project argument.
   .command(AttachCommand)
