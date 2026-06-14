@@ -1,5 +1,5 @@
 import { cmd } from "./cmd"
-import { latestForRole, readAll } from "../../../../../aiplus/dispatch"
+import { append, latestForRole, readAll } from "../../../../../aiplus/dispatch"
 
 function formatEntry(entry: {
   dispatchId: string
@@ -71,6 +71,50 @@ export const DispatchCommand = cmd({
           console.log([`AiPlus Dispatch Latest (${role})`, formatEntry(entry)].join("\n"))
         },
       )
-      .demandCommand(1, "subcommand required: list | latest"),
+      .command(
+        "append <role> <task> <sessionId>",
+        "append a dispatch entry to the local dispatch log",
+        (yargs) =>
+          yargs
+            .positional("role", {
+              type: "string",
+              demandOption: true,
+              describe: "role id for the dispatch entry",
+            })
+            .positional("task", {
+              type: "string",
+              demandOption: true,
+              describe: "task summary for the dispatch entry",
+            })
+            .positional("sessionId", {
+              type: "string",
+              demandOption: true,
+              describe: "session id for the dispatch entry",
+            })
+            .option("status", {
+              type: "string",
+              choices: ["created", "running", "completed", "failed"],
+              default: "created",
+              describe: "dispatch status",
+            })
+            .option("worktree-path", {
+              type: "string",
+              describe: "override worktree path; defaults to the current directory",
+            }),
+        async (args) => {
+          const entry = {
+            dispatchId: `dispatch-${Date.now()}-${args.role}`,
+            role: args.role as string,
+            task: args.task as string,
+            status: args.status as "created" | "running" | "completed" | "failed",
+            sessionId: args.sessionId as string,
+            worktreePath: typeof args.worktreePath === "string" ? args.worktreePath : process.cwd(),
+            timestamp: new Date().toISOString(),
+          }
+          append(process.cwd(), entry)
+          console.log(["AiPlus Dispatch Append", formatEntry(entry)].join("\n"))
+        },
+      )
+      .demandCommand(1, "subcommand required: list | latest | append"),
   async handler() {},
 })

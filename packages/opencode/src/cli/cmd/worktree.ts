@@ -1,5 +1,5 @@
 import { cmd } from "./cmd"
-import { fencingCheck, list } from "../../../../../aiplus/worktree"
+import { acquire, fencingCheck, list, release, renew } from "../../../../../aiplus/worktree"
 
 export const WorktreeCommand = cmd({
   command: "worktree",
@@ -55,6 +55,67 @@ export const WorktreeCommand = cmd({
           ].join("\n"))
         },
       )
-      .demandCommand(1, "subcommand required: status | check"),
+      .command(
+        "acquire <sessionId> <lane>",
+        "record a worktree lease for a session and lane",
+        (yargs) =>
+          yargs
+            .positional("sessionId", {
+              type: "string",
+              demandOption: true,
+              describe: "session id for the lease",
+            })
+            .positional("lane", {
+              type: "string",
+              demandOption: true,
+              describe: "lane id to claim, e.g. ceo-1 or default",
+            })
+            .option("worktree-path", {
+              type: "string",
+              describe: "override tracked worktree path; defaults to the current directory",
+            }),
+        async (args) => {
+          const worktreePath = typeof args.worktreePath === "string" ? args.worktreePath : process.cwd()
+          const lease = acquire(process.cwd(), args.sessionId as string, args.lane as string, worktreePath)
+          console.log([
+            "AiPlus Worktree Acquire",
+            `  leaseId: ${lease.leaseId}`,
+            `  sessionId: ${lease.sessionId}`,
+            `  lane: ${lease.lane}`,
+            `  status: ${lease.status}`,
+            `  worktreePath: ${lease.worktreePath}`,
+            `  baseCommit: ${lease.baseCommit}`,
+          ].join("\n"))
+        },
+      )
+      .command(
+        "renew <leaseId>",
+        "renew a previously recorded worktree lease",
+        (yargs) =>
+          yargs.positional("leaseId", {
+            type: "string",
+            demandOption: true,
+            describe: "lease id to renew",
+          }),
+        async (args) => {
+          renew(process.cwd(), args.leaseId as string)
+          console.log(["AiPlus Worktree Renew", `  leaseId: ${args.leaseId as string}`].join("\n"))
+        },
+      )
+      .command(
+        "release <sessionId>",
+        "mark a session's lease as prunable",
+        (yargs) =>
+          yargs.positional("sessionId", {
+            type: "string",
+            demandOption: true,
+            describe: "session id whose lease should be released",
+          }),
+        async (args) => {
+          release(process.cwd(), args.sessionId as string)
+          console.log(["AiPlus Worktree Release", `  sessionId: ${args.sessionId as string}`].join("\n"))
+        },
+      )
+      .demandCommand(1, "subcommand required: status | check | acquire | renew | release"),
   async handler() {},
 })
