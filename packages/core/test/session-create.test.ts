@@ -1,4 +1,5 @@
 import { describe, expect } from "bun:test"
+import * as fs from "node:fs"
 import path from "path"
 import { Effect, Layer, Stream } from "effect"
 import { AgentV2 } from "@opencode-ai/core/agent"
@@ -75,6 +76,34 @@ describe("SessionV2.create", () => {
 
       expect(second.id).not.toBe(first.id)
       expect(yield* session.list()).toHaveLength(2)
+    }),
+  )
+
+  it.effect("writes one dispatch shadow start on session create", () =>
+    Effect.gen(function* () {
+      const tmp = yield* Effect.acquireRelease(
+        Effect.promise(() => tmpdir()),
+        (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
+      )
+      const tempLocation = Location.Ref.make({ directory: AbsolutePath.make(tmp.path) })
+      const session = yield* SessionV2.Service
+
+      const created = yield* session.create({ location: tempLocation })
+
+      const dispatchLogPath = path.join(tmp.path, ".aiplus", "agents", "dispatch-log.jsonl")
+      const canonicalPath = path.join(tmp.path, ".aiplus", "agents", "canonical-events.jsonl")
+
+      expect(fs.existsSync(dispatchLogPath)).toBe(true)
+      expect(fs.existsSync(canonicalPath)).toBe(true)
+
+      const dispatchLines = fs.readFileSync(dispatchLogPath, "utf-8").trim().split("\n").filter(Boolean)
+      expect(dispatchLines).toHaveLength(1)
+
+      const canonicalLines = fs.readFileSync(canonicalPath, "utf-8").trim().split("\n").filter(Boolean)
+      expect(canonicalLines).toHaveLength(1)
+      const event = JSON.parse(canonicalLines[0])
+      expect(event.eventType).toBe("dispatch.created")
+      expect(event.dispatchId).toBe(`dispatch-${created.id}`)
     }),
   )
 

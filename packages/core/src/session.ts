@@ -298,15 +298,6 @@ export const layer = Layer.effect(
             }),
           )
         if (projected.type === "existing") return projected.session
-        // AiPlus dispatch log: fire-and-forget append on session creation.
-        // Import is at module top; write failure is non-blocking (stderr only).
-        void appendDispatchLogEntry({
-          dispatchId: `dispatch-${sessionID}`,
-          role: input.agent ?? "unknown",
-          task: "(pending)",
-          sessionId: sessionID,
-          worktreePath: input.location.directory,
-        })
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
