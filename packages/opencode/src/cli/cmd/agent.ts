@@ -10,8 +10,40 @@ import { EOL } from "os"
 import type { Argv } from "yargs"
 import { Effect } from "effect"
 import { effectCmd } from "../effect-cmd"
+import { PERSONA_ASSETS } from "../../../../../aiplus/gen/persona-assets"
+import { getDisplayName, getPillar } from "../../../../../aiplus/lobby/pillars"
 
 type AgentMode = "all" | "primary" | "subagent"
+
+interface BundledAgentSummary {
+  role: string
+  displayName: string
+  pillar: string
+  mode: string
+  description: string
+  file: string
+}
+
+function getBundledAgents(): BundledAgentSummary[] {
+  return Object.entries(PERSONA_ASSETS)
+    .map(([file, content]) => {
+      const parsed = matter(content)
+      const rawName = typeof parsed.data.name === "string" ? parsed.data.name : file.replace(/\.md$/, "")
+      const role = rawName.replace(/^aiplus-/, "")
+      return {
+        role,
+        displayName: getDisplayName(role),
+        pillar: getPillar(role),
+        mode: typeof parsed.data.mode === "string" ? parsed.data.mode : "unknown",
+        description: typeof parsed.data.description === "string" ? parsed.data.description : "",
+        file,
+      }
+    })
+    .sort((a, b) => {
+      if (a.pillar !== b.pillar) return a.pillar.localeCompare(b.pillar)
+      return a.displayName.localeCompare(b.displayName)
+    })
+}
 
 // Permission keys (not raw tool names). Multiple tools can map to a single
 // permission — e.g. write/edit/apply_patch all gate on `edit` — so we configure
@@ -251,9 +283,35 @@ const AgentListCommand = effectCmd({
   }),
 })
 
+const AgentBundledCommand = cmd({
+  command: "bundled",
+  describe: "list the bundled AiPlus personas shipped with aiplus-native",
+  builder: (yargs) =>
+    yargs.option("json", {
+      type: "boolean",
+      default: false,
+      describe: "print raw JSON instead of the summary view",
+    }),
+  async handler(args) {
+    const bundled = getBundledAgents()
+    if (args.json) {
+      process.stdout.write(JSON.stringify(bundled, null, 2) + EOL)
+      return
+    }
+
+    process.stdout.write(`AiPlus Bundled Personas (${bundled.length})` + EOL)
+    for (const agent of bundled) {
+      process.stdout.write(
+        `- ${agent.displayName} (${agent.role}) · ${agent.pillar} · ${agent.mode}` + EOL,
+      )
+      process.stdout.write(`  ${agent.description}` + EOL)
+    }
+  },
+})
+
 export const AgentCommand = cmd({
   command: "agent",
   describe: "manage agents",
-  builder: (yargs) => yargs.command(AgentCreateCommand).command(AgentListCommand).demandCommand(),
+  builder: (yargs) => yargs.command(AgentCreateCommand).command(AgentListCommand).command(AgentBundledCommand).demandCommand(),
   async handler() {},
 })
