@@ -16,9 +16,11 @@ export const COMPACT_THRESHOLDS: Record<
 /** Uniform handoff token reserve across all models. */
 export const HANDOFF_TOKENS = 5_000
 
-/** Lookup thresholds for a model ID, with a safe fallback. */
+/** Lookup thresholds for a model ID, with a safe fallback.
+ *  Normalizes provider-prefixed IDs ("deepseek/deepseek-v4-pro" → "deepseek-v4-pro"). */
 export function getThresholds(modelId: string): { soft: number; hard: number; emergency: number } {
-  return COMPACT_THRESHOLDS[modelId] ?? { soft: 0.30, hard: 0.45, emergency: 0.60 }
+  const normalized = modelId.includes("/") ? modelId.split("/").pop()! : modelId
+  return COMPACT_THRESHOLDS[normalized] ?? COMPACT_THRESHOLDS[modelId] ?? { soft: 0.30, hard: 0.45, emergency: 0.60 }
 }
 
 /** Role → lifecycle profile mapping (20 roles, 3-way triage from Advisor spec v2). */
