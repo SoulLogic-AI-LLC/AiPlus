@@ -49,10 +49,15 @@ export interface TeamEntry {
   confidence: TeamConfidence
   status: TeamStatus
   tags: string[]
-  schemaVersion: "0.2.0"
+  schemaVersion: "0.2.1"
   timestamp: string
   /** Redaction level: "none" | "partial" | "full". Set by redact pipeline. */
   redaction: "none" | "partial" | "full"
+  supersededBy: string[]
+  supersedes: string[]
+  conflictGroup: string | null
+  expiresAt: string | null
+  staleAfter: string | null
 }
 
 // ---- Project (V2) --------------------------------------------------------
@@ -62,8 +67,13 @@ export interface ProjectEntry {
   key: string
   value: string
   source: string
-  schemaVersion: "0.2.0"
+  schemaVersion: "0.2.1"
   timestamp: string
+  supersededBy: string[]
+  supersedes: string[]
+  conflictGroup: string | null
+  expiresAt: string | null
+  staleAfter: string | null
 }
 
 // ---- Redaction (V2) ------------------------------------------------------
