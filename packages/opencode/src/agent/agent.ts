@@ -32,6 +32,7 @@ import { PluginBoot } from "@opencode-ai/core/plugin/boot"
 import { Reference } from "@opencode-ai/core/reference"
 import { Location } from "@opencode-ai/core/location"
 import { TEAM } from "../../../../aiplus/team/manifest"
+import { readState as readLobbyState } from "../../../../aiplus/lobby/state"
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -333,7 +334,21 @@ export const layer = Layer.effect(
         }
 
         const get = Effect.fnUntraced(function* (agent: string) {
-          return agents[resolveAgentName(agent) ?? agent]
+          const resolved = resolveAgentName(agent) ?? agent
+          // Inject CEO lane env var when resolving a CEO persona
+          if (resolved === "CEO") {
+            try {
+              const lobby = readLobbyState(ctx.directory)
+              if (lobby.lane) {
+                process.env.AIPLUS_LOBBY_CEO_LANE = lobby.lane
+              } else {
+                delete process.env.AIPLUS_LOBBY_CEO_LANE
+              }
+            } catch {
+              // lobby state not available — skip
+            }
+          }
+          return agents[resolved]
         })
 
         const list = Effect.fnUntraced(function* () {

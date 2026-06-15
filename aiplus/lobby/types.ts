@@ -48,6 +48,8 @@ export interface LaneStatus {
 export interface LobbyState {
   /** Currently bound role */
   boundRole: string | null
+  /** CEO lane (e.g. "ceo-1", "ceo-2", "ceo-3") — only for CEO role */
+  lane: string | null
   /** When bound (ISO 8601) */
   boundAt: string | null
   /** Current session ID */

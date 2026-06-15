@@ -12,6 +12,7 @@ const STATE_PATH = ".aiplus/lobby/lobby-state.json"
 
 const DEFAULT_STATE: LobbyState = {
   boundRole: null,
+  lane: null,
   boundAt: null,
   sessionId: null,
 }
@@ -26,6 +27,7 @@ export function readState(projectRoot: string): LobbyState {
     const data = JSON.parse(content)
     return {
       boundRole: data.boundRole ?? null,
+      lane: data.lane ?? null,
       boundAt: data.boundAt ?? null,
       sessionId: data.sessionId ?? null,
     }
@@ -42,10 +44,11 @@ export function writeState(projectRoot: string, state: LobbyState): void {
   fs.writeFileSync(statePath, JSON.stringify(state, null, 2), "utf-8")
 }
 
-/** Bind a role. */
-export function bindRole(projectRoot: string, roleId: string): LobbyState {
+/** Bind a role (with optional CEO lane). */
+export function bindRole(projectRoot: string, roleId: string, lane?: string | null): LobbyState {
   const state: LobbyState = {
     boundRole: roleId,
+    lane: lane ?? null,
     boundAt: new Date().toISOString(),
     sessionId: null,
   }

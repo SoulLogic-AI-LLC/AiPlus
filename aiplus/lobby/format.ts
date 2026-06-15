@@ -7,6 +7,7 @@
 
 import type { RoleStatus, LaneStatus, LobbyState, Pillar } from "./types"
 import { getPillarLabel } from "./pillars"
+import { laneDisplayName, type CEOLane } from "./lane"
 
 /** ANSI color codes. */
 const COLORS = {
@@ -108,16 +109,17 @@ export function formatLobbyStatus(
     const color = PILLAR_COLORS[pillar]
     lines.push(`║ ${color}${COLORS.bold}${label}${COLORS.reset}`)
 
-    for (const role of pillarRoles) {
-      const isActive = state.boundRole === role.id
-      const line = formatRole(role, roleIndex)
-      if (isActive) {
-        lines.push(`${COLORS.bold}${line} ← bound${COLORS.reset}`)
-      } else {
-        lines.push(line)
+      for (const role of pillarRoles) {
+        const isActive = state.boundRole === role.id
+        const line = formatRole(role, roleIndex)
+        if (isActive) {
+          const laneTag = state.lane && role.id === "ceo" ? ` [${state.lane}]` : ""
+          lines.push(`${COLORS.bold}${line} ← bound${laneTag}${COLORS.reset}`)
+        } else {
+          lines.push(line)
+        }
+        roleIndex++
       }
-      roleIndex++
-    }
 
     lines.push("║")
   }
@@ -136,8 +138,9 @@ export function formatLobbyStatus(
 }
 
 /** Format bind confirmation. */
-export function formatBindConfirm(roleId: string, displayName: string): string {
-  return `\n${COLORS.green}✓${COLORS.reset} Bound to ${COLORS.bold}${displayName}${COLORS.reset} [${roleId}]\n`
+export function formatBindConfirm(roleId: string, displayName: string, lane?: CEOLane | null): string {
+  const laneInfo = lane ? ` → lane ${laneDisplayName(roleId, lane)}` : ""
+  return `\n${COLORS.green}✓${COLORS.reset} Bound to ${COLORS.bold}${displayName}${COLORS.reset} [${roleId}]${laneInfo}\n`
 }
 
 /** Format unbind confirmation. */
