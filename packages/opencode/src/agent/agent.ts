@@ -151,6 +151,7 @@ export const layer = Layer.effect(
             ),
             mode: "primary",
             native: true,
+            hidden: true,
           },
           plan: {
             name: "plan",
@@ -177,6 +178,7 @@ export const layer = Layer.effect(
             ),
             mode: "primary",
             native: true,
+            hidden: true,
           },
           general: {
             name: "general",
@@ -261,6 +263,19 @@ export const layer = Layer.effect(
             ),
             prompt: PROMPT_SUMMARY,
           },
+        }
+
+        // Register persona agents from native team manifest
+        for (const spec of TEAM) {
+          if (agents[spec.persona]) continue
+          agents[spec.persona] = {
+            name: spec.persona,
+            description: spec.description,
+            mode: "primary",
+            options: {},
+            permission: Permission.merge(defaults, user),
+            native: false,
+          }
         }
 
         for (const [key, value] of Object.entries(cfg.agent ?? {})) {
