@@ -6,10 +6,10 @@
  */
 
 import * as fs from "node:fs"
-import type { MemoryEntry, TeamEntry, ProjectEntry } from "./types"
+import type { MemoryEntry, TeamEntry, ProjectEntry, CraftEntry } from "./types"
 import { resolveLayerPath } from "./layers"
 
-type AnyEntry = TeamEntry | ProjectEntry | MemoryEntry
+type AnyEntry = TeamEntry | ProjectEntry | MemoryEntry | CraftEntry
 
 const REJECTED_STATUSES = new Set(["superseded", "rejected", "forgotten"])
 

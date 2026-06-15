@@ -72,6 +72,7 @@ export function detectConflicts(
 
   // 2. missing_superseded
   for (const r of records) {
+    if (!Array.isArray(r.supersedes)) continue
     for (const refId of r.supersedes) {
       if (!byId.has(refId)) {
         reports.push({
@@ -87,6 +88,7 @@ export function detectConflicts(
   // 3. circular_supersede
   const seen = new Set<string>()
   for (const r of records) {
+    if (!Array.isArray(r.supersedes)) continue
     for (const refId of r.supersedes) {
       const other = byId.get(refId)
       if (other?.supersedes.includes(r.id)) {

@@ -225,18 +225,36 @@ export function processCraftMarkers(
       staleAfter: null,
     }
 
-    const roleDir = path.dirname(memFile)
-    fs.mkdirSync(roleDir, { recursive: true })
-    writeLine(memFile, entry)
+    try {
+      const roleDir = path.dirname(memFile)
+      fs.mkdirSync(roleDir, { recursive: true })
+      writeLine(memFile, entry)
 
-    captures.push({
-      marker,
-      written: true,
-      deduped: false,
-      blockedReason: null,
-      riskLevel: risk,
-      roleMismatchWarn,
-    })
+      captures.push({
+        marker,
+        written: true,
+        deduped: false,
+        blockedReason: null,
+        riskLevel: risk,
+        roleMismatchWarn,
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      const fb = writeFeedback(
+        projectRoot,
+        "BLOCKED",
+        `craft_memory write failed: ${msg}`,
+      )
+      feedbackLines.push(fb)
+      captures.push({
+        marker,
+        written: false,
+        deduped: false,
+        blockedReason: `write failed: ${msg}`,
+        riskLevel: risk,
+        roleMismatchWarn,
+      })
+    }
   }
 
   return { captures, feedbackLines }
