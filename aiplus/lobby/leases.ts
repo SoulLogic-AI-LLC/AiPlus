@@ -40,6 +40,16 @@ export function getLaneStatuses(projectRoot: string): LaneStatus[] {
     const lane = lanes.find(l => l.lane === lease.lane)
     if (!lane) continue
 
+    // Ignore orphaned leases: the session was never created because the prompt
+    // delivery failed mid-flight. These leases have sessionId "pending-*" — no
+    // real OpenCode session exists. After a 10s grace period (to avoid racing
+    // with an in-progress lease acquisition), we consider them orphaned.
+    if (lease.sessionId.startsWith("pending-")) {
+      const ORPHAN_GRACE_MS = 10_000 // 10s — enough for TUI round-trip
+      const acquiredAt = new Date(lease.acquiredAt).getTime()
+      if (now - acquiredAt > ORPHAN_GRACE_MS) continue
+    }
+
     // Check if lease is expired
     const expiresAt = new Date(lease.expiresAt).getTime()
     if (expiresAt < now) continue
