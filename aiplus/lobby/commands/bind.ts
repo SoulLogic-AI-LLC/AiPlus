@@ -60,5 +60,7 @@ export function bindCommand(projectRoot: string, roleId: string | null): string 
   // Bind role with lane
   bindRole(projectRoot, normalizedId, lane)
   const displayName = getDisplayName(normalizedId)
-  return formatBindConfirm(normalizedId, displayName, lane)
+  // activeCount: derive from lane number (ceo-1 → 1, ceo-2 → 2, etc.)
+  const activeCount = lane ? Number(lane.replace("ceo-", "")) : 1
+  return formatBindConfirm(normalizedId, displayName, lane, activeCount)
 }

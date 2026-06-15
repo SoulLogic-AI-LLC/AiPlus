@@ -113,7 +113,10 @@ export function formatLobbyStatus(
         const isActive = state.boundRole === role.id
         const line = formatRole(role, roleIndex)
         if (isActive) {
-          const laneTag = state.lane && role.id === "ceo" ? ` [${state.lane}]` : ""
+          const activeCount = lanes.filter((l) => l.status === "active").length
+          const laneTag = state.lane && role.id === "ceo"
+            ? ` [${laneDisplayName(role.id, state.lane as CEOLane, activeCount)}]`
+            : ""
           lines.push(`${COLORS.bold}${line} ← bound${laneTag}${COLORS.reset}`)
         } else {
           lines.push(line)
@@ -138,8 +141,8 @@ export function formatLobbyStatus(
 }
 
 /** Format bind confirmation. */
-export function formatBindConfirm(roleId: string, displayName: string, lane?: CEOLane | null): string {
-  const laneInfo = lane ? ` → lane ${laneDisplayName(roleId, lane)}` : ""
+export function formatBindConfirm(roleId: string, displayName: string, lane?: CEOLane | null, activeCount = 1): string {
+  const laneInfo = lane ? ` → lane ${laneDisplayName(roleId, lane, activeCount)}` : ""
   return `\n${COLORS.green}✓${COLORS.reset} Bound to ${COLORS.bold}${displayName}${COLORS.reset} [${roleId}]${laneInfo}\n`
 }
 

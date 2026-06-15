@@ -80,15 +80,19 @@ export function parseLaneBranch(branch: string): { lane: CEOLane; role: string }
 }
 
 /**
- * Display name for a CEO lane (e.g. "ceo-2" → "CEO 2", null → "CEO").
- * Ported from talk.rs startup_display_name().
+ * Display name for a CEO lane.
+ * When activeCount === 1, "ceo-1" shows as "CEO" (no suffix).
+ * When activeCount > 1, "ceo-1" shows as "CEO 1".
+ * "ceo-2" always shows as "CEO 2", etc.
  */
-export function laneDisplayName(role: string, lane?: CEOLane | null): string {
-  if (role === "ceo" && lane) {
-    const num = lane.replace("ceo-", "")
-    if (num) return `CEO ${num}`
+export function laneDisplayName(role: string, lane?: CEOLane | null, activeCount = 1): string {
+  if (role === "ceo") {
+    if (!lane) return "CEO"
+    const num = Number(lane.replace("ceo-", ""))
+    if (num === 1 && activeCount <= 1) return "CEO"
+    return `CEO ${num}`
   }
-  return role === "ceo" ? "CEO" : role
+  return role
 }
 
 /** Parse input like "ceo-2" or "lane2" into { role: "ceo", lane }. */
