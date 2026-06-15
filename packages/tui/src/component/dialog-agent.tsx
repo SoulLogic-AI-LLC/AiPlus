@@ -28,12 +28,25 @@ export function DialogAgent() {
 
   const agents = () => freshAgents() ?? local.agent.list()
 
-  const options = () =>
-    agents().map((item) => ({
+  const CEO_PATTERN = /^CEO(-\d)?$/
+
+  const options = () => {
+    const list = agents()
+    const hasCEO = list.some((a) => CEO_PATTERN.test(a.name))
+    const items = list.map((item) => ({
       value: item.name,
       title: item.name,
       description: item.native ? "native" : (item.description ?? ""),
     }))
+    if (!hasCEO) {
+      items.unshift({
+        value: "",
+        title: "CEO (all lanes occupied — 3/3 in use)",
+        description: "Close a CEO session to free a lane.",
+      })
+    }
+    return items
+  }
 
   return (
     <DialogSelect
@@ -41,6 +54,7 @@ export function DialogAgent() {
       current={local.agent.current()?.name}
       options={options()}
       onSelect={(option) => {
+        if (!option.value) return
         local.agent.set(option.value)
         dialog.clear()
       }}
