@@ -18,6 +18,7 @@ import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@opencode-ai/core/global"
 import path from "path"
+import fs from "node:fs"
 import { Plugin } from "@/plugin"
 import { Skill } from "../skill"
 import { Effect, Context, Layer, Schema } from "effect"
@@ -33,6 +34,7 @@ import { Reference } from "@opencode-ai/core/reference"
 import { Location } from "@opencode-ai/core/location"
 import { TEAM } from "../../../../aiplus/team/manifest"
 import { readState as readLobbyState } from "../../../../aiplus/lobby/state"
+import { getLaneStatuses } from "../../../../aiplus/lobby/leases"
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -333,33 +335,117 @@ export const layer = Layer.effect(
           return raw
         }
 
+        // CEO lane helpers
+        const CEO_LANE_AGENTS = [
+          { name: "CEO", lane: null as string | null },
+          { name: "CEO-1", lane: "ceo-1" },
+          { name: "CEO-2", lane: "ceo-2" },
+          { name: "CEO-3", lane: "ceo-3" },
+        ]
+
+        function activeCEOLaneCount(): number {
+          try {
+            const statuses = getLaneStatuses(ctx.directory)
+            return statuses.filter((l) => l.status === "active").length
+          } catch {
+            return 0
+          }
+        }
+
+        function ceoAgentInfo(name: string): Info | undefined {
+          const ceoBase = agents["CEO"]
+          if (!ceoBase) return undefined
+          const lane = CEO_LANE_AGENTS.find((c) => c.name === name)
+          if (!lane) return undefined
+          return { ...ceoBase, name }
+        }
+
+        function buildCEOLaneAgents(): Info[] {
+          const count = activeCEOLaneCount()
+          const result: Info[] = []
+          if (count === 0) {
+            const info = ceoAgentInfo("CEO")
+            if (info) result.push(info)
+          } else if (count === 1) {
+            // First CEO is occupied — show CEO-1 (renamed) and CEO-2
+            for (const name of ["CEO-1", "CEO-2"]) {
+              const info = ceoAgentInfo(name)
+              if (info) result.push(info)
+            }
+          } else if (count === 2) {
+            for (const name of ["CEO-1", "CEO-2", "CEO-3"]) {
+              const info = ceoAgentInfo(name)
+              if (info) result.push(info)
+            }
+          }
+          // count >= 3: no CEO agents shown
+          return result
+        }
+
+        function resolveCEOLane(name: string): string | null | undefined {
+          // Returns the lane for a CEO agent name, or undefined if not a CEO agent
+          const match = CEO_LANE_AGENTS.find((c) => c.name === name)
+          if (!match) return undefined // not a CEO agent
+          return match.lane
+        }
+
         const get = Effect.fnUntraced(function* (agent: string) {
           const resolved = resolveAgentName(agent) ?? agent
-          // Inject CEO lane env var when resolving a CEO persona
-          if (resolved === "CEO") {
-            try {
-              const lobby = readLobbyState(ctx.directory)
-              if (lobby.lane) {
-                process.env.AIPLUS_LOBBY_CEO_LANE = lobby.lane
-              } else {
-                delete process.env.AIPLUS_LOBBY_CEO_LANE
+          // Handle CEO lane agent names (CEO, CEO-1, CEO-2, CEO-3)
+          const ceoLane = resolveCEOLane(resolved)
+          if (ceoLane !== undefined) {
+            // ceoLane is null (bare CEO) or a lane string
+            const lane = ceoLane ?? (activeCEOLaneCount() === 0 ? null : "ceo-1")
+            process.env.AIPLUS_LOBBY_CEO_LANE = lane ?? ""
+            if (lane) {
+              try {
+                const leasePath = path.join(ctx.directory, ".aiplus/worktree/leases.json")
+                const existing = fs.existsSync(leasePath)
+                  ? JSON.parse(fs.readFileSync(leasePath, "utf-8"))
+                  : { leases: [] }
+                const now = Date.now()
+                const hasActive = (existing.leases ?? []).some(
+                  (l: { lane?: string; expiresAt?: string }) =>
+                    l.lane === lane && l.expiresAt && new Date(l.expiresAt).getTime() > now,
+                )
+                if (!hasActive) {
+                  const leaseId = `lease-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+                  ;(existing.leases ??= []).push({
+                    leaseId,
+                    sessionId: `pending-${Date.now()}`,
+                    lane,
+                    status: "active",
+                    acquiredAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                  })
+                  fs.mkdirSync(path.dirname(leasePath), { recursive: true })
+                  fs.writeFileSync(leasePath, JSON.stringify(existing, null, 2))
+                }
+              } catch {
+                // lease write failure is non-fatal
               }
-            } catch {
-              // lobby state not available — skip
             }
+            // Return the CEO persona agent
+            return agents["CEO"]
           }
           return agents[resolved]
         })
 
         const list = Effect.fnUntraced(function* () {
           const cfg = yield* config.get()
-          return pipe(
+          // Filter out base "CEO" from agents — we add CEO lane agents dynamically
+          const baseAgents = pipe(
             agents,
             values(),
-            sortBy(
-              [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "build"), "desc"],
-              [(x) => x.name, "asc"],
-            ),
+            (items) => items.filter((a) => a.name !== "CEO"),
+          )
+          // Add CEO lane agents based on current lease occupancy
+          const ceoAgents = buildCEOLaneAgents()
+          const allAgents = [...baseAgents, ...ceoAgents]
+          return sortBy(
+            allAgents,
+            [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "build"), "desc"],
+            [(x) => x.name, "asc"],
           )
         })
 
