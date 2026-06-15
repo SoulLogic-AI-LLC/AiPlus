@@ -2,6 +2,7 @@ import { createSignal, onMount, Show } from "solid-js"
 import { useLocal } from "../context/local"
 import { DialogSelect } from "../ui/dialog-select"
 import { useDialog } from "../ui/dialog"
+import { useToast } from "../ui/toast"
 import { useSDK } from "../context/sdk"
 import { useProject } from "../context/project"
 
@@ -10,6 +11,7 @@ type AgentInfo = { name: string; description?: string; native?: boolean }
 export function DialogAgent() {
   const local = useLocal()
   const dialog = useDialog()
+  const toast = useToast()
   const sdk = useSDK()
   const project = useProject()
 
@@ -54,7 +56,10 @@ export function DialogAgent() {
       current={local.agent.current()?.name}
       options={options()}
       onSelect={(option) => {
-        if (!option.value) return
+        if (!option.value) {
+          toast.show({ variant: "warning", message: "All CEO lanes in use (3/3). Close a CEO session to free a lane.", duration: 4000 })
+          return
+        }
         local.agent.set(option.value)
         dialog.clear()
       }}
