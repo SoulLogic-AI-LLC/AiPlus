@@ -363,116 +363,99 @@ export const layer = Layer.effect(
           return raw
         }
 
-        // CEO lane helpers
-        const CEO_LANE_AGENTS = [
-          { name: "CEO", lane: "ceo-1" as string | null },
+        // CEO lane helpers — fixed 3-slot model
+        const CEO_LANE_SLOTS = [
           { name: "CEO-1", lane: "ceo-1" },
           { name: "CEO-2", lane: "ceo-2" },
           { name: "CEO-3", lane: "ceo-3" },
         ]
 
-        function activeCEOLaneCount(): number {
+        function getOccupiedCEOLanes(): Set<string> {
           try {
             const statuses = getLaneStatuses(ctx.directory)
-            return statuses.filter((l) => l.status === "active").length
+            return new Set(statuses.filter((l) => l.status === "active").map((l) => l.lane))
           } catch {
-            return 0
+            return new Set()
           }
         }
 
         function ceoAgentInfo(name: string): Info | undefined {
           const ceoBase = agents["CEO"]
           if (!ceoBase) return undefined
-          const lane = CEO_LANE_AGENTS.find((c) => c.name === name)
-          if (!lane) return undefined
           return { ...ceoBase, name }
         }
 
         function buildCEOLaneAgents(): Info[] {
-          const count = activeCEOLaneCount()
-          const result: Info[] = []
-          if (count === 0) {
-            const info = ceoAgentInfo("CEO")
-            if (info) result.push(info)
-          } else if (count === 1) {
-            // First CEO is occupied — show CEO-1 (renamed) and CEO-2
-            for (const name of ["CEO-1", "CEO-2"]) {
-              const info = ceoAgentInfo(name)
-              if (info) result.push(info)
+          const occupied = getOccupiedCEOLanes()
+          return CEO_LANE_SLOTS.map((slot) => {
+            const base = ceoAgentInfo(slot.name)
+            if (!base) return null
+            const isOccupied = occupied.has(slot.lane)
+            return {
+              ...base,
+              name: slot.name,
+              description: isOccupied
+                ? `${base.description || "AiPlus execution coordinator"} — currently in use`
+                : base.description || "AiPlus execution coordinator",
             }
-          } else if (count === 2) {
-            for (const name of ["CEO-1", "CEO-2", "CEO-3"]) {
-              const info = ceoAgentInfo(name)
-              if (info) result.push(info)
-            }
-          }
-          // count >= 3: no CEO agents shown (hint displayed by TUI dialog)
-          return result
+          }).filter(Boolean) as Info[]
         }
 
-        function resolveCEOLane(name: string): string | null | undefined {
-          // Returns the lane for a CEO agent name, or undefined if not a CEO agent
-          const match = CEO_LANE_AGENTS.find((c) => c.name === name)
-          if (!match) return undefined // not a CEO agent
+        function resolveCEOLane(name: string): string | undefined {
+          const match = CEO_LANE_SLOTS.find((c) => c.name === name)
+          if (!match) return undefined
           return match.lane
         }
 
         const get = Effect.fnUntraced(function* (agent: string) {
           const resolved = resolveAgentName(agent) ?? agent
-          // Handle CEO lane agent names (CEO, CEO-1, CEO-2, CEO-3)
           const ceoLane = resolveCEOLane(resolved)
           if (ceoLane !== undefined) {
-            // ceoLane is null (bare CEO) or a lane string
-            const lane = ceoLane ?? "ceo-1"
-            process.env.AIPLUS_LOBBY_CEO_LANE = lane ?? ""
-            if (lane) {
-              try {
-                const leasePath = path.join(ctx.directory, ".aiplus/worktree/leases.json")
-                const existing = fs.existsSync(leasePath)
-                  ? JSON.parse(fs.readFileSync(leasePath, "utf-8"))
-                  : { leases: [] }
-                const now = Date.now()
-
-                // Clean expired leases (>24h) to prevent file bloat
-                const STALE_MS = 24 * 60 * 60 * 1000
-                existing.leases = (existing.leases ?? []).filter(
-                  (l: { acquiredAt?: string; expiresAt?: string }) => {
-                    if (!l.acquiredAt) return false
-                    const acquired = new Date(l.acquiredAt).getTime()
-                    return now - acquired <= STALE_MS
-                  },
-                )
-
-                const hasActive = existing.leases.some(
-                  (l: { lane?: string; expiresAt?: string }) =>
-                    l.lane === lane && l.expiresAt && new Date(l.expiresAt).getTime() > now,
-                )
-                if (!hasActive) {
-                  const leaseId = `lease-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-                  existing.leases.push({
-                    leaseId,
-                    sessionId: `pending-${Date.now()}`,
-                    lane,
-                    status: "active",
-                    acquiredAt: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + STALE_MS).toISOString(),
-                  })
-                  fs.mkdirSync(path.dirname(leasePath), { recursive: true })
-                  fs.writeFileSync(leasePath, JSON.stringify(existing, null, 2))
-
-                  // Track for cleanup on shutdown
-                  let dirLeases = activeCEOLeaseIds.get(ctx.directory)
-                  if (!dirLeases) {
-                    dirLeases = new Map()
-                    activeCEOLeaseIds.set(ctx.directory, dirLeases)
-                  }
-                  dirLeases.set(lane, leaseId)
-                }
-              } catch {
-                // lease write failure is non-fatal
-              }
+            const occupied = getOccupiedCEOLanes()
+            if (occupied.has(ceoLane)) {
+              // Lane occupied — return undefined (TUI shows "Agent not found")
+              return agents["__nonexistent__"]
             }
-            // Return the CEO persona agent
+            process.env.AIPLUS_LOBBY_CEO_LANE = ceoLane
+            try {
+              const leasePath = path.join(ctx.directory, ".aiplus/worktree/leases.json")
+              const existing = fs.existsSync(leasePath)
+                ? JSON.parse(fs.readFileSync(leasePath, "utf-8"))
+                : { leases: [] }
+              const now = Date.now()
+              const STALE_MS = 24 * 60 * 60 * 1000
+              existing.leases = (existing.leases ?? []).filter(
+                (l: { acquiredAt?: string; expiresAt?: string }) => {
+                  if (!l.acquiredAt) return false
+                  return now - new Date(l.acquiredAt).getTime() <= STALE_MS
+                },
+              )
+              const hasActive = existing.leases.some(
+                (l: { lane?: string; expiresAt?: string }) =>
+                  l.lane === ceoLane && l.expiresAt && new Date(l.expiresAt).getTime() > now,
+              )
+              if (!hasActive) {
+                const leaseId = `lease-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+                existing.leases.push({
+                  leaseId,
+                  sessionId: `pending-${Date.now()}`,
+                  lane: ceoLane,
+                  status: "active",
+                  acquiredAt: new Date().toISOString(),
+                  expiresAt: new Date(Date.now() + STALE_MS).toISOString(),
+                })
+                fs.mkdirSync(path.dirname(leasePath), { recursive: true })
+                fs.writeFileSync(leasePath, JSON.stringify(existing, null, 2))
+                let dirLeases = activeCEOLeaseIds.get(ctx.directory)
+                if (!dirLeases) {
+                  dirLeases = new Map()
+                  activeCEOLeaseIds.set(ctx.directory, dirLeases)
+                }
+                dirLeases.set(ceoLane, leaseId)
+              }
+            } catch {
+              // lease write failure is non-fatal
+            }
             return agents["CEO"]
           }
           return agents[resolved]

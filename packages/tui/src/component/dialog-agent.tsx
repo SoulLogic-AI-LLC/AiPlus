@@ -31,20 +31,31 @@ export function DialogAgent() {
   const agents = () => freshAgents() ?? local.agent.list()
 
   const CEO_PATTERN = /^CEO(-\d)?$/
+  const OCCUPIED_SUFFIX = " — currently in use"
 
   const options = () => {
     const list = agents()
-    const hasCEO = list.some((a) => CEO_PATTERN.test(a.name))
-    const items = list.map((item) => ({
-      value: item.name,
-      title: item.name,
-      description: item.native ? "native" : (item.description ?? ""),
-    }))
-    if (!hasCEO) {
+    const ceoAgents = list.filter((a) => CEO_PATTERN.test(a.name))
+    const allOccupied = ceoAgents.length > 0 && ceoAgents.every((a) => (a.description ?? "").includes("currently in use"))
+
+    const items = list
+      .filter((a) => !allOccupied || !CEO_PATTERN.test(a.name))
+      .map((item) => {
+        const isOccupied = (item.description ?? "").includes("currently in use")
+        return {
+          value: isOccupied ? "" : item.name,
+          title: isOccupied ? `${item.name}${OCCUPIED_SUFFIX}` : item.name,
+          description: item.native ? "native" : (item.description ?? "").replace(" — currently in use", ""),
+          disabled: isOccupied,
+        }
+      })
+
+    if (allOccupied) {
       items.unshift({
         value: "",
-        title: "CEO (all lanes occupied — 3/3 in use)",
+        title: "All CEO lanes in use (3/3)",
         description: "Close a CEO session to free a lane.",
+        disabled: true,
       })
     }
     return items
