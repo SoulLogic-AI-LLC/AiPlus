@@ -337,7 +337,7 @@ export const layer = Layer.effect(
 
         // CEO lane helpers
         const CEO_LANE_AGENTS = [
-          { name: "CEO", lane: null as string | null },
+          { name: "CEO", lane: "ceo-1" as string | null },
           { name: "CEO-1", lane: "ceo-1" },
           { name: "CEO-2", lane: "ceo-2" },
           { name: "CEO-3", lane: "ceo-3" },
@@ -395,7 +395,7 @@ export const layer = Layer.effect(
           const ceoLane = resolveCEOLane(resolved)
           if (ceoLane !== undefined) {
             // ceoLane is null (bare CEO) or a lane string
-            const lane = ceoLane ?? (activeCEOLaneCount() === 0 ? null : "ceo-1")
+            const lane = ceoLane ?? "ceo-1"
             process.env.AIPLUS_LOBBY_CEO_LANE = lane ?? ""
             if (lane) {
               try {
