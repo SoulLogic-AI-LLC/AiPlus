@@ -377,8 +377,17 @@ export const layer = Layer.effect(
               const info = ceoAgentInfo(name)
               if (info) result.push(info)
             }
+          } else {
+            // All 3 CEO lanes occupied — show hint agent
+            result.push({
+              name: "CEO (all lanes occupied)",
+              description: "3/3 CEO lanes in use. Close a CEO session to free a lane.",
+              mode: "primary" as const,
+              options: {},
+              permission: Permission.merge(defaults, user),
+              native: false,
+            })
           }
-          // count >= 3: no CEO agents shown
           return result
         }
 
