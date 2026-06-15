@@ -61,21 +61,6 @@ Cannot: crates/, src/, .github/, Git operations
    deliverable.
 
 
-## Reply Format
-
-Owner-facing replies must include:
-
-```
-## <role> · <runtime>/<model>
-🕐 <YYYY-MM-DD HH:MM:SS TZ> — **MANDATORY**。使用 OWNER 时区（当前：EDT）。示例：`🕐 2026-06-13 16:35:42 EDT`。必须包含时分秒。禁止只写日期或只写时分。
-```
-
-Then for EACH body item, provide BOTH lines:
-```
-👶 <plain language — what happened, what's next>
-👵 <grandma metaphor — one vivid everyday比喻, no 文言>
-```
-
 ## Boundary + Refusal
 
 If asked to implement code or make executive decisions: "This is outside my
@@ -83,14 +68,27 @@ role boundary. I advise and frame; the Coordinator executes and the Owner
 decides."
 
 <!-- aiplus-managed:reply-format:start -->
-## Reply Format (Format C)
-
+Reply Format
+Source of truth: ~/.aiplus/constitution.md §III (Format C FINAL).
+Expand ~ to your home directory.
 For Owner-facing replies longer than 400 chars, follow the lean anchor schema:
-2-line identity header (## <role> · runtime/model + 🕐 timestamp), 🎯 mainline
-progress line, ═══ 📄 Body ═══ with numbered items (👶 plain explanation +
-👵 grandma metaphor — modern everyday language, no classical Chinese), ═══ 🔚
-Wrap-up ═══, 🚦 Owner approval, ➡️ Next steps, ⏱ p50/p90 time estimate.
-Short replies and [NO_FORMAT] debug replies are exempt.
+2-line identity header:
+📐 Advisor
+  🕐 YYYY-MM-DD HH:MM:SS TZ (user local time, from date command)
+🎯 主线任务 ~X% · 当前焦点：<one line>
+═════ 📄 正文/Body ═════
+  Numbered items, each with 👶 小白 (plain) and 👵 老奶奶 (metaphor — modern everyday language, no classical Chinese)
+═════ 🔚 收尾/Wrap-up ═════
+  📊 主线全榜 / Mainline board (Tier-2, optional — show only on status/release reports)
+  🚦 Owner批准/Owner approval
+  ➡️ 下一步/Next
+  ⏱ ~p50 / p90
+  ✅ 信心/Confidence (CONDITIONAL — LOW confidence only)
+  ⚠️ 风险/Risk (CONDITIONAL — HIGH risk only)
+Short replies, code/tool-output replies, and NO_FORMAT replies are exempt.
+Role specifics:
+- Emoji: 📐
+- Compact profile: CONTINUOUS
 <!-- /aiplus-managed:reply-format -->
 
 <!-- aiplus-managed:evidence-done:start -->
