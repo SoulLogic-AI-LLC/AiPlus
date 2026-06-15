@@ -36,7 +36,30 @@ import { TEAM } from "../../../../aiplus/team/manifest"
 import { PERSONA_ASSETS } from "../../../../aiplus/gen/persona-assets"
 import { readState as readLobbyState } from "../../../../aiplus/lobby/state"
 import { getLaneStatuses } from "../../../../aiplus/lobby/leases"
+import { registerDisposer } from "@/effect/instance-registry"
 import matter from "gray-matter"
+
+// Track active CEO lease IDs per directory for cleanup on shutdown
+const activeCEOLeaseIds = new Map<string, Map<string, string>>() // directory → (lane → leaseId)
+
+// Register disposer: clean up CEO leases when instance shuts down
+registerDisposer(async (directory: string) => {
+  const leases = activeCEOLeaseIds.get(directory)
+  if (!leases || leases.size === 0) return
+  try {
+    const leasePath = path.join(directory, ".aiplus/worktree/leases.json")
+    if (!fs.existsSync(leasePath)) return
+    const data = JSON.parse(fs.readFileSync(leasePath, "utf-8"))
+    const leaseIdSet = new Set(leases.values())
+    data.leases = (data.leases ?? []).filter(
+      (l: { leaseId?: string }) => !l.leaseId || !leaseIdSet.has(l.leaseId),
+    )
+    fs.writeFileSync(leasePath, JSON.stringify(data, null, 2))
+    activeCEOLeaseIds.delete(directory)
+  } catch {
+    // cleanup failure is non-fatal
+  }
+})
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -409,22 +432,41 @@ export const layer = Layer.effect(
                   ? JSON.parse(fs.readFileSync(leasePath, "utf-8"))
                   : { leases: [] }
                 const now = Date.now()
-                const hasActive = (existing.leases ?? []).some(
+
+                // Clean expired leases (>24h) to prevent file bloat
+                const STALE_MS = 24 * 60 * 60 * 1000
+                existing.leases = (existing.leases ?? []).filter(
+                  (l: { acquiredAt?: string; expiresAt?: string }) => {
+                    if (!l.acquiredAt) return false
+                    const acquired = new Date(l.acquiredAt).getTime()
+                    return now - acquired <= STALE_MS
+                  },
+                )
+
+                const hasActive = existing.leases.some(
                   (l: { lane?: string; expiresAt?: string }) =>
                     l.lane === lane && l.expiresAt && new Date(l.expiresAt).getTime() > now,
                 )
                 if (!hasActive) {
                   const leaseId = `lease-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-                  ;(existing.leases ??= []).push({
+                  existing.leases.push({
                     leaseId,
                     sessionId: `pending-${Date.now()}`,
                     lane,
                     status: "active",
                     acquiredAt: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                    expiresAt: new Date(Date.now() + STALE_MS).toISOString(),
                   })
                   fs.mkdirSync(path.dirname(leasePath), { recursive: true })
                   fs.writeFileSync(leasePath, JSON.stringify(existing, null, 2))
+
+                  // Track for cleanup on shutdown
+                  let dirLeases = activeCEOLeaseIds.get(ctx.directory)
+                  if (!dirLeases) {
+                    dirLeases = new Map()
+                    activeCEOLeaseIds.set(ctx.directory, dirLeases)
+                  }
+                  dirLeases.set(lane, leaseId)
                 }
               } catch {
                 // lease write failure is non-fatal
