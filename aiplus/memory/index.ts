@@ -8,6 +8,9 @@
 export { appendMemoryEntry, appendTeamEntry, appendProjectEntry, appendSessionCreated, hashEntry, writeLine } from "./append"
 export { applyRedaction, detectFirstSensitive, getRedactionRules } from "./redact"
 export { resolveLayerPath } from "./layers"
+export { detectConflicts, detectStale } from "./conflict"
+export type { ConflictReport, StaleReport, ConflictCapable } from "./conflict"
+export { readActive, readAll, findById, findByQuery } from "./read"
 export type {
   MemoryLayer,
   MemoryEntry,

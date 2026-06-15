@@ -93,6 +93,7 @@ export function appendTeamEntry(params: {
   confidence?: TeamConfidence
   status?: TeamStatus
   tags?: string[]
+  supersedes?: string[]
 }): void {
   try {
     const teamDir = path.join(params.projectRoot, MEMORY_DIR, "_team")
@@ -106,9 +107,14 @@ export function appendTeamEntry(params: {
       confidence: params.confidence ?? "owner_asserted",
       status: params.status ?? "active",
       tags: params.tags ?? [],
-      schemaVersion: "0.2.0",
+      schemaVersion: "0.2.1",
       timestamp: new Date().toISOString(),
       redaction: "none",
+      supersededBy: [],
+      supersedes: params.supersedes ?? [],
+      conflictGroup: null,
+      expiresAt: null,
+      staleAfter: null,
     }
 
     const memFile = path.join(teamDir, "memory.jsonl")
@@ -130,6 +136,7 @@ export function appendProjectEntry(params: {
   key: string
   value: string
   source: string
+  supersedes?: string[]
 }): void {
   try {
     const projectDir = path.join(params.projectRoot, MEMORY_DIR, "project")
@@ -139,8 +146,13 @@ export function appendProjectEntry(params: {
       key: params.key,
       value: params.value,
       source: params.source,
-      schemaVersion: "0.2.0",
+      schemaVersion: "0.2.1",
       timestamp: new Date().toISOString(),
+      supersededBy: [],
+      supersedes: params.supersedes ?? [],
+      conflictGroup: null,
+      expiresAt: null,
+      staleAfter: null,
     }
 
     const memFile = path.join(projectDir, "memory.jsonl")
