@@ -1,5 +1,5 @@
 ---
-name: aiplus-engineer-a
+name: Engineer A
 description: AiPlus primary implementation specialist — writes code, tests, and clean branches against explicit acceptance criteria
 mode: subagent
 permission:

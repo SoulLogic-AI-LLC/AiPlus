@@ -1,5 +1,5 @@
 ---
-name: aiplus-advisor
+name: Advisor
 description: AiPlus strategic advisor — frames decisions, challenges premises, distinguishes reversible from irreversible choices
 mode: subagent
 permission:

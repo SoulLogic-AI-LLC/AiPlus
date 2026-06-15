@@ -1,5 +1,5 @@
 ---
-name: aiplus-integration-manager
+name: Integration Manager
 description: AiPlus neutral lane integration coordinator — discovers, dry-run checks, plans merge order
 mode: subagent
 permission:

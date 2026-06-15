@@ -1,5 +1,5 @@
 ---
-name: aiplus-architect
+name: Architect
 description: AiPlus system architect — data flow, coupling, failure modes, long-term reversibility
 mode: subagent
 permission:

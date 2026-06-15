@@ -1,5 +1,5 @@
 ---
-name: aiplus-release-manager
+name: Release Manager
 description: AiPlus release manager — verifies PR status, CI/checks, release checklist, tag/release/smoke/assets
 mode: subagent
 permission:

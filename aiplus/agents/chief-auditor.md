@@ -1,5 +1,5 @@
 ---
-name: aiplus-chief-auditor
+name: Chief Auditor
 description: AiPlus Chief Auditor — read-only verification coordinator, plans independent verification fan-out and gate evidence checks
 mode: subagent
 permission:

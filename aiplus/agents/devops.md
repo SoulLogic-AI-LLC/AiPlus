@@ -1,5 +1,5 @@
 ---
-name: aiplus-devops
+name: DevOps
 description: AiPlus DevOps / SRE — CI/CD, deploy, rollback, monitoring, SLOs, on-call ergonomics
 mode: subagent
 permission:

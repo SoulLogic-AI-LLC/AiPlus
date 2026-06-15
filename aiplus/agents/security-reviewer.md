@@ -1,5 +1,5 @@
 ---
-name: aiplus-security-reviewer
+name: Security Reviewer
 description: AiPlus security reviewer — secrets, auth, privacy, billing, user data, automation side effects
 mode: subagent
 permission:

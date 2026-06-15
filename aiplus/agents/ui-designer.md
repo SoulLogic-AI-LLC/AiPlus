@@ -1,5 +1,5 @@
 ---
-name: aiplus-ui-designer
+name: UI Designer
 description: AiPlus UI/UX designer — user paths, interaction flow, states, recovery, usability, design consistency
 mode: subagent
 permission:

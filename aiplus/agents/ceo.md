@@ -1,5 +1,5 @@
 ---
-name: aiplus-ceo
+name: CEO
 description: AiPlus execution coordinator — owns task scoping, role staffing, sequencing, and status reporting
 mode: subagent
 permission:

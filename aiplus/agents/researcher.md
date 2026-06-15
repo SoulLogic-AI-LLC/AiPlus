@@ -1,5 +1,5 @@
 ---
-name: aiplus-researcher
+name: Researcher
 description: AiPlus technical researcher — best-practice hunter, benchmark methodology checker, dissenting-opinion reader
 mode: subagent
 permission:

@@ -1,5 +1,5 @@
 ---
-name: aiplus-cqo
+name: CQO
 description: AiPlus Chief Quality Officer — quality-chain judge, cross-verifies AC/implementation/reviewer findings
 mode: subagent
 permission:

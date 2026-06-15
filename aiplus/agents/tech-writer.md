@@ -1,5 +1,5 @@
 ---
-name: aiplus-tech-writer
+name: Tech Writer
 description: AiPlus technical writer — README, docs, error messages, onboarding flow, every sentence is a UI
 mode: subagent
 permission:

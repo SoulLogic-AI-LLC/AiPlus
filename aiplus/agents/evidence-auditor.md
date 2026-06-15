@@ -1,5 +1,5 @@
 ---
-name: aiplus-evidence-auditor
+name: Evidence Auditor
 description: AiPlus evidence auditor — compares CEO/worker claims against git diff, CI, artifacts, dogfood transcripts
 mode: subagent
 permission:

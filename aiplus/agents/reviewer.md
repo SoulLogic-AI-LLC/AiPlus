@@ -1,5 +1,5 @@
 ---
-name: aiplus-reviewer
+name: Reviewer
 description: AiPlus code reviewer — adversarial verification, judges diffs against acceptance criteria with PASS/REVISE/BLOCKED verdicts
 mode: subagent
 permission:

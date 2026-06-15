@@ -1,5 +1,5 @@
 ---
-name: aiplus-ai-integration
+name: AI Integration
 description: AiPlus AI integration specialist — LLM workflows, prompts, model choice, tool calling, evals, fallbacks, cost, latency, and AI failure modes
 mode: subagent
 permission:

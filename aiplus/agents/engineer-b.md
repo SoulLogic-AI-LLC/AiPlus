@@ -1,5 +1,5 @@
 ---
-name: aiplus-engineer-b
+name: Engineer B
 description: AiPlus secondary implementation specialist — parallel builder with strict file-ownership boundaries
 mode: subagent
 permission:

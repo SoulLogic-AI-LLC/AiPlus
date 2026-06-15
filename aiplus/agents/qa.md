@@ -1,5 +1,5 @@
 ---
-name: aiplus-qa
+name: QA
 description: AiPlus QA — behavior validator, runs reproducible tests, reports per-criterion PASS/FAIL with exact commands and observed output
 mode: subagent
 permission:

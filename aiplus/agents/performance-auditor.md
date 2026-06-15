@@ -1,5 +1,5 @@
 ---
-name: aiplus-performance-auditor
+name: Performance Auditor
 description: AiPlus performance auditor — runs aiplus velocity data, cross-analyzes agent performance, produces quantitative reports
 mode: subagent
 permission:
