@@ -51,7 +51,12 @@ function currentFreeMemoryGb() {
 }
 
 function subagentCapacity(freeGb: number) {
-  return Math.max(0, Math.floor(((freeGb - SUBAGENT_SOFT_RESERVE_GB) / SUBAGENT_MEMORY_GB) + 1e-9))
+  // Hard floor: no sub-agents below 0.75GB — system stability at risk
+  if (freeGb < SUBAGENT_HARD_FLOOR_GB) return 0
+  // Low memory: allow exactly 1 sub-agent between 0.75GB and 1.5GB
+  if (freeGb < SUBAGENT_SOFT_RESERVE_GB) return 1
+  // Normal: capacity scales with available memory above the hard floor (ceil = don't waste partial slots)
+  return Math.max(1, Math.ceil(((freeGb - SUBAGENT_HARD_FLOOR_GB) / SUBAGENT_MEMORY_GB) - 1e-9))
 }
 
 function reserveSubagentSlot() {
@@ -63,10 +68,17 @@ function reserveSubagentSlot() {
     }
   }
   if (freeGb < SUBAGENT_SOFT_RESERVE_GB) {
-    return {
-      ok: false as const,
-      message: `Free memory is ${freeGb.toFixed(2)}GB, below the safety reserve of ${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)}GB. Do not start a new subagent yet.`,
+    const capacity = subagentCapacity(freeGb)
+    const active = activeSubagentSlots.size
+    if (active >= capacity) {
+      return {
+        ok: false as const,
+        message: `Memory is tight (${freeGb.toFixed(2)}GB free, below ${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)}GB reserve). Only 1 sub-agent slot available and it is currently in use.`,
+      }
     }
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    activeSubagentSlots.add(token)
+    return { ok: true as const, token }
   }
   const capacity = subagentCapacity(freeGb)
   const active = activeSubagentSlots.size
