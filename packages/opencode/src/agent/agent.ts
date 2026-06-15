@@ -33,8 +33,10 @@ import { PluginBoot } from "@opencode-ai/core/plugin/boot"
 import { Reference } from "@opencode-ai/core/reference"
 import { Location } from "@opencode-ai/core/location"
 import { TEAM } from "../../../../aiplus/team/manifest"
+import { PERSONA_ASSETS } from "../../../../aiplus/gen/persona-assets"
 import { readState as readLobbyState } from "../../../../aiplus/lobby/state"
 import { getLaneStatuses } from "../../../../aiplus/lobby/leases"
+import matter from "gray-matter"
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -271,6 +273,8 @@ export const layer = Layer.effect(
         // Register persona agents from native team manifest
         for (const spec of TEAM) {
           if (agents[spec.persona]) continue
+          const personaContent = PERSONA_ASSETS[`${spec.slug}.md`]
+          const prompt = personaContent ? matter(personaContent).content.trim() : undefined
           agents[spec.persona] = {
             name: spec.persona,
             description: spec.description,
@@ -278,6 +282,7 @@ export const layer = Layer.effect(
             options: {},
             permission: Permission.merge(defaults, user),
             native: false,
+            prompt,
           }
         }
 
