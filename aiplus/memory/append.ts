@@ -7,11 +7,38 @@
 
 import * as fs from "node:fs"
 import * as path from "node:path"
+import * as crypto from "node:crypto"
 import type { MemoryEntry, SessionOutcome, TeamEntry, TeamConfidence, TeamStatus, ProjectEntry } from "./types"
 import { truncateTask } from "./types"
 import { applyRedaction } from "./redact"
 
 const MEMORY_DIR = ".aiplus/agent-memory"
+
+/** Hash a JSON-stringified entry (SHA-256, first 16 hex chars). */
+function hashEntry(entryBody: string): string {
+  const hash = crypto.createHash("sha256")
+  hash.update(entryBody)
+  return hash.digest("hex").slice(0, 16)
+}
+
+/** Read the last entry_hash from a memory file (or "genesis" if none). */
+function readPrevHash(memFile: string): string {
+  if (!fs.existsSync(memFile)) return "genesis"
+  const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
+  if (lines.length === 0) return "genesis"
+  try {
+    return JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis"
+  } catch { return "genesis" }
+}
+
+/** Write a JSONL line to a memory file with hash chain and redaction. */
+function writeLine(memFile: string, entry: object): void {
+  const entryBody = JSON.stringify(entry)
+  const entryHash = hashEntry(entryBody)
+  const prevHash = readPrevHash(memFile)
+  const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
+  fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+}
 
 /**
  * Append a memory entry for a completed session.
@@ -142,19 +169,49 @@ export function appendProjectEntry(params: {
     }
 
     const memFile = path.join(projectDir, "memory.jsonl")
-    let prevHash = "genesis"
-    if (fs.existsSync(memFile)) {
-      const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
-      if (lines.length > 0) {
-        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
-        catch { /* corrupt */ }
-      }
-    }
-    const entryBody = JSON.stringify(entry)
-    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
+    writeLine(memFile, entry)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    process.stderr.write(`[aiplus-memory] ${msg}\n`)
+  }
+}
 
-    const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
-    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+/** Memory entry written on session create — lightweight, no outcome/duration. */
+interface SessionCreatedEntry {
+  sessionId: string
+  role: string
+  task: string
+  schemaVersion: "0.1.0"
+  timestamp: string
+}
+
+/**
+ * Append a lightweight "session created" entry to the role's memory log.
+ *
+ * Unlike `appendMemoryEntry`, this does not require startedAt/endedAt/outcome.
+ * Called from the session create path before any execution begins.
+ * Fire-and-forget: errors are logged to stderr, never thrown.
+ */
+export function appendSessionCreated(params: {
+  projectRoot: string
+  sessionId: string
+  role: string
+  task: string
+}): void {
+  try {
+    const roleDir = path.join(params.projectRoot, MEMORY_DIR, params.role)
+    fs.mkdirSync(roleDir, { recursive: true })
+
+    const entry: SessionCreatedEntry = {
+      sessionId: params.sessionId,
+      role: params.role,
+      task: truncateTask(params.task),
+      schemaVersion: "0.1.0",
+      timestamp: new Date().toISOString(),
+    }
+
+    const memFile = path.join(roleDir, "memory.jsonl")
+    writeLine(memFile, entry)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-memory] ${msg}\n`)

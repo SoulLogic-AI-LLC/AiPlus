@@ -32,6 +32,7 @@ import { SessionInput } from "./session/input"
 import * as fs from "node:fs"
 import { appendCanonicalEvent } from "../../../aiplus/canonical-events"
 import { applyRedaction } from "../../../aiplus/memory/redact"
+import { appendSessionCreated } from "../../../aiplus/memory"
 
 // AiPlus dispatch log: append a "created" entry to .aiplus/agents/dispatch-log.jsonl.
 // Fire-and-forget — write failure logs to stderr but never blocks session startup.
@@ -298,6 +299,13 @@ export const layer = Layer.effect(
             }),
           )
         if (projected.type === "existing") return projected.session
+        // AiPlus agent memory: record session creation (fire-and-forget).
+        void appendSessionCreated({
+          projectRoot: input.location.directory,
+          sessionId: sessionID,
+          role: (input.agent ?? "unknown").replace(/^aiplus-/, "").toLowerCase(),
+          task: input.agent ? `[${input.agent}] session created` : "(session-create)",
+        })
         // TODO: Restore recorded sessions onto replacement synchronized workspaces in a future API slice.
         return yield* result.get(sessionID).pipe(Effect.orDie)
       }),
