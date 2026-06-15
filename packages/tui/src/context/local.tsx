@@ -76,6 +76,15 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       const [agentStore, setAgentStore] = createStore({
         current: "Advisor" as string | undefined,
       })
+
+      const agentFilePath = path.join(paths.state, "agent.json")
+      readJson<{ current?: string }>(agentFilePath)
+        .then((x) => {
+          if (x?.current && agents().some((a) => a.name === x.current)) {
+            setAgentStore("current", x.current)
+          }
+        })
+        .catch(() => {})
       const colors = createMemo(() => [
         theme.secondary,
         theme.accent,
@@ -100,6 +109,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
               duration: 3000,
             })
           setAgentStore("current", name)
+          void writeJsonAtomic(agentFilePath, { current: name })
         },
         move(direction: 1 | -1) {
           batch(() => {
@@ -110,6 +120,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
             if (next >= agents().length) next = 0
             const value = agents()[next]
             setAgentStore("current", value.name)
+            void writeJsonAtomic(agentFilePath, { current: value.name })
           })
         },
         color(name: string) {
