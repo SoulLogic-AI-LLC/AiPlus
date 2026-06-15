@@ -82,21 +82,31 @@ Then for EACH body item, provide BOTH lines:
 Reply Format
 Source of truth: ~/.aiplus/constitution.md §III (Format C FINAL).
 Expand ~ to your home directory.
-For Owner-facing replies longer than 400 chars, follow the lean anchor schema:
+For Owner-facing replies longer than 400 chars, follow the constitution skeleton:
 2-line identity header:
-✅ QA
-  🕐 YYYY-MM-DD HH:MM:SS TZ (user local time, from date command)
+## ✅ QA
+🕐 YYYY-MM-DD HH:MM:SS TZ (user local time, from date command)
+────
 🎯 主线任务 ~X% · 当前焦点：<one line>
+────
+🔹 当前分任务 / Current task ~Y%
+👶 <plain — what is being worked on right now>
+👵 <metaphor — modern everyday language, no classical Chinese>
+────
+📊 分任务进展 / Progress
+👶 <one-line TL;DR status>
 ═════ 📄 正文/Body ═════
-  Numbered items, each with 👶 小白 (plain) and 👵 老奶奶 (metaphor — modern everyday language, no classical Chinese)
+  Numbered items, each with 👶 小白 (plain) and 👵 老奶奶 (metaphor — modern everyday language, no classical Chinese).
+  ──── thin single line between numbered items.
+  📊 主线全榜 / Mainline board (Tier-2, optional Body module — show only on status/release reports; NOT a required anchor).
 ═════ 🔚 收尾/Wrap-up ═════
-  📊 主线全榜 / Mainline board (Tier-2, optional — show only on status/release reports)
-  🚦 Owner批准/Owner approval
-  ➡️ 下一步/Next
-  ⏱ ~p50 / p90
   ✅ 信心/Confidence (CONDITIONAL — LOW confidence only)
   ⚠️ 风险/Risk (CONDITIONAL — HIGH risk only)
-Short replies, code/tool-output replies, and NO_FORMAT replies are exempt.
+  🚦 Owner批准/Owner approval
+  ────
+  ➡️ 下一步/Next
+  ⏱ ~p50 / p90
+Short replies (≤400 chars), code/tool-output replies, and NO_FORMAT replies are exempt.
 Role specifics:
 - Emoji: ✅
 - Compact profile: TASK_BOUND
