@@ -31,6 +31,7 @@ import { LocationServiceMap } from "@opencode-ai/core/location-layer"
 import { PluginBoot } from "@opencode-ai/core/plugin/boot"
 import { Reference } from "@opencode-ai/core/reference"
 import { Location } from "@opencode-ai/core/location"
+import { TEAM } from "../../../../aiplus/team/manifest"
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -307,8 +308,17 @@ export const layer = Layer.effect(
           )
         }
 
+        const resolveAgentName = (raw: string): string | undefined => {
+          if (raw.startsWith("agent-team-")) {
+            const slug = raw.slice("agent-team-".length)
+            const spec = TEAM.find((r) => r.slug === slug)
+            return spec?.persona
+          }
+          return raw
+        }
+
         const get = Effect.fnUntraced(function* (agent: string) {
-          return agents[agent]
+          return agents[resolveAgentName(agent) ?? agent]
         })
 
         const list = Effect.fnUntraced(function* () {
