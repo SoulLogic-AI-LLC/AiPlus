@@ -71,20 +71,7 @@ export function appendMemoryEntry(params: {
     }
 
     const memFile = path.join(roleDir, "memory.jsonl")
-    // GAP-2: hash chain
-    let prevHash = "genesis"
-    if (fs.existsSync(memFile)) {
-      const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
-      if (lines.length > 0) {
-        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
-        catch { /* corrupt */ }
-      }
-    }
-    const entryBody = JSON.stringify(entry)
-    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
-
-    const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
-    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+    writeLine(memFile, entry)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-memory] ${msg}\n`)
@@ -125,19 +112,7 @@ export function appendTeamEntry(params: {
     }
 
     const memFile = path.join(teamDir, "memory.jsonl")
-    let prevHash = "genesis"
-    if (fs.existsSync(memFile)) {
-      const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
-      if (lines.length > 0) {
-        try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
-        catch { /* corrupt */ }
-      }
-    }
-    const entryBody = JSON.stringify(entry)
-    const entryHash = Bun.SHA256.hash(entryBody, "hex").slice(0, 16)
-
-    const line = JSON.stringify({ ...entry, prev_hash: prevHash, entry_hash: entryHash }) + "\n"
-    fs.appendFileSync(memFile, applyRedaction(line), "utf-8")
+    writeLine(memFile, entry)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     process.stderr.write(`[aiplus-memory] ${msg}\n`)
