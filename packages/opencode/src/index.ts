@@ -20,6 +20,7 @@ import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/attach"
 import { TuiThreadCommand } from "./cli/cmd/tui"
+import { DaemonCommand } from "./cli/cmd/daemon"
 import { AcpCommand } from "./cli/cmd/acp"
 import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
@@ -110,6 +111,8 @@ const cli = yargs(args)
   .command(WorktreeCommand)
   .command(EffectsCommand)
   .command(MemoryCommand)
+  .command(DaemonCommand)     // before TuiThreadCommand: daemon has no positional project arg, but registering
+                               // it early keeps the literal-command surface in a single ordered block.
   .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
                                // consumed as a positional project argument.
   .command(AttachCommand)

@@ -13,6 +13,10 @@ import type { EventSource } from "@opencode-ai/tui/context/sdk"
 import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
+import { Effect, Option } from "effect"
+import { readDaemonPort, isDaemonAlive, clearDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
+import { ServerAuth } from "@/server/auth"
+import { createDaemonFetch, createSSEEventSource } from "../tui/daemon-transport"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -66,6 +70,58 @@ export function resolveThreadDirectory(project?: string, envPWD = process.env.PW
   const root = Filesystem.resolve(envPWD ?? cwd)
   if (project) return Filesystem.resolve(path.isAbsolute(project) ? project : path.join(root, project))
   return Filesystem.resolve(cwd)
+}
+
+async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | undefined } | null> {
+  let mode = process.env.OPENCODE_DAEMON_MODE ?? "auto"
+  if (mode === "off") return null
+
+  if (mode !== "auto" && mode !== "0" && mode !== "force" && mode !== "1") {
+    console.warn(`unknown OPENCODE_DAEMON_MODE=${mode}, treating as auto`)
+  }
+  if (mode === "1") mode = "force"
+  if (mode === "0") mode = "auto"
+
+  const portOpt = await Effect.runPromise(readDaemonPort())
+  if (Option.isNone(portOpt)) {
+    if (mode === "auto" || mode === "0" || !mode) {
+      try {
+        spawnDaemonProcess()
+        const deadline = Date.now() + 15000
+        while (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 500))
+          const p = await Effect.runPromise(readDaemonPort())
+          if (Option.isSome(p) && (await Effect.runPromise(isDaemonAlive(p.value))))
+            return { url: `http://127.0.0.1:${p.value.port}`, auth: ServerAuth.header() }
+        }
+        console.warn("warning: daemon auto-start timed out; falling back to standalone mode")
+      } catch (e) {
+        console.error("failed to auto-start daemon:", e)
+      }
+    }
+
+    if (mode === "force" || mode === "1")
+      throw new Error("Daemon mode forced but no daemon found. Start one with: opencode daemon")
+    return null
+  }
+
+  const portInfo = portOpt.value
+  const alive = await Effect.runPromise(isDaemonAlive(portInfo))
+  if (!alive) {
+    await Effect.runPromise(clearDaemonPort())
+    if (mode === "force") {
+      throw new Error(
+        "Daemon mode forced but daemon not responding. Stale port file removed; start a fresh daemon.",
+      )
+    }
+    return null
+  }
+
+  if (process.argv.includes("--port") || process.argv.includes("--hostname")) {
+    console.warn("warning: daemon is running; ignoring --port/--hostname flags")
+  }
+  const auth = ServerAuth.header()
+  return { url: `http://127.0.0.1:${portInfo.port}`, auth }
 }
 
 export const TuiThreadCommand = cmd({
@@ -125,6 +181,55 @@ export const TuiThreadCommand = cmd({
         return
       }
       const cwd = Filesystem.resolve(process.cwd())
+
+      const daemon = await detectAndConnectDaemon()
+      if (daemon) {
+        const transport = {
+          url: daemon.url,
+          fetch: createDaemonFetch(daemon.url, daemon.auth),
+          events: createSSEEventSource(daemon.url, daemon.auth),
+        }
+        try {
+          await validateSession({
+            url: transport.url,
+            sessionID: args.session,
+            directory: cwd,
+            fetch: transport.fetch,
+          })
+        } catch (error) {
+          UI.error(errorMessage(error))
+          process.exitCode = 1
+          return
+        }
+        try {
+          const { run } = await import("../tui/layer")
+          const { createLegacyTuiPluginHost } = await import("@/plugin/tui/runtime")
+          await Effect.runPromise(
+            run({
+              url: transport.url,
+              async onSnapshot() {
+                return [writeHeapSnapshot("tui.heapsnapshot")]
+              },
+              config: await TuiConfig.get(),
+              pluginHost: createLegacyTuiPluginHost(),
+              directory: cwd,
+              fetch: transport.fetch,
+              events: transport.events,
+              args: {
+                continue: args.continue,
+                sessionID: args.session,
+                agent: args.agent,
+                model: args.model,
+                prompt: await input(args.prompt),
+                fork: args.fork,
+              },
+            }),
+          )
+        } finally {
+          // Daemon lifecycle is independent in Phase 1 — no shutdown call.
+        }
+        return
+      }
 
       const worker = new Worker(file)
       const client = Rpc.client<typeof rpc>(worker)

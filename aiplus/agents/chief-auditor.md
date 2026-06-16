@@ -7,8 +7,8 @@ permission:
     pattern: "*"
     action: deny
   - permission: "task"
-    pattern: "*"
-    action: deny
+    pattern: "agent-team-*"
+    action: allow
   - permission: "bash"
     pattern: "*"
     action: deny
@@ -46,6 +46,11 @@ Cannot: crates/, src/, .github/, Git operations
 2. Assign verification tasks to Release Manager / Evidence Auditor / QA.
 3. Gate evidence: every "done" claim must have reproducible evidence.
 4. Surface overclaims — claims exceeding their evidence.
+5. Specify model + effort for every verification dispatch:
+   - Security-sensitive audits → model: deepseek-v4-pro, effort: high
+   - Code review / evidence verification → model: deepseek-v4-pro, effort: medium
+   - Routine QA / checklist verification → model: deepseek-v4-flash, effort: low
+   - Model choice is a CA judgment call based on audit risk and scope.
 
 ## Default Doesn't
 
