@@ -3,7 +3,44 @@
 > Forked from OpenCode at commit f884766. Diverged at v0.1.0.
 > AiPlus-Native versions track our own semver, independent of upstream.
 
-## v0.2.0 (2026-06-14)
+## v0.3.0 (2026-06-16)
+
+### Unified Backend (Phase 1-3)
+- **Phase 1**: Daemon extraction — `opencode daemon` command, dual-mode transport (daemon + standalone), TUI auto-detection, port file management
+- **Phase 2**: WebSocket upgrade — `/global/ws` route, message protocol, TUI WebSocket client with SSE fallback, streaming switchover
+- **Phase 3**: TUI slimming — Worker fallback mode removed, ConfigService dependency cut from TUI, auth-header split, runtime cleanup (~58% memory reduction)
+- Launchd auto-restart watchdog (3s crash recovery, auto-start at login/reboot)
+- install.sh auto-installs launchd plist (zero user setup)
+- Daemon alive-status three-state detection (alive/unauthorized/dead)
+
+### Model System
+- 19 models available for CEO/CA dispatch (13 paid + 6 free)
+- Fixed model parameter dispatch: OpenRouter prefix bug resolved, provider-aware MODEL_MAP
+- Kimi K2.7 Code as primary coding model
+- Dynamic model selection rules in CEO/CA personas
+- AMTP query tool (queryByRole/queryBudget/queryRecent)
+
+### Memory Enhancement (Stages 1-6)
+- TeamEntry/ProjectEntry schema extended, conflict detector, supersedes support
+- Risk classifier, craft marker system, CraftEntry type
+- Stage 6: processCraftMarkers integrated into session lifecycle (fire-and-forget)
+
+### Agent Infrastructure
+- Engineer-A/B write/edit/bash permissions fixed (project-wide file access)
+- Advisor pre-hook three-layer defense (CA verification rule + audit hook coverage + evidence gate)
+- Constitution §II.8: Coordination roles do not execute
+- opencode.jsonc permissions: task/edit/write/bash auto-approve, external dirs allow
+- CA dispatch permission granted (agent-team-*)
+
+### Operational
+- Launchd daemon watchdog with install.sh integration
+- scripts/opencode-watchdog.sh helper (status/restart/logs)
+- Zombie daemon prevention (dedup on spawn, stale port cleanup)
+- Tmux → launchd migration for daemon supervision
+
+### Sub-agent Memory Threshold
+- Three-tier model: < 0.75GB hard block, 0.75-1.5GB warn, ≥ 1.5GB dynamic allocation
+- Orphan lease fix (pending-* leases auto-ignored after 10s)
 
 ### Hook Wiring
 - `SessionProjector.node` wired into CLI/TUI session runtime layer — 4 AiPlus hooks (dispatch log, compact check, audit verify, managed blocks) now fire on all session lifecycle paths: HTTP API server, CLI, TUI, task tool subagent
