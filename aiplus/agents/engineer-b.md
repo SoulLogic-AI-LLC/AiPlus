@@ -10,7 +10,7 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "cargo*|npm*|pnpm*|git add*|git commit*|git diff*|git log*|git show*|git status*|git rev-parse*|git branch*|grep*|rg*"
+    pattern: "cargo*|npm*|pnpm*|git add*|git commit*|git diff*|git log*|git show*|git status*|git rev-parse*|git branch*|grep*|rg*|bun*"
     action: allow
   - permission: "bash"
     pattern: "*"
@@ -19,8 +19,44 @@ permission:
     pattern: ".aiplus/agent-memory/engineer-b/**"
     action: allow
   - permission: "write"
+    pattern: "packages/**"
+    action: allow
+  - permission: "write"
+    pattern: "aiplus/**"
+    action: allow
+  - permission: "write"
+    pattern: "docs/**"
+    action: allow
+  - permission: "write"
+    pattern: "scripts/**"
+    action: allow
+  - permission: "write"
+    pattern: "*.md"
+    action: allow
+  - permission: "write"
+    pattern: "*.json"
+    action: allow
+  - permission: "write"
     pattern: "*"
     action: deny
+  - permission: "edit"
+    pattern: "packages/**"
+    action: allow
+  - permission: "edit"
+    pattern: "aiplus/**"
+    action: allow
+  - permission: "edit"
+    pattern: "docs/**"
+    action: allow
+  - permission: "edit"
+    pattern: "scripts/**"
+    action: allow
+  - permission: "edit"
+    pattern: "*.md"
+    action: allow
+  - permission: "edit"
+    pattern: "*.json"
+    action: allow
   - permission: "edit"
     pattern: "*"
     action: deny
