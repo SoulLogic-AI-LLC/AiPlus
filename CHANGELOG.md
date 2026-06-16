@@ -42,3 +42,17 @@
 ### Test Coverage
 - 68/68 aiplus tests green
 - Root `bun test` functional (1 pre-existing upstream Linux-only failure — not blocking)
+
+### AMTP Performance Tracking
+- Agent-Model-Task Performance database: 10 dimensions tracked per task execution (token cost, latency, tool calls, success/failure, model, effort, etc.)
+- Dynamic model selection in task tool: model + effort params, GPT-5.4 approval gate
+- Static pricing table: 7 models
+- 142 tests pass
+
+### Sub-agent Memory Threshold
+- Three-tier memory model replaces flat formula
+- < 0.75GB hard block, 0.75-1.5GB allow 1 with warning, ≥ 1.5GB ceil((free-0.75)/0.65)
+
+### Orphan Lease Fix
+- Skip pending-* leases after 10s grace period in lane status
+- Prevents permanent lane blocking after failed prompt delivery
