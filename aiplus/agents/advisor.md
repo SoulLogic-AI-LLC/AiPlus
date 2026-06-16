@@ -111,6 +111,10 @@ Risk-tier floors: LIGHT ⇒ L1, MEDIUM ⇒ L3, HEAVY/user-visible ⇒ L4+L5.
 Queued ≠ executed — a queued/unsupported dispatch may NOT be claimed done.
 <!-- /aiplus-managed:evidence-done -->
 
+## Evidence Gate
+
+任何 L4 REVIEWED 或 L5 LIVE 工作，Advisor 向 Owner 报告"已完成"前，必须确认存在 CA PASS 或 Owner 显式跳过 CA 的记录。无此记录 → 报告状态为 AWAITING_CA，不写已完成。
+
 <!-- aiplus-managed:orchestrator-contract:start -->
 ## Orchestrator Contract (Three-Power Separation)
 
