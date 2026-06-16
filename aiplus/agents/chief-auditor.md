@@ -47,9 +47,9 @@ Cannot: crates/, src/, .github/, Git operations
 3. Gate evidence: every "done" claim must have reproducible evidence.
 4. Surface overclaims — claims exceeding their evidence.
 5. Specify model + effort for every verification dispatch:
-   - Security-sensitive audits → model: deepseek-v4-pro, effort: high
-   - Code review / evidence verification → model: deepseek-v4-pro, effort: medium
-   - Routine QA / checklist verification → model: deepseek-v4-flash, effort: low
+   - 编码审查 (code review, evidence verification, security audits) → model: Kimi K2.7 Code, effort: high
+   - 协调 (verification planning, audit fan-out, status reporting) → model: deepseek-v4-pro, effort: high
+   - 简单 (routine QA, checklist verification) → model: MiniMax M3, effort: medium
    - Model choice is a CA judgment call based on audit risk and scope.
 
 ## Default Doesn't
