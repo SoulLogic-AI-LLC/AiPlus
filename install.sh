@@ -16,7 +16,16 @@ set -eu
 
 REPO="izhiwen/AiPlus-Native"
 CMD="aiplus-native"
-NAME="${CMD}-darwin-arm64"
+# GitHub release asset: build.ts emits ${pkg.name}-${os}-${arch}.zip (pkg.name is
+# "opencode") containing a binary named "opencode" — we rename it to ${CMD} on install.
+ASSET="opencode-darwin-arm64.zip"
+BIN="opencode"
+
+if ! command -v unzip >/dev/null 2>&1; then
+  echo "Error: 'unzip' is required to extract ${ASSET}."
+  echo "  Install it (e.g. 'brew install unzip') and re-run."
+  exit 1
+fi
 
 echo "AiPlus-Native installer (latest release, macOS arm64)"
 
@@ -24,7 +33,7 @@ echo "AiPlus-Native installer (latest release, macOS arm64)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-echo "  downloading ${NAME} from ${REPO}..."
+echo "  downloading ${ASSET} from ${REPO}..."
 
 # Optional first arg pins a tag. If omitted, install latest release.
 RELEASE="${1:-latest}"
@@ -32,37 +41,45 @@ RELEASE="${1:-latest}"
 # Try gh first (handles private repo auth automatically)
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   if [ "$RELEASE" = "latest" ]; then
-    gh release download -R "$REPO" -p "$NAME" -D "$TMP" --clobber 2>/dev/null || true
+    gh release download -R "$REPO" -p "$ASSET" -D "$TMP" --clobber 2>/dev/null || true
   else
-    gh release download "$RELEASE" -R "$REPO" -p "$NAME" -D "$TMP" --clobber 2>/dev/null || true
-  fi
-  if [ -f "${TMP}/${NAME}" ]; then
-    mv "${TMP}/${NAME}" "${TMP}/${CMD}"
+    gh release download "$RELEASE" -R "$REPO" -p "$ASSET" -D "$TMP" --clobber 2>/dev/null || true
   fi
 fi
 
 # Fallback: try curl (works if repo is public or GITHUB_TOKEN is set)
-if [ ! -f "${TMP}/${CMD}" ]; then
+if [ ! -f "${TMP}/${ASSET}" ]; then
   if [ "$RELEASE" = "latest" ]; then
     BASE="https://github.com/${REPO}/releases/latest/download"
   else
     BASE="https://github.com/${REPO}/releases/download/${RELEASE}"
   fi
-  URL="${BASE}/${NAME}"
+  URL="${BASE}/${ASSET}"
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} "$URL" -o "${TMP}/${CMD}" || true
+    curl -fsSL ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} "$URL" -o "${TMP}/${ASSET}" || true
   fi
 fi
 
-if [ ! -f "${TMP}/${CMD}" ]; then
+if [ ! -f "${TMP}/${ASSET}" ]; then
   echo ""
-  echo "Error: could not download ${NAME}."
+  echo "Error: could not download ${ASSET}."
   echo "  Ensure one of:"
   echo "    - gh is installed and authenticated (gh auth login)"
   echo "    - the repo is public"
   echo "    - GITHUB_TOKEN is set"
   exit 1
 fi
+
+# Extract the binary from the zip and rename to ${CMD} for the installed command.
+EXTRACT_DIR="${TMP}/extracted"
+mkdir -p "$EXTRACT_DIR"
+unzip -o -q "${TMP}/${ASSET}" -d "$EXTRACT_DIR"
+if [ ! -f "${EXTRACT_DIR}/${BIN}" ]; then
+  echo ""
+  echo "Error: ${ASSET} did not contain expected binary '${BIN}'."
+  exit 1
+fi
+mv "${EXTRACT_DIR}/${BIN}" "${TMP}/${CMD}"
 
 chmod +x "${TMP}/${CMD}"
 
