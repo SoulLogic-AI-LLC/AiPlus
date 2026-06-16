@@ -181,7 +181,7 @@ describe("agent-memory", () => {
       expect(entry.confidence).toBe("owner_asserted")
       expect(entry.status).toBe("active")
       expect(entry.tags).toEqual(["oom", "16gb", "sessions"])
-      expect(entry.schemaVersion).toBe("0.2.0")
+      expect(entry.schemaVersion).toBe("0.2.1")
     })
 
     it("appends multiple team entries", () => {
@@ -207,6 +207,25 @@ describe("agent-memory", () => {
       expect(entry.summary).toContain("[REDACTED")
       expect(entry.summary).not.toContain("sk-live")
     })
+
+    it("includes supersedes and new fields in team entry", () => {
+      appendTeamEntry({
+        projectRoot: tmpDir,
+        id: "team-sup",
+        subject: "replaces",
+        summary: "this supersedes old",
+        source: "advisor",
+        supersedes: ["old-team-001"],
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/_team/memory.jsonl")
+      const entry = JSON.parse(fs.readFileSync(filePath, "utf-8").trim())
+      expect(entry.supersedes).toEqual(["old-team-001"])
+      expect(entry.supersededBy).toEqual([])
+      expect(entry.conflictGroup).toBeNull()
+      expect(entry.expiresAt).toBeNull()
+      expect(entry.staleAfter).toBeNull()
+    })
   })
 
   // ---- Project (V2) --------------------------------------------------------
@@ -227,7 +246,7 @@ describe("agent-memory", () => {
       expect(entry.key).toBe("preferred_runtime")
       expect(entry.value).toBe("opencode")
       expect(entry.source).toBe("owner")
-      expect(entry.schemaVersion).toBe("0.2.0")
+      expect(entry.schemaVersion).toBe("0.2.1")
     })
 
     it("redacts secrets in project values", () => {
@@ -243,6 +262,24 @@ describe("agent-memory", () => {
       const entry = JSON.parse(lines[lines.length - 1])
       expect(entry.value).toContain("[REDACTED_TOKEN]")
       expect(entry.value).not.toContain("ghp_")
+    })
+
+    it("includes supersedes and new fields in project entry", () => {
+      appendProjectEntry({
+        projectRoot: tmpDir,
+        key: "runtime",
+        value: "bun",
+        source: "owner",
+        supersedes: ["old-runtime-entry"],
+      })
+
+      const filePath = path.join(tmpDir, ".aiplus/agent-memory/project/memory.jsonl")
+      const entry = JSON.parse(fs.readFileSync(filePath, "utf-8").trim())
+      expect(entry.supersedes).toEqual(["old-runtime-entry"])
+      expect(entry.supersededBy).toEqual([])
+      expect(entry.conflictGroup).toBeNull()
+      expect(entry.expiresAt).toBeNull()
+      expect(entry.staleAfter).toBeNull()
     })
   })
 })

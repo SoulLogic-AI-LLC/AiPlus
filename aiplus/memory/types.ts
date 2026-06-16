@@ -49,10 +49,15 @@ export interface TeamEntry {
   confidence: TeamConfidence
   status: TeamStatus
   tags: string[]
-  schemaVersion: "0.2.0"
+  schemaVersion: "0.2.1"
   timestamp: string
   /** Redaction level: "none" | "partial" | "full". Set by redact pipeline. */
   redaction: "none" | "partial" | "full"
+  supersededBy: string[]
+  supersedes: string[]
+  conflictGroup: string | null
+  expiresAt: string | null
+  staleAfter: string | null
 }
 
 // ---- Project (V2) --------------------------------------------------------
@@ -62,8 +67,38 @@ export interface ProjectEntry {
   key: string
   value: string
   source: string
-  schemaVersion: "0.2.0"
+  schemaVersion: "0.2.1"
   timestamp: string
+  supersededBy: string[]
+  supersedes: string[]
+  conflictGroup: string | null
+  expiresAt: string | null
+  staleAfter: string | null
+}
+
+/** A single craft-memory record (Rust MemoryRecord 0.2.0 字段子集). */
+export interface CraftEntry {
+  schemaVersion: "0.2.0"
+  id: string
+  recordType: string
+  scope: "personal"
+  source: "craft_marker"
+  createdAt: string
+  updatedAt: string
+  summary: string
+  confidence: "auto_inferred"
+  status: "active"
+  evidence: string[]
+  tags: string[]
+  redaction: "none" | "partial" | "full"
+  subject: string
+  visibility: "personal"
+  contentHash: string | null
+  supersedes: string[]
+  supersededBy: string[]
+  conflictGroup: string | null
+  expiresAt: string | null
+  staleAfter: string | null
 }
 
 // ---- Redaction (V2) ------------------------------------------------------

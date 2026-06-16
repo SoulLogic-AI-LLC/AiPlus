@@ -13,8 +13,10 @@ import { Config } from "@/config/config"
 import { Effect, Exit, Schema, Scope } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { RuntimeFlags } from "@/effect/runtime-flags"
+import { InstanceState } from "@/effect/instance-state"
 import { Database } from "@opencode-ai/core/database/database"
 import os from "os"
+import { appendPerformanceStart, appendPerformanceComplete } from "../../../../aiplus/agent-performance/record"
 
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): Effect.Effect<void>
@@ -51,7 +53,12 @@ function currentFreeMemoryGb() {
 }
 
 function subagentCapacity(freeGb: number) {
-  return Math.max(0, Math.floor(((freeGb - SUBAGENT_SOFT_RESERVE_GB) / SUBAGENT_MEMORY_GB) + 1e-9))
+  // Hard floor: no sub-agents below 0.75GB — system stability at risk
+  if (freeGb < SUBAGENT_HARD_FLOOR_GB) return 0
+  // Low memory: allow exactly 1 sub-agent between 0.75GB and 1.5GB
+  if (freeGb < SUBAGENT_SOFT_RESERVE_GB) return 1
+  // Normal: capacity scales with available memory above the hard floor (ceil = don't waste partial slots)
+  return Math.max(1, Math.ceil(((freeGb - SUBAGENT_HARD_FLOOR_GB) / SUBAGENT_MEMORY_GB) - 1e-9))
 }
 
 function reserveSubagentSlot() {
@@ -63,10 +70,17 @@ function reserveSubagentSlot() {
     }
   }
   if (freeGb < SUBAGENT_SOFT_RESERVE_GB) {
-    return {
-      ok: false as const,
-      message: `Free memory is ${freeGb.toFixed(2)}GB, below the safety reserve of ${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)}GB. Do not start a new subagent yet.`,
+    const capacity = subagentCapacity(freeGb)
+    const active = activeSubagentSlots.size
+    if (active >= capacity) {
+      return {
+        ok: false as const,
+        message: `Memory is tight (${freeGb.toFixed(2)}GB free, below ${SUBAGENT_SOFT_RESERVE_GB.toFixed(2)}GB reserve). Only 1 sub-agent slot available and it is currently in use.`,
+      }
     }
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    activeSubagentSlots.add(token)
+    return { ok: true as const, token }
   }
   const capacity = subagentCapacity(freeGb)
   const active = activeSubagentSlots.size
@@ -94,6 +108,13 @@ const BaseParameterFields = {
       "This should only be set if you mean to resume a previous task (you can pass a prior task_id and the task will continue the same subagent session as before instead of creating a fresh one)",
   }),
   command: Schema.optional(Schema.String).annotate({ description: "The command that triggered this task" }),
+  model: Schema.optional(Schema.String).annotate({
+    description:
+      "Override the model for this task. Valid values: deepseek-v4-pro, deepseek-v4-flash, mimo-v2.5-pro, minimax-m3. If not specified, uses the agent default or parent model.",
+  }),
+  effort: Schema.optional(Schema.String).annotate({
+    description: "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
+  }),
 }
 
 const BaseParameters = Schema.Struct(BaseParameterFields)
@@ -139,6 +160,7 @@ export const TaskTool = Tool.define(
       ctx: Tool.Context,
     ) {
       const cfg = yield* config.get()
+      const instanceCtx = yield* InstanceState.context
       const runInBackground = params.background === true
       if (runInBackground && !flags.experimentalBackgroundSubagents) {
         return yield* Effect.fail(
@@ -209,14 +231,32 @@ export const TaskTool = Tool.define(
       if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
       const variant = msg.info.variant
 
-      const model = next.model ?? {
-        modelID: msg.info.modelID,
-        providerID: msg.info.providerID,
+      // CEO-specified model overrides agent default and parent inheritance
+      const MODEL_MAP: Record<string, { modelID: typeof msg.info.modelID; providerID: typeof msg.info.providerID }> = {
+        "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
+        "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
+        "mimo-v2.5-pro": { modelID: "xiaomi/mimo-v2.5-pro" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
+        "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
       }
+      if (params.model === "gpt-5.4") {
+        yield* ctx.ask({
+          permission: id,
+          patterns: ["gpt-5.4"],
+          always: ["*"],
+          metadata: {
+            description: `GPT-5.4 requires owner approval: ${params.description}`,
+            model: params.model,
+          },
+        })
+      }
+      const model = params.model
+        ? MODEL_MAP[params.model] ?? { modelID: params.model as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID }
+        : next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID }
       const metadata = {
         parentSessionId: ctx.sessionID,
         sessionId: nextSession.id,
         model,
+        effort: params.effort,
         ...(runInBackground ? { background: true } : {}),
       }
 
@@ -224,6 +264,21 @@ export const TaskTool = Tool.define(
         title: params.description,
         metadata,
       })
+
+      // AMTP: record performance start
+      const taskStartTime = Date.now()
+      yield* Effect.sync(() =>
+        appendPerformanceStart({
+          projectRoot: instanceCtx.directory,
+          sessionId: nextSession.id,
+          role: next.name,
+          agentName: next.name,
+          modelId: model.modelID,
+          taskType: params.description.split(":")[0]?.trim().split(" ")[0]?.toLowerCase() ?? "other",
+          taskSummary: params.description,
+          estimatedMs: null,
+        }),
+      )
 
       const ops = ctx.extra?.promptOps as TaskPromptOps
       if (!ops) return yield* Effect.fail(new Error("TaskTool requires promptOps in ctx.extra"))
@@ -362,8 +417,38 @@ export const TaskTool = Tool.define(
               background.waitForPromotion(nextSession.id),
             )
             if (result?.metadata?.background === true) return backgroundResult()
-            if (result?.status === "error") return yield* Effect.fail(new Error(result.error ?? "Task failed"))
+            if (result?.status === "error") {
+              // AMTP: record failed performance
+              yield* Effect.sync(() =>
+                appendPerformanceComplete({
+                  projectRoot: instanceCtx.directory,
+                  sessionId: nextSession.id,
+                  actualMs: Date.now() - taskStartTime,
+                  tokensIn: 0,
+                  tokensOut: 0,
+                  costUSD: 0,
+                  outcome: "failed",
+                  linesChanged: 0,
+                  filesChanged: 0,
+                }),
+              )
+              return yield* Effect.fail(new Error(result.error ?? "Task failed"))
+            }
             if (result?.status === "cancelled") return yield* Effect.fail(new Error("Task cancelled"))
+            // AMTP: record performance complete
+            yield* Effect.sync(() =>
+              appendPerformanceComplete({
+                projectRoot: instanceCtx.directory,
+                sessionId: nextSession.id,
+                actualMs: Date.now() - taskStartTime,
+                tokensIn: 0,
+                tokensOut: 0,
+                costUSD: 0,
+                outcome: "success",
+                linesChanged: 0,
+                filesChanged: 0,
+              }),
+            )
             return {
               title: params.description,
               metadata,
