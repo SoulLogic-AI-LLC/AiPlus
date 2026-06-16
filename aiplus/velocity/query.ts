@@ -20,7 +20,7 @@ function defaultDbPath(): string {
  * Parse role from session title + agent field.
  * Same logic as token-cost (keep in sync).
  */
-function parseRole(title: string, agent: string | null): string {
+export function parseRole(title: string, agent: string | null): string {
   if (agent) {
     const m = agent.match(/^agent-team-(\S+)$/)
     if (m) return m[1]
@@ -41,7 +41,7 @@ function parseRole(title: string, agent: string | null): string {
  * Parse task type from conventional commit prefix.
  * "feat: add X" → "feat", "fix: ..." → "fix", etc.
  */
-function parseTaskType(title: string): string {
+export function parseTaskType(title: string): string {
   const m = title.match(/^(feat|fix|refactor|test|docs|chore|perf|style|build|ci|revert)\b/i)
   return m ? m[1].toLowerCase() : "other"
 }
