@@ -236,8 +236,16 @@ export const TaskTool = Tool.define(
         "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
         "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: msg.info.providerID },
         "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "minimax-m2.7": { modelID: "minimax-m2.7" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "mimo-v2.5": { modelID: "mimo-v2.5" as typeof msg.info.modelID, providerID: msg.info.providerID },
         "mimo-v2.5-pro": { modelID: "mimo-v2.5-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
         "kimi-k2.7-code": { modelID: "kimi-k2.7-code" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "kimi-k2.6": { modelID: "kimi-k2.6" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "glm-5.1": { modelID: "glm-5.1" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "glm-5": { modelID: "glm-5" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "qwen3.7-max": { modelID: "qwen3.7-max" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "qwen3.7-plus": { modelID: "qwen3.7-plus" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "qwen3.6-plus": { modelID: "qwen3.6-plus" as typeof msg.info.modelID, providerID: msg.info.providerID },
       }
       if (params.model === "gpt-5.4") {
         yield* ctx.ask({
