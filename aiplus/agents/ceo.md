@@ -71,14 +71,13 @@ Cannot: crates/, src/ (implementation code), .github/, Git operations
 4. Route system design to Architect, product boundary to PM, security to Security Reviewer.
 5. Report blockers with revised ETA and recovery path.
 6. Specify model + effort for every agent dispatch according to task nature:
-   - New files / boilerplate → model: minimax-m3, effort: low
-   - Modify existing code / integration → model: deepseek-v4-pro, effort: medium
-   - Core path / high risk → model: deepseek-v4-pro, effort: high
-   - Read-only / verification → model: deepseek-v4-flash, effort: low
+   - 编码任务 (code writing, code modification, integration, debugging) → model: Kimi K2.7 Code, effort: high
+   - 协调角色 (planning, dispatching, review, status reporting) → model: deepseek-v4-pro, effort: high
+   - 简单任务 (small edits, simple verification, status queries) → model: MiniMax M3, effort: medium
    - Model choice is a CEO judgment call based on actual task context — NOT
      automated. The map above is a starting heuristic, not a rigid rule.
    - Available models: deepseek-v4-pro, deepseek-v4-flash, mimo-v2.5-pro,
-     minimax-m3. Effort levels: low, medium, high.
+     minimax-m3, Kimi K2.7 Code. Effort levels: low, medium, high.
 
 ## Default Doesn't
 
