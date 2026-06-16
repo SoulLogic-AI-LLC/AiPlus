@@ -71,9 +71,69 @@ INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
 mv "${TMP}/${CMD}" "${INSTALL_DIR}/${CMD}"
 
+# ---- install launchd watchdog (macOS only) ----
+# After install, the daemon is supervised by launchd so it:
+#   - auto-starts at login/reboot (RunAtLoad)
+#   - auto-restarts on crash (KeepAlive, throttled to 1 per 10s)
+#   - logs to /tmp/aiplus-native-launchd.log
+# End users don't need to run anything else.
+# Linux: systemd support is a follow-up; this section is silently skipped.
+WATCHDOG_STATUS=""
+if [ "$(uname 2>/dev/null)" = "Darwin" ]; then
+  PLIST_LABEL="com.aiplus.aiplus-native-daemon"
+  PLIST_PATH="$HOME/Library/LaunchAgents/${PLIST_LABEL}.plist"
+  mkdir -p "$(dirname "$PLIST_PATH")"
+  cat > "$PLIST_PATH" <<PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${PLIST_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${INSTALL_DIR}/${CMD}</string>
+        <string>daemon</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${HOME}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>StandardOutPath</key>
+    <string>/tmp/aiplus-native-launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/aiplus-native-launchd.log</string>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
+PLIST_EOF
+  # If a previous version of the watchdog is loaded (upgrade re-run),
+  # unload it first so the new plist content takes effect.
+  launchctl bootout "gui/$(id -u)/${PLIST_LABEL}" 2>/dev/null || true
+  launchctl unload "$PLIST_PATH" 2>/dev/null || true
+  if launchctl bootstrap "gui/$(id -u)" "$PLIST_PATH" 2>/dev/null; then
+    WATCHDOG_STATUS="enabled (auto-restart on crash, auto-start at login)"
+  elif launchctl load "$PLIST_PATH" 2>/dev/null; then
+    WATCHDOG_STATUS="enabled via legacy launchctl"
+  else
+    WATCHDOG_STATUS="installed but not loaded — try: launchctl load $PLIST_PATH"
+  fi
+fi
+
 echo ""
 echo "AiPlus-Native installed to ${INSTALL_DIR}/${CMD}"
 echo "Release: ${RELEASE}"
+if [ -n "$WATCHDOG_STATUS" ]; then
+  echo "Watchdog: ${WATCHDOG_STATUS}"
+  echo "  Log:     tail -f /tmp/aiplus-native-launchd.log"
+  echo "  Status:  launchctl list | grep ${PLIST_LABEL}"
+  echo "  Remove:  launchctl bootout gui/\$(id -u)/${PLIST_LABEL} && rm ${PLIST_PATH}"
+fi
 
 if ! echo "$PATH" | tr ':' '\n' | grep -Fxq "$INSTALL_DIR"; then
   echo ""
