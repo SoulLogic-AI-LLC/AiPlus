@@ -94,7 +94,7 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
         while (Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 500))
           const p = await Effect.runPromise(readDaemonPort())
-          if (Option.isSome(p) && (await Effect.runPromise(isDaemonAlive(p.value))))
+          if (Option.isSome(p) && (await Effect.runPromise(isDaemonAlive(p.value))) === "alive")
             return { url: `http://127.0.0.1:${p.value.port}`, auth: ServerAuth.header() }
         }
         console.warn("warning: daemon auto-start timed out; falling back to standalone mode")
@@ -109,8 +109,15 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
   }
 
   const portInfo = portOpt.value
-  const alive = await Effect.runPromise(isDaemonAlive(portInfo))
-  if (!alive) {
+  const status = await Effect.runPromise(isDaemonAlive(portInfo))
+  if (status === "unauthorized") {
+    console.error("failed to connect to daemon: unauthorized (wrong password?)")
+    if (mode === "force") {
+      throw new Error("Daemon mode forced but daemon password is incorrect.")
+    }
+    return null
+  }
+  if (status !== "alive") {
     await Effect.runPromise(clearDaemonPort())
     if (mode === "force") {
       throw new Error(

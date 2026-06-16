@@ -44,6 +44,7 @@ import { decodeDataUrl } from "@/util/data-url"
 import { Process } from "@/util/process"
 import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema, Types } from "effect"
 import { InstanceState } from "@/effect/instance-state"
+import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { TaskTool, type TaskPromptOps } from "@/tool/task"
 import { SessionRunState } from "./run-state"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -82,6 +83,14 @@ function isOrphanedInterruptedTool(part: SessionV1.ToolPart) {
   // They are not pending work and must not trigger an assistant-prefill request.
   return part.state.status === "error" && part.state.metadata?.interrupted === true
 }
+
+const withActiveTurn = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  Effect.gen(function* () {
+    const lifecycle = yield* Effect.serviceOption(DaemonLifecycle.Service)
+    if (Option.isNone(lifecycle)) return yield* effect
+    yield* lifecycle.value.incrementActiveTurn
+    return yield* effect.pipe(Effect.ensuring(lifecycle.value.decrementActiveTurn))
+  })
 
 export interface Interface {
   readonly cancel: (sessionID: SessionID) => Effect.Effect<void>
@@ -1333,7 +1342,7 @@ export const layer = Layer.effect(
             const system = [...env, ...instructions, ...(skills ? [skills] : [])]
             const format = lastUser.format ?? { type: "text" as const }
             if (format.type === "json_schema") system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
-            const result = yield* handle.process({
+            const result = yield* withActiveTurn(handle.process({
               user: lastUser,
               agent,
               permission: session.permission,
@@ -1344,7 +1353,7 @@ export const layer = Layer.effect(
               tools,
               model,
               toolChoice: format.type === "json_schema" ? "required" : undefined,
-            })
+            }))
 
             if (structured !== undefined) {
               handle.message.structured = structured

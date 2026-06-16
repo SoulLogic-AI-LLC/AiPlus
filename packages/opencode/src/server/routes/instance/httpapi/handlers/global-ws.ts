@@ -1,6 +1,7 @@
 import { GlobalBus, type GlobalEvent as GlobalBusEvent } from "@/bus/global"
+import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { EventV2 } from "@opencode-ai/core/event"
-import { Effect, Queue, Schema } from "effect"
+import { Effect, Option, Queue, Schema } from "effect"
 import * as Stream from "effect/Stream"
 import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
 import { WebSocketTracker } from "../websocket-tracker"
@@ -91,6 +92,22 @@ export const globalWebSocketHandler = Effect.fn("GlobalHttpApi.ws")(function* (c
 
   yield* Effect.forkScoped(events.pipe(Stream.runForEach((event) => send(wsEvent(undefined, event)))))
 
+  const onConnectionOpen = Effect.gen(function* () {
+    yield* send(
+      wsEvent(undefined, {
+        payload: { id: EventV2.ID.create(), type: "server.connected", properties: {} },
+      }),
+    )
+    const lifecycle = yield* Effect.serviceOption(DaemonLifecycle.Service)
+    if (Option.isSome(lifecycle)) yield* lifecycle.value.addConnection
+  })
+
+  const onConnectionClose = Effect.gen(function* () {
+    yield* Effect.logInfo("global websocket disconnected")
+    const lifecycle = yield* Effect.serviceOption(DaemonLifecycle.Service)
+    if (Option.isSome(lifecycle)) yield* lifecycle.value.removeConnection
+  })
+
   yield* socket
     .runString(
       (message) =>
@@ -115,16 +132,12 @@ export const globalWebSocketHandler = Effect.fn("GlobalHttpApi.ws")(function* (c
           Effect.catch(() => Effect.void),
         ),
       {
-        onOpen: send(
-          wsEvent(undefined, {
-            payload: { id: EventV2.ID.create(), type: "server.connected", properties: {} },
-          }),
-        ),
+        onOpen: onConnectionOpen,
       },
     )
     .pipe(
       Effect.catchReason("SocketError", "SocketCloseError", () => Effect.void),
-      Effect.ensuring(Effect.logInfo("global websocket disconnected")),
+      Effect.ensuring(onConnectionClose),
       Effect.orDie,
     )
 

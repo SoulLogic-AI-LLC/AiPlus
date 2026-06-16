@@ -69,8 +69,8 @@ export async function openapi() {
 
 export let url: URL
 
-export async function listen(opts: ListenOptions): Promise<Listener> {
-  const listener = await Effect.runPromise(listenEffect(opts))
+export async function listen(opts: ListenOptions, context?: Context.Context<never>): Promise<Listener> {
+  const listener = await Effect.runPromise(listenEffect(opts, context))
   return {
     hostname: listener.hostname,
     port: listener.port,
@@ -79,9 +79,9 @@ export async function listen(opts: ListenOptions): Promise<Listener> {
   }
 }
 
-const listenEffect: (opts: ListenOptions) => Effect.Effect<EffectListener, unknown> = Effect.fn("Server.listen")(
-  function* (opts: ListenOptions) {
-    const state = yield* startWithPortFallback(opts)
+const listenEffect: (opts: ListenOptions, context?: Context.Context<never>) => Effect.Effect<EffectListener, unknown> =
+  Effect.fn("Server.listen")(function* (opts: ListenOptions, context?: Context.Context<never>) {
+    const state = yield* startWithPortFallback(opts, context)
     const address = yield* tcpAddress(state)
     const listenerUrl = makeURL(opts.hostname, address.port)
     url = listenerUrl
@@ -94,11 +94,10 @@ const listenEffect: (opts: ListenOptions) => Effect.Effect<EffectListener, unkno
       url: listenerUrl,
       stop: yield* makeStop(state, unpublishMdns),
     }
-  },
-)
+  })
 
-function listenerLayer(opts: ListenOptions, port: number) {
-  return HttpRouter.serve(HttpApiApp.createRoutes(opts), {
+function listenerLayer(opts: ListenOptions, port: number, context?: Context.Context<never>) {
+  const base = HttpRouter.serve(HttpApiApp.createRoutes(opts), {
     middleware: disposeMiddleware,
     disableLogger: true,
     disableListenLog: true,
@@ -112,18 +111,19 @@ function listenerLayer(opts: ListenOptions, port: number) {
     // every later `Server.listen()` keeps observing that initial snapshot.
     Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv())),
   )
+  return context ? Layer.provideMerge(base, Layer.succeedContext(context)) : base
 }
 
-function startWithPortFallback(opts: ListenOptions) {
-  if (opts.port !== 0) return startListener(opts, opts.port)
+function startWithPortFallback(opts: ListenOptions, context?: Context.Context<never>) {
+  if (opts.port !== 0) return startListener(opts, opts.port, context)
   // Match the legacy listener port-resolution behavior: explicit `0` prefers
   // 4096 first, then any free port.
-  return startListener(opts, 4096).pipe(Effect.catch(() => startListener(opts, 0)))
+  return startListener(opts, 4096, context).pipe(Effect.catch(() => startListener(opts, 0, context)))
 }
 
-function startListener(opts: ListenOptions, port: number) {
+function startListener(opts: ListenOptions, port: number, context?: Context.Context<never>) {
   const scope = Scope.makeUnsafe()
-  return Layer.buildWithMemoMap(listenerLayer(opts, port), Layer.makeMemoMapUnsafe(), scope).pipe(
+  return Layer.buildWithMemoMap(listenerLayer(opts, port, context), Layer.makeMemoMapUnsafe(), scope).pipe(
     Effect.provide(HttpApiApp.context),
     Effect.onError(() => Scope.close(scope, Exit.void).pipe(Effect.ignore)),
     Effect.map(

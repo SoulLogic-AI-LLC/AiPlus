@@ -6,6 +6,7 @@ import WebSocket from "ws"
 import {
   decodeWsMessage,
   encodeWsMessage,
+  wsPing,
   wsPong,
   type WsMessage,
 } from "@/server/routes/instance/httpapi/handlers/global-ws"
@@ -31,6 +32,18 @@ import {
 
 const INITIAL_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30000
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 30000
+
+function heartbeatIntervalMs() {
+  const raw = process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS
+  if (raw === undefined) return DEFAULT_HEARTBEAT_INTERVAL_MS
+  const parsed = Number(raw)
+  if (Number.isNaN(parsed) || parsed < 0) {
+    console.warn(`invalid OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS=${raw}, using default ${DEFAULT_HEARTBEAT_INTERVAL_MS}`)
+    return DEFAULT_HEARTBEAT_INTERVAL_MS
+  }
+  return parsed
+}
 
 export function createDaemonFetch(url: string, auth: string | undefined) {
   const fn = async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
@@ -83,9 +96,11 @@ export function createWebSocketEventSource(baseUrl: string, auth: string | undef
   return {
     subscribe: async (handler) => {
       const wsUrl = `${toWebSocketUrl(baseUrl)}/global/ws`
+      const intervalMs = heartbeatIntervalMs()
       let active = true
       let socket: WebSocket | undefined
       let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+      let heartbeatTimer: ReturnType<typeof setInterval> | undefined
       let attempt = 0
 
       const send = (message: WsMessage) => {
@@ -149,18 +164,34 @@ export function createWebSocketEventSource(baseUrl: string, auth: string | undef
           ws.once("close", onClose)
         })
 
+      const clearHeartbeat = () => {
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer)
+          heartbeatTimer = undefined
+        }
+      }
+
+      const startHeartbeat = (ws: WebSocket) => {
+        if (intervalMs === 0) return
+        clearHeartbeat()
+        heartbeatTimer = setInterval(() => send(wsPing()), intervalMs)
+      }
+
       const attach = (ws: WebSocket) => {
         attempt = 0
         ws.on("error", () => {})
         ws.on("message", handleMessage)
         ws.once("close", () => {
           ws.removeAllListeners()
+          clearHeartbeat()
           scheduleReconnect()
         })
         ws.once("error", () => {
           ws.removeAllListeners()
+          clearHeartbeat()
           scheduleReconnect()
         })
+        startHeartbeat(ws)
       }
 
       const scheduleReconnect = () => {
@@ -183,6 +214,7 @@ export function createWebSocketEventSource(baseUrl: string, auth: string | undef
 
       return () => {
         active = false
+        clearHeartbeat()
         if (reconnectTimer) clearTimeout(reconnectTimer)
         socket?.close()
         socket = undefined

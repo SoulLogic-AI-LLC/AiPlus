@@ -1,8 +1,9 @@
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { InstanceState } from "@/effect/instance-state"
+import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { GlobalBus } from "@/bus/global"
 import { EventV2 } from "@opencode-ai/core/event"
-import { Effect, Queue } from "effect"
+import { Effect, Option, Queue } from "effect"
 import * as Stream from "effect/Stream"
 import { HttpServerResponse } from "effect/unstable/http"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
@@ -65,6 +66,9 @@ function eventResponse(events: EventV2.Interface) {
       Stream.map(() => ({ id: eventID(), type: "server.heartbeat", properties: {} })),
     )
 
+    const lifecycle = yield* Effect.serviceOption(DaemonLifecycle.Service)
+    if (Option.isSome(lifecycle)) yield* lifecycle.value.addConnection
+
     yield* Effect.logInfo("event connected")
     return HttpServerResponse.stream(
       Stream.make({ id: eventID(), type: "server.connected", properties: {} }).pipe(
@@ -72,7 +76,12 @@ function eventResponse(events: EventV2.Interface) {
         Stream.map(eventData),
         Stream.pipeThroughChannel(Sse.encode()),
         Stream.encodeText,
-        Stream.ensuring(Effect.logInfo("event disconnected")),
+        Stream.ensuring(
+          Effect.gen(function* () {
+            yield* Effect.logInfo("event disconnected")
+            if (Option.isSome(lifecycle)) yield* lifecycle.value.removeConnection
+          }),
+        ),
       ),
       {
         contentType: "text/event-stream",

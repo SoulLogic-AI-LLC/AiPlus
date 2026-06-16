@@ -1,22 +1,11 @@
-import { Effect, Option } from "effect"
+import { Context, Effect, Option } from "effect"
 import { effectCmd } from "../effect-cmd"
 import { Heap } from "@/cli/heap"
 import { clearDaemonPort, writeDaemonPort, readDaemonPort, isDaemonAlive } from "@/cli/daemon-port"
+import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import type { Listener } from "../../server/server"
-
-async function shutdownDaemon(server: Listener) {
-  const { AppRuntime } = await import("@/effect/app-runtime")
-  await AppRuntime.runPromise(
-    Effect.gen(function* () {
-      yield* clearDaemonPort()
-      yield* disposeAllInstancesAndEmitGlobalDisposed({ swallowErrors: true })
-    }).pipe(Effect.ignore),
-  )
-  await server.stop(true)
-  process.exit(0)
-}
 
 export const DaemonCommand = effectCmd({
   command: "daemon",
@@ -36,30 +25,66 @@ export const DaemonCommand = effectCmd({
 
     const existingPort = yield* readDaemonPort()
     if (Option.isSome(existingPort)) {
-      const alive = yield* isDaemonAlive(existingPort.value)
-      if (alive) {
+      const status = yield* isDaemonAlive(existingPort.value)
+      if (status === "alive" || status === "unauthorized") {
         process.stderr.write(`daemon already running on port ${existingPort.value.port}\n`)
         return
       }
     }
 
-    // port: 0 → 4096-preferred behavior (B0-B3 / V1). The actual port is reported
-    // to consumers via the port file written below.
-    const server: Listener = yield* Effect.promise(() =>
-      Server.listen({ port: 0, hostname: "127.0.0.1" }),
+    const idleTimeoutMs = Number(process.env.OPENCODE_DAEMON_IDLE_TIMEOUT_MS ?? "300000")
+    const shutdownGraceMs = Number(process.env.OPENCODE_DAEMON_SHUTDOWN_GRACE_MS ?? "30000")
+
+    let server: Listener | undefined
+
+    const onShutdown = Effect.gen(function* () {
+      if (server !== undefined) {
+        yield* Effect.promise(() => server!.stop(true))
+      }
+      yield* clearDaemonPort()
+      yield* disposeAllInstancesAndEmitGlobalDisposed({ swallowErrors: true })
+    }).pipe(Effect.asVoid)
+
+    const shutdownDaemon = (exitCode: number) => {
+      Effect.runPromise(clearDaemonPort()).catch(() => {}).finally(() => process.exit(exitCode))
+    }
+
+    const lifecycle = yield* DaemonLifecycle.make({
+      idleTimeoutMs,
+      shutdownGraceMs,
+      onShutdown,
+      shutdownDaemon,
+    })
+
+    const context = Context.make(DaemonLifecycle.Service, lifecycle)
+
+    server = yield* Effect.promise(() =>
+      Server.listen({ port: 0, hostname: "127.0.0.1" }, context),
     )
 
     yield* writeDaemonPort(server.port)
     process.stderr.write(`daemon ready on port ${server.port}\n`)
 
+    yield* lifecycle.startIdleTimer(idleTimeoutMs)
+
     let shuttingDown = false
     const onSignal = () => {
       if (shuttingDown) return
       shuttingDown = true
-      void shutdownDaemon(server).catch(() => process.exit(0))
+      process.stderr.write("shutting down\n")
+      void Effect.runPromise(lifecycle.shutdown).catch(() => shutdownDaemon(1))
     }
     process.on("SIGTERM", onSignal)
     process.on("SIGINT", onSignal)
+
+    process.on("uncaughtException", (error) => {
+      process.stderr.write(`uncaught exception: ${error}\n`)
+      shutdownDaemon(1)
+    })
+    process.on("unhandledRejection", (reason) => {
+      process.stderr.write(`unhandled rejection: ${reason}\n`)
+      shutdownDaemon(1)
+    })
 
     yield* Effect.never
   }),

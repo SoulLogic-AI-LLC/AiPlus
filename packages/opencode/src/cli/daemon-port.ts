@@ -84,6 +84,8 @@ export const clearDaemonPort = Effect.fn("Cli.daemon-port.clear")(function* () {
   })
 })
 
+export type DaemonAliveStatus = "alive" | "dead" | "unauthorized"
+
 /**
  * Probes the daemon by hitting `/global/health` with a 2-second timeout. The
  * route lives at `server/routes/instance/httpapi/groups/global.ts:68`
@@ -96,9 +98,9 @@ export const clearDaemonPort = Effect.fn("Cli.daemon-port.clear")(function* () {
  * the `ServerAuth.required(config) === false` short-circuit in the auth
  * middleware (`server/routes/instance/httpapi/middleware/authorization.ts:46`).
  *
- * On any error — connection refused, non-2xx response, timeout — returns
- * `false`. The caller is responsible for deleting the stale port file when
- * this returns false (see B0-B7).
+ * Returns `"alive"` for a healthy 2xx response, `"unauthorized"` for a 401
+ * response (caller must NOT delete the port file), and `"dead"` for any
+ * connection error, timeout, or other non-2xx response.
  */
 export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
   info: DaemonPort,
@@ -119,11 +121,19 @@ export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
         return undefined
       }
     })
-    return response?.ok === true
+    if (response === undefined) return "dead"
+    if (response.status === 401) return "unauthorized"
+    return response.ok ? "alive" : "dead"
   } finally {
     clearTimeout(timer)
   }
 })
+
+export class DaemonAuthError extends Schema.TaggedErrorClass<DaemonAuthError>()("CliDaemonAuthError", {
+  port: Schema.Int,
+}) {}
+
+export class DaemonSpawnTimeoutError extends Schema.TaggedErrorClass<DaemonSpawnTimeoutError>()("CliDaemonSpawnTimeoutError", {}) {}
 
 /**
  * Ensures a daemon is running and returns either the URL of an existing alive
@@ -157,9 +167,21 @@ export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
 export const spawnDaemonProcess = Effect.fn("Cli.daemon-port.spawn")(function* () {
   const portOpt = yield* readDaemonPort()
   if (Option.isSome(portOpt)) {
-    const alive = yield* isDaemonAlive(portOpt.value)
-    if (alive) {
+    const status = yield* isDaemonAlive(portOpt.value)
+    if (status === "alive") {
       return { type: "existing" as const, url: `http://127.0.0.1:${portOpt.value.port}` }
+    }
+    if (status === "unauthorized") {
+      return yield* new DaemonAuthError({ port: portOpt.value.port })
+    }
+    // Stale port file: the daemon at this port is not responding. Check whether
+    // the recorded PID still exists purely for diagnostics, then clear the file
+    // and start a fresh daemon.
+    try {
+      process.kill(portOpt.value.pid, 0)
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code !== "EPERM" && code !== "ESRCH") throw err
     }
     yield* clearDaemonPort()
   }
@@ -177,7 +199,23 @@ export const spawnDaemonProcess = Effect.fn("Cli.daemon-port.spawn")(function* (
   })
   proc.unref()
   fsSync.closeSync(logFd)
-  return { type: "spawned" as const, proc }
+
+  // Wait for the daemon to write its port file and become healthy.
+  const deadline = Date.now() + 10_000
+  while (Date.now() < deadline) {
+    yield* Effect.promise(() => new Promise<void>((resolve) => setTimeout(resolve, 200)))
+    const spawnedPort = yield* readDaemonPort()
+    if (Option.isNone(spawnedPort)) continue
+    const spawnedStatus = yield* isDaemonAlive(spawnedPort.value)
+    if (spawnedStatus === "alive") {
+      return { type: "existing" as const, url: `http://127.0.0.1:${spawnedPort.value.port}` }
+    }
+    if (spawnedStatus === "unauthorized") {
+      return yield* new DaemonAuthError({ port: spawnedPort.value.port })
+    }
+  }
+
+  return yield* new DaemonSpawnTimeoutError({})
 })
 
 export * as DaemonPort from "./daemon-port"
