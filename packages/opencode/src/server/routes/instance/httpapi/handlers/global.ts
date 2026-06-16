@@ -12,6 +12,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi"
 import * as Sse from "effect/unstable/encoding/Sse"
 import { RootHttpApi } from "../api"
 import { GlobalUpgradeInput } from "../groups/global"
+import { globalWebSocketHandler } from "./global-ws"
 
 function eventData(data: unknown): Sse.Event {
   return {
@@ -148,6 +149,7 @@ export const globalHandlers = HttpApiBuilder.group(RootHttpApi, "global", (handl
     return handlers
       .handle("health", health)
       .handleRaw("event", event)
+      .handleRaw("ws", globalWebSocketHandler)
       .handle("configGet", configGet)
       .handle("configUpdate", configUpdate)
       .handle("dispose", dispose)

@@ -67,6 +67,7 @@ const GlobalUpgradeResult = Schema.Union([
 export const GlobalPaths = {
   health: "/global/health",
   event: "/global/event",
+  ws: "/global/ws",
   config: "/global/config",
   dispose: "/global/dispose",
   upgrade: "/global/upgrade",
@@ -91,6 +92,15 @@ export const GlobalApi = HttpApi.make("global").add(
           identifier: "global.event",
           summary: "Get global events",
           description: "Subscribe to global events from the OpenCode system using server-sent events.",
+        }),
+      ),
+      HttpApiEndpoint.get("ws", GlobalPaths.ws, {
+        success: described(Schema.Boolean, "Connected session"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "global.ws",
+          summary: "Connect to global events",
+          description: "Establish a WebSocket connection to receive global events from the OpenCode system.",
         }),
       ),
       HttpApiEndpoint.get("configGet", GlobalPaths.config, {

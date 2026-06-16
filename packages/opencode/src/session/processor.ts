@@ -31,8 +31,10 @@ import { ProviderV2 } from "@opencode-ai/core/provider"
 import * as DateTime from "effect/DateTime"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ToolOutput, Usage, type LLMEvent } from "@opencode-ai/llm"
+import { processCraftMarkers } from "../../../../aiplus/memory"
 
 const DOOM_LOOP_THRESHOLD = 3
+const AIPLUS_AGENT_ROLE = process.env.AIPLUS_AGENT_ROLE
 export type Result = "compact" | "stop" | "continue"
 
 export interface Handle {
@@ -112,6 +114,13 @@ export const layer = Layer.effect(
       // may execute tools internally before emitting start-step events,
       // so capturing inside the event handler can be too late.
       const initialSnapshot = yield* snapshot.track()
+      // AiPlus agent memory: resolve projectRoot once per create so the
+      // 📓 craft-marker hook can fire-and-forget without re-querying.
+      // Falls back to globalThis.process.cwd() (Node global) — local
+      // `process` below shadows `process.cwd`.
+      const projectRoot = yield* session
+        .get(input.sessionID)
+        .pipe(Effect.map((info) => info.directory), Effect.orElseSucceed(() => globalThis.process.cwd()))
       const ctx: ProcessorContext = {
         assistantMessage: input.assistantMessage,
         sessionID: input.sessionID,
@@ -366,6 +375,18 @@ export const layer = Layer.effect(
           output:
             typeof value.result.value === "string" ? value.result.value : (JSON.stringify(value.result.value) ?? ""),
         }
+      }
+
+      // Fire-and-forget: scan finalized assistant text for 📓 craft markers
+      // and persist approved entries to .aiplus/agent-memory/<role>/memory.jsonl.
+      // Errors are caught so a craft-marker failure can never break a message.
+      const processCraftMarkersAsync = (text: string) => {
+        if (ctx.assistantMessage.summary) return
+        if (!text.trim()) return
+        Effect.try({
+          try: () => processCraftMarkers(projectRoot, text, { contextRole: AIPLUS_AGENT_ROLE }),
+          catch: (e) => new Error(`craft marker processing failed: ${e}`),
+        }).pipe(Effect.ignore, Effect.forkIn(scope))
       }
 
       const handleEvent = Effect.fnUntraced(function* (value: StreamEvent) {
@@ -834,6 +855,9 @@ export const layer = Layer.effect(
             }
             if (value.providerMetadata) ctx.currentText.metadata = value.providerMetadata
             yield* session.updatePart(ctx.currentText)
+            // AiPlus craft markers: scan the finalized text after commit.
+            // Fire-and-forget — processCraftMarkersAsync swallows its own errors.
+            processCraftMarkersAsync(ctx.currentText.text)
             ctx.currentText = undefined
             ctx.currentTextID = undefined
             return

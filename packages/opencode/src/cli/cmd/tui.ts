@@ -16,7 +16,7 @@ import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
 import { Effect, Option } from "effect"
 import { readDaemonPort, isDaemonAlive, clearDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
 import { ServerAuth } from "@/server/auth"
-import { createDaemonFetch, createSSEEventSource } from "../tui/daemon-transport"
+import { createDaemonFetch, createHybridEventSource } from "../tui/daemon-transport"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -190,7 +190,7 @@ export const TuiThreadCommand = cmd({
         const transport = {
           url: daemon.url,
           fetch: createDaemonFetch(daemon.url, daemon.auth),
-          events: createSSEEventSource(daemon.url, daemon.auth),
+          events: createHybridEventSource(daemon.url, daemon.auth),
         }
         try {
           await validateSession({
@@ -329,4 +329,3 @@ export const TuiThreadCommand = cmd({
     process.exit(0)
   },
 })
-// scratch
