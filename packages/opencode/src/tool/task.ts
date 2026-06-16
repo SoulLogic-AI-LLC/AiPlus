@@ -233,10 +233,10 @@ export const TaskTool = Tool.define(
 
       // CEO-specified model overrides agent default and parent inheritance
       const MODEL_MAP: Record<string, { modelID: typeof msg.info.modelID; providerID: typeof msg.info.providerID }> = {
-        "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "mimo-v2.5-pro": { modelID: "xiaomi/mimo-v2.5-pro" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
+        "deepseek-v4-pro": { modelID: "deepseek/deepseek-v4-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "deepseek-v4-flash": { modelID: "deepseek/deepseek-v4-flash" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "mimo-v2.5-pro": { modelID: "xiaomi/mimo-v2.5-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "minimax-m3": { modelID: "minimax/minimax-m3" as typeof msg.info.modelID, providerID: msg.info.providerID },
       }
       if (params.model === "gpt-5.4") {
         yield* ctx.ask({
@@ -250,7 +250,7 @@ export const TaskTool = Tool.define(
         })
       }
       const model = params.model
-        ? MODEL_MAP[params.model] ?? { modelID: params.model as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID }
+        ? MODEL_MAP[params.model] ?? { modelID: params.model as typeof msg.info.modelID, providerID: msg.info.providerID }
         : next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID }
       const metadata = {
         parentSessionId: ctx.sessionID,
