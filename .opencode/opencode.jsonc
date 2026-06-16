@@ -2,8 +2,15 @@
   "$schema": "https://opencode.ai/config.json",
   "provider": {},
   "permission": {
+    "task": "allow",
+    "edit": "allow",
+    "write": "allow",
+    "bash": "allow",
     "external_directory": {
       "~/Projects/AiPlus-Native/**": "allow",
+      "~/.opencode/**": "allow",
+      "~/.local/share/opencode/**": "allow",
+      "/tmp/**": "allow",
       "~/Projects/AiPlus-Native/**/.env": "deny",
       "~/Projects/AiPlus-Native/**/*.key": "deny",
       "~/Projects/AiPlus-Native/**/*.pem": "deny",
