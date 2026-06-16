@@ -1,15 +1,9 @@
 import { cmd } from "@/cli/cmd/cmd"
-import { Rpc } from "@/util/rpc"
-import { type rpc } from "../tui/worker"
-import path from "path"
-import { fileURLToPath } from "url"
 import { UI } from "@/cli/ui"
 import { errorMessage } from "@opencode-ai/tui/util/error"
-import { withTimeout } from "@/util/timeout"
-import { withNetworkOptions, resolveNetworkOptionsNoConfig } from "@/cli/network"
 import { Filesystem } from "@/util/filesystem"
-import type { GlobalEvent } from "@opencode-ai/sdk/v2"
-import type { EventSource } from "@opencode-ai/tui/context/sdk"
+import { withNetworkOptions } from "@/cli/network"
+import path from "path"
 import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
@@ -17,47 +11,6 @@ import { Effect, Option } from "effect"
 import { readDaemonPort, isDaemonAlive, clearDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
 import { ServerAuth } from "@/server/auth"
 import { createDaemonFetch, createHybridEventSource } from "../tui/daemon-transport"
-
-declare global {
-  const OPENCODE_WORKER_PATH: string
-}
-
-type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
-
-function createWorkerFetch(client: RpcClient): typeof fetch {
-  const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const request = new Request(input, init)
-    const body = request.body ? await request.text() : undefined
-    const result = await client.call("fetch", {
-      url: request.url,
-      method: request.method,
-      headers: Object.fromEntries(request.headers.entries()),
-      body,
-    })
-    return new Response(result.body, {
-      status: result.status,
-      headers: result.headers,
-    })
-  }
-  return fn as typeof fetch
-}
-
-function createEventSource(client: RpcClient): EventSource {
-  return {
-    subscribe: async (handler) => {
-      return client.on<GlobalEvent>("global.event", (e) => {
-        handler(e)
-      })
-    },
-  }
-}
-
-async function target() {
-  if (typeof OPENCODE_WORKER_PATH !== "undefined") return OPENCODE_WORKER_PATH
-  const dist = new URL("./cli/tui/worker.js", import.meta.url)
-  if (await Filesystem.exists(fileURLToPath(dist))) return dist
-  return new URL("../tui/worker.ts", import.meta.url)
-}
 
 async function input(value?: string) {
   const piped = process.stdin.isTTY ? undefined : await Bun.stdin.text()
@@ -74,13 +27,16 @@ export function resolveThreadDirectory(project?: string, envPWD = process.env.PW
 
 async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | undefined } | null> {
   let mode = process.env.OPENCODE_DAEMON_MODE ?? "auto"
-  if (mode === "off") return null
 
-  if (mode !== "auto" && mode !== "0" && mode !== "force" && mode !== "1") {
+  if (mode !== "auto" && mode !== "0" && mode !== "force" && mode !== "1" && mode !== "off") {
     console.warn(`unknown OPENCODE_DAEMON_MODE=${mode}, treating as auto`)
   }
   if (mode === "1") mode = "force"
   if (mode === "0") mode = "auto"
+  if (mode === "off") {
+    console.warn("OPENCODE_DAEMON_MODE=off is no longer supported; TUI now requires a daemon")
+    mode = "auto"
+  }
 
   const portOpt = await Effect.runPromise(readDaemonPort())
   if (Option.isNone(portOpt)) {
@@ -97,7 +53,7 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
           if (Option.isSome(p) && (await Effect.runPromise(isDaemonAlive(p.value))) === "alive")
             return { url: `http://127.0.0.1:${p.value.port}`, auth: ServerAuth.header() }
         }
-        console.warn("warning: daemon auto-start timed out; falling back to standalone mode")
+        console.warn("warning: daemon auto-start timed out")
       } catch (e) {
         console.error("failed to auto-start daemon:", e)
       }
@@ -180,10 +136,7 @@ export const TuiThreadCommand = cmd({
         return
       }
 
-      // Resolve relative --project paths from PWD, then use the real cwd after
-      // chdir so the thread and worker share the same directory key.
       const next = resolveThreadDirectory(args.project)
-      const file = await target()
       try {
         process.chdir(next)
       } catch {
@@ -193,93 +146,17 @@ export const TuiThreadCommand = cmd({
       const cwd = Filesystem.resolve(process.cwd())
 
       const daemon = await detectAndConnectDaemon()
-      if (daemon) {
-        const transport = {
-          url: daemon.url,
-          fetch: createDaemonFetch(daemon.url, daemon.auth),
-          events: createHybridEventSource(daemon.url, daemon.auth),
-        }
-        try {
-          await validateSession({
-            url: transport.url,
-            sessionID: args.session,
-            directory: cwd,
-            fetch: transport.fetch,
-          })
-        } catch (error) {
-          UI.error(errorMessage(error))
-          process.exitCode = 1
-          return
-        }
-        try {
-          const { run } = await import("../tui/layer")
-          const { createLegacyTuiPluginHost } = await import("@/plugin/tui/runtime")
-          await Effect.runPromise(
-            run({
-              url: transport.url,
-              async onSnapshot() {
-                return [writeHeapSnapshot("tui.heapsnapshot")]
-              },
-              config: await TuiConfig.get(),
-              pluginHost: createLegacyTuiPluginHost(),
-              directory: cwd,
-              fetch: transport.fetch,
-              events: transport.events,
-              args: {
-                continue: args.continue,
-                sessionID: args.session,
-                agent: args.agent,
-                model: args.model,
-                prompt: await input(args.prompt),
-                fork: args.fork,
-              },
-            }),
-          )
-        } finally {
-          // Daemon lifecycle is independent in Phase 1 — no shutdown call.
-        }
+      if (!daemon) {
+        UI.error("无法连接或启动 daemon。请手动运行：opencode daemon")
+        process.exitCode = 1
         return
       }
 
-      const worker = new Worker(file)
-      const client = Rpc.client<typeof rpc>(worker)
-      const reload = () => {
-        client.call("reload", undefined).catch(() => {})
+      const transport = {
+        url: daemon.url,
+        fetch: createDaemonFetch(daemon.url, daemon.auth),
+        events: createHybridEventSource(daemon.url, daemon.auth),
       }
-      process.on("SIGUSR2", reload)
-
-      let stopped = false
-      const stop = async () => {
-        if (stopped) return
-        stopped = true
-        process.off("SIGUSR2", reload)
-        await withTimeout(client.call("shutdown", undefined), 5000).catch(() => {})
-        worker.terminate()
-      }
-
-      const prompt = await input(args.prompt)
-      const config = await TuiConfig.get()
-
-      const network = resolveNetworkOptionsNoConfig(args)
-      const external =
-        process.argv.includes("--port") ||
-        process.argv.includes("--hostname") ||
-        process.argv.includes("--mdns") ||
-        network.mdns ||
-        network.port !== 0 ||
-        network.hostname !== "127.0.0.1"
-
-      const transport = external
-        ? {
-            url: (await client.call("server", network)).url,
-            fetch: undefined,
-            events: undefined,
-          }
-        : {
-            url: "http://opencode.internal",
-            fetch: createWorkerFetch(client),
-            events: createEventSource(client),
-          }
 
       try {
         await validateSession({
@@ -294,23 +171,16 @@ export const TuiThreadCommand = cmd({
         return
       }
 
-      setTimeout(() => {
-        client.call("checkUpgrade", { directory: cwd }).catch(() => {})
-      }, 1000).unref?.()
-
       try {
-        const { Effect } = await import("effect")
         const { run } = await import("../tui/layer")
         const { createLegacyTuiPluginHost } = await import("@/plugin/tui/runtime")
         await Effect.runPromise(
           run({
             url: transport.url,
             async onSnapshot() {
-              const tui = writeHeapSnapshot("tui.heapsnapshot")
-              const server = await client.call("snapshot", undefined)
-              return [tui, server]
+              return [writeHeapSnapshot("tui.heapsnapshot")]
             },
-            config,
+            config: await TuiConfig.get(),
             pluginHost: createLegacyTuiPluginHost(),
             directory: cwd,
             fetch: transport.fetch,
@@ -320,19 +190,18 @@ export const TuiThreadCommand = cmd({
               sessionID: args.session,
               agent: args.agent,
               model: args.model,
-              prompt,
+              prompt: await input(args.prompt),
               fork: args.fork,
             },
           }),
         )
       } finally {
-        await stop()
+        // Daemon lifecycle is independent in Phase 1 — no shutdown call.
       }
     } finally {
       try {
         unguard?.()
       } catch {}
     }
-    process.exit(0)
   },
 })
