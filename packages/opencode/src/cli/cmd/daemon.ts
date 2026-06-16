@@ -1,7 +1,7 @@
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import { effectCmd } from "../effect-cmd"
 import { Heap } from "@/cli/heap"
-import { clearDaemonPort, writeDaemonPort } from "@/cli/daemon-port"
+import { clearDaemonPort, writeDaemonPort, readDaemonPort, isDaemonAlive } from "@/cli/daemon-port"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import type { Listener } from "../../server/server"
@@ -32,6 +32,15 @@ export const DaemonCommand = effectCmd({
 
     if (!Flag.OPENCODE_SERVER_PASSWORD) {
       process.stderr.write("Warning: OPENCODE_SERVER_PASSWORD is not set; daemon is unsecured.\n")
+    }
+
+    const existingPort = yield* readDaemonPort()
+    if (Option.isSome(existingPort)) {
+      const alive = yield* isDaemonAlive(existingPort.value)
+      if (alive) {
+        process.stderr.write(`daemon already running on port ${existingPort.value.port}\n`)
+        return
+      }
     }
 
     // port: 0 → 4096-preferred behavior (B0-B3 / V1). The actual port is reported

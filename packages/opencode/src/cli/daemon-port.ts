@@ -126,6 +126,10 @@ export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
 })
 
 /**
+ * Ensures a daemon is running and returns either the URL of an existing alive
+ * daemon or the spawned child process. Prevents duplicate daemon spawns by
+ * checking the port file and probing health before starting a new process.
+ *
  * Spawns the daemon as a detached process whose stdio is drained to
  * `Global.Path.log/daemon.log`. This prevents the pipe-buffer deadlock that
  * happens when a child process with `stdio: "inherit"` (or a fully-buffered
@@ -150,7 +154,16 @@ export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
  * tightly coupled to the daemon-port file location, and there is no other
  * consumer in B1. Promote to its own file only if a third caller appears.
  */
-export function spawnDaemonProcess(): ChildProcess {
+export const spawnDaemonProcess = Effect.fn("Cli.daemon-port.spawn")(function* () {
+  const portOpt = yield* readDaemonPort()
+  if (Option.isSome(portOpt)) {
+    const alive = yield* isDaemonAlive(portOpt.value)
+    if (alive) {
+      return { type: "existing" as const, url: `http://127.0.0.1:${portOpt.value.port}` }
+    }
+    yield* clearDaemonPort()
+  }
+
   const logDir = Global.Path.log
   fsSync.mkdirSync(logDir, { recursive: true })
   const logPath = path.join(logDir, "daemon.log")
@@ -164,7 +177,7 @@ export function spawnDaemonProcess(): ChildProcess {
   })
   proc.unref()
   fsSync.closeSync(logFd)
-  return proc
-}
+  return { type: "spawned" as const, proc }
+})
 
 export * as DaemonPort from "./daemon-port"

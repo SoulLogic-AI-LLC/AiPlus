@@ -86,7 +86,10 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
   if (Option.isNone(portOpt)) {
     if (mode === "auto" || mode === "0" || !mode) {
       try {
-        spawnDaemonProcess()
+        const spawned = await Effect.runPromise(spawnDaemonProcess())
+        if (spawned.type === "existing") {
+          return { url: spawned.url, auth: ServerAuth.header() }
+        }
         const deadline = Date.now() + 15000
         while (Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 500))
