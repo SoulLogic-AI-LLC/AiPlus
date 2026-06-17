@@ -9,6 +9,7 @@
 - **Phase 1**: Daemon extraction — `opencode daemon` command, dual-mode transport (daemon + standalone), TUI auto-detection, port file management
 - **Phase 2**: WebSocket upgrade — `/global/ws` route, message protocol, TUI WebSocket client with SSE fallback, streaming switchover
 - **Phase 3**: TUI slimming — Worker fallback mode removed, ConfigService dependency cut from TUI, auth-header split, runtime cleanup (~58% memory reduction)
+- `worker.ts` reintroduction via upstream `origin/dev` merge is expected upstream-merge behavior, not an AiPlus regression (TUI runtime path remains ConfigService-free)
 - Launchd auto-restart watchdog (3s crash recovery, auto-start at login/reboot)
 - install.sh auto-installs launchd plist (zero user setup)
 - Daemon alive-status three-state detection (alive/unauthorized/dead)
