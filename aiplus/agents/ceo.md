@@ -16,7 +16,31 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "cargo*|aiplus*|gh pr create|gh pr merge|gh pr view|gh release create|git push origin feat/*|git tag|git branch feat/*"
+    pattern: "cargo*"
+    action: allow
+  - permission: "bash"
+    pattern: "aiplus*"
+    action: allow
+  - permission: "bash"
+    pattern: "gh pr create"
+    action: allow
+  - permission: "bash"
+    pattern: "gh pr merge"
+    action: allow
+  - permission: "bash"
+    pattern: "gh pr view"
+    action: allow
+  - permission: "bash"
+    pattern: "gh release create"
+    action: allow
+  - permission: "bash"
+    pattern: "git push origin feat/*"
+    action: allow
+  - permission: "bash"
+    pattern: "git tag"
+    action: allow
+  - permission: "bash"
+    pattern: "git branch feat/*"
     action: allow
   - permission: "write"
     pattern: "*"

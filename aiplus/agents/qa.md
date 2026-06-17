@@ -13,7 +13,34 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "cargo*|npm*|pnpm*|curl*|git log|git diff|git show|git status|git rev-parse|git blame"
+    pattern: "cargo*"
+    action: allow
+  - permission: "bash"
+    pattern: "npm*"
+    action: allow
+  - permission: "bash"
+    pattern: "pnpm*"
+    action: allow
+  - permission: "bash"
+    pattern: "curl*"
+    action: allow
+  - permission: "bash"
+    pattern: "git log"
+    action: allow
+  - permission: "bash"
+    pattern: "git diff"
+    action: allow
+  - permission: "bash"
+    pattern: "git show"
+    action: allow
+  - permission: "bash"
+    pattern: "git status"
+    action: allow
+  - permission: "bash"
+    pattern: "git rev-parse"
+    action: allow
+  - permission: "bash"
+    pattern: "git blame"
     action: allow
   - permission: "write"
     pattern: "*"
