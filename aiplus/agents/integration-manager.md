@@ -13,7 +13,34 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "git merge*|git cherry-pick*|git log*|git diff*|git show*|git status*|git rev-parse*|git worktree*|git branch*|git fetch*"
+    pattern: "git merge*"
+    action: allow
+  - permission: "bash"
+    pattern: "git cherry-pick*"
+    action: allow
+  - permission: "bash"
+    pattern: "git log*"
+    action: allow
+  - permission: "bash"
+    pattern: "git diff*"
+    action: allow
+  - permission: "bash"
+    pattern: "git show*"
+    action: allow
+  - permission: "bash"
+    pattern: "git status*"
+    action: allow
+  - permission: "bash"
+    pattern: "git rev-parse*"
+    action: allow
+  - permission: "bash"
+    pattern: "git worktree*"
+    action: allow
+  - permission: "bash"
+    pattern: "git branch*"
+    action: allow
+  - permission: "bash"
+    pattern: "git fetch*"
     action: allow
   - permission: "write"
     pattern: "*"

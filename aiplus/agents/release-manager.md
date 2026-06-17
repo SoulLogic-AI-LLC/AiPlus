@@ -13,7 +13,25 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "gh pr view*|gh run view*|gh release view*|git log*|git diff*|git show*|git status*"
+    pattern: "gh pr view*"
+    action: allow
+  - permission: "bash"
+    pattern: "gh run view*"
+    action: allow
+  - permission: "bash"
+    pattern: "gh release view*"
+    action: allow
+  - permission: "bash"
+    pattern: "git log*"
+    action: allow
+  - permission: "bash"
+    pattern: "git diff*"
+    action: allow
+  - permission: "bash"
+    pattern: "git show*"
+    action: allow
+  - permission: "bash"
+    pattern: "git status*"
     action: allow
   - permission: "write"
     pattern: "*"

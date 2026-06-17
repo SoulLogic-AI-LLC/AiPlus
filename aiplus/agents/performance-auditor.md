@@ -13,7 +13,19 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "aiplus velocity*|aiplus agent*|git log*|git diff*|git show*"
+    pattern: "aiplus velocity*"
+    action: allow
+  - permission: "bash"
+    pattern: "aiplus agent*"
+    action: allow
+  - permission: "bash"
+    pattern: "git log*"
+    action: allow
+  - permission: "bash"
+    pattern: "git diff*"
+    action: allow
+  - permission: "bash"
+    pattern: "git show*"
     action: allow
   - permission: "write"
     pattern: "*"
