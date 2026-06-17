@@ -109,6 +109,25 @@ export const DaemonCommand = effectCmd({
       }
     }).pipe(Effect.forkDetach)
 
+    // Heap monitor: check memory every 30 minutes. If daemon leaks past
+    // 1.5 GB, log a warning and exit gracefully — launchd restarts a fresh
+    // daemon at 160 MB baseline. Configurable via env vars.
+    yield* Effect.gen(function* () {
+      const intervalMs = Number(process.env.OPENCODE_DAEMON_HEAP_CHECK_MS ?? "1800000") // 30 min
+      const limitBytes = Number(process.env.OPENCODE_DAEMON_HEAP_LIMIT_MB ?? "1536") * 1024 * 1024 // 1.5 GB
+      while (true) {
+        yield* Effect.sleep(intervalMs)
+        const used = process.memoryUsage().heapUsed
+        if (used > limitBytes) {
+          process.stderr.write(
+            `[daemon] heap ${(used / 1024 / 1024).toFixed(0)} MB exceeds limit ` +
+              `${(limitBytes / 1024 / 1024).toFixed(0)} MB; restarting\n`,
+          )
+          yield* lifecycle.shutdown
+        }
+      }
+    }).pipe(Effect.forkDetach)
+
     let shuttingDown = false
     const onSignal = () => {
       if (shuttingDown) return
