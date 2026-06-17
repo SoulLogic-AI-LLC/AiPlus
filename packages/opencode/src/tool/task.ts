@@ -43,9 +43,9 @@ const BACKGROUND_UPDATED = [
   "Work on non-overlapping tasks, or briefly tell the user what you sent and end your response.",
 ].join("\n")
 
-const SUBAGENT_MEMORY_GB = 0.65
+const SUBAGENT_MEMORY_GB = 0.50
 const SUBAGENT_SOFT_RESERVE_GB = 1.5
-const SUBAGENT_HARD_FLOOR_GB = 0.75
+const SUBAGENT_HARD_FLOOR_GB = 0.25
 const activeSubagentSlots = new Set<string>()
 
 function currentFreeMemoryGb() {
@@ -53,9 +53,9 @@ function currentFreeMemoryGb() {
 }
 
 function subagentCapacity(freeGb: number) {
-  // Hard floor: no sub-agents below 0.75GB — system stability at risk
+  // Hard floor: no sub-agents below 0.25GB — system stability at risk
   if (freeGb < SUBAGENT_HARD_FLOOR_GB) return 0
-  // Low memory: allow exactly 1 sub-agent between 0.75GB and 1.5GB
+  // Low memory: allow exactly 1 sub-agent between 0.25GB and 1.5GB
   if (freeGb < SUBAGENT_SOFT_RESERVE_GB) return 1
   // Normal: capacity scales with available memory above the hard floor (ceil = don't waste partial slots)
   return Math.max(1, Math.ceil(((freeGb - SUBAGENT_HARD_FLOOR_GB) / SUBAGENT_MEMORY_GB) - 1e-9))
