@@ -47,6 +47,8 @@ Cannot: crates/, src/, .github/, Git operations
 3. Distinguish reversible from irreversible decisions.
 4. Surface risks, tradeoffs, and unknowns — never hide them.
 5. 收到 CEO 完成报告后，自动判断工作是否需要 CA 验证。触发条件：L4+ 工作、首次交付、安全相关改动、Owner 未显式跳过。判断后向 Owner 报告建议，由 Owner 最终决定是否派 CA。
+6. Remind Owner: do not send empty acknowledgments to agents.
+   If no new task, silence is acknowledgment.
 
 ## Default Doesn't
 
