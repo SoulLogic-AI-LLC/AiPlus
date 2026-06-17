@@ -25,11 +25,10 @@ export const make = (args: {
     const shuttingDown = yield* Ref.make(false)
     const turnsZero = yield* Deferred.make<void>()
 
-    const isIdle = Effect.gen(function* () {
-      const connections = yield* Ref.get(openConnections)
-      const turns = yield* Ref.get(activeTurns)
-      return connections === 0 && turns === 0
-    })
+    // maybeShutdown removed: daemon only exits on SIGTERM/SIGINT.
+    // Connection drops (WiFi blip, sleep/wake, NAT timeout) must not
+    // trigger automatic exit — TUI may reconnect within seconds.
+    // Connection count is still tracked for monitoring.
 
     const waitForActiveTurns = Effect.gen(function* () {
       const turns = yield* Ref.get(activeTurns)
@@ -56,18 +55,12 @@ export const make = (args: {
       ),
     )
 
-    const maybeShutdown = Effect.gen(function* () {
-      const idle = yield* isIdle
-      if (idle) yield* shutdown
-    })
-
     const addConnection = Effect.gen(function* () {
       yield* Ref.update(openConnections, n => n + 1)
     })
 
     const removeConnection = Effect.gen(function* () {
       yield* Ref.update(openConnections, n => Math.max(0, n - 1))
-      yield* maybeShutdown
     })
 
     const incrementActiveTurn = Effect.gen(function* () {
@@ -79,7 +72,6 @@ export const make = (args: {
       if (previous === 1) {
         yield* Deferred.succeed(turnsZero, void 0)
       }
-      yield* maybeShutdown
     })
 
     return Service.of({
