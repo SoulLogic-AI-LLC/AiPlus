@@ -10,17 +10,17 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
     pattern: "gh pr view*|gh run view*|gh release view*|git log*|git diff*|git show*|git status*"
     action: allow
-  - permission: "bash"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/release-manager/**"
     action: allow
-  - permission: "write"
-    pattern: "*"
-    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

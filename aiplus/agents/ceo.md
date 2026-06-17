@@ -7,15 +7,18 @@ permission:
     pattern: "*"
     action: deny
   - permission: "task"
+    pattern: "*"
+    action: deny
+  - permission: "task"
     pattern: "agent-team-*"
     action: allow
-  - permission: "task"
+  - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "bash"
     pattern: "cargo*|aiplus*|gh pr create|gh pr merge|gh pr view|gh release create|git push origin feat/*|git tag|git branch feat/*"
     action: allow
-  - permission: "bash"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "write"
@@ -24,9 +27,6 @@ permission:
   - permission: "write"
     pattern: ".aiplus/agent-memory/_team/**"
     action: allow
-  - permission: "write"
-    pattern: "*"
-    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

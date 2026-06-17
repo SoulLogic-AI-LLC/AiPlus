@@ -10,17 +10,17 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
     pattern: "aiplus velocity*|aiplus agent*|git log*|git diff*|git show*"
     action: allow
-  - permission: "bash"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/performance-auditor/**"
     action: allow
-  - permission: "write"
-    pattern: "*"
-    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

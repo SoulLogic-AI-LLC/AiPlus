@@ -10,17 +10,17 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
     pattern: "cargo*|npm*|pnpm*|curl*|git log|git diff|git show|git status|git rev-parse|git blame"
     action: allow
-  - permission: "bash"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/qa/**"
     action: allow
-  - permission: "write"
-    pattern: "*"
-    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

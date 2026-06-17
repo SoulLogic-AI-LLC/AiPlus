@@ -10,9 +10,12 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
+    pattern: "*"
+    action: deny
+  - permission: "bash"
     pattern: "cargo*|npm*|pnpm*|git add*|git commit*|git diff*|git log*|git show*|git status*|git rev-parse*|git branch*|grep*|rg*|bun*"
     action: allow
-  - permission: "bash"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "write"
@@ -36,7 +39,7 @@ permission:
   - permission: "write"
     pattern: "*.json"
     action: allow
-  - permission: "write"
+  - permission: "edit"
     pattern: "*"
     action: deny
   - permission: "edit"
@@ -57,9 +60,6 @@ permission:
   - permission: "edit"
     pattern: "*.json"
     action: allow
-  - permission: "edit"
-    pattern: "*"
-    action: deny
 ---
 
 # Engineer B — AiPlus Agent Team
