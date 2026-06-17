@@ -22,22 +22,22 @@ permission:
     pattern: "aiplus*"
     action: allow
   - permission: "bash"
-    pattern: "gh pr create"
+    pattern: "gh pr create*"
     action: allow
   - permission: "bash"
-    pattern: "gh pr merge"
+    pattern: "gh pr merge*"
     action: allow
   - permission: "bash"
-    pattern: "gh pr view"
+    pattern: "gh pr view*"
     action: allow
   - permission: "bash"
-    pattern: "gh release create"
+    pattern: "gh release create*"
     action: allow
   - permission: "bash"
     pattern: "git push origin feat/*"
     action: allow
   - permission: "bash"
-    pattern: "git tag"
+    pattern: "git tag*"
     action: allow
   - permission: "bash"
     pattern: "git branch feat/*"
