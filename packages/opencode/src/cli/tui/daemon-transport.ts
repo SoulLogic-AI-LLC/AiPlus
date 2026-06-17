@@ -1,8 +1,9 @@
 import { createOpencodeClient } from "@opencode-ai/sdk/v2"
 import type { GlobalEvent } from "@opencode-ai/sdk/v2"
 import type { EventSource } from "@opencode-ai/tui/context/sdk"
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import WebSocket from "ws"
+import { readDaemonPort, isDaemonAlive, type DaemonPort } from "@/cli/daemon-port"
 import {
   decodeWsMessage,
   encodeWsMessage,
@@ -95,13 +96,14 @@ function toWebSocketUrl(baseUrl: string) {
 export function createWebSocketEventSource(baseUrl: string, auth: string | undefined): EventSource {
   return {
     subscribe: async (handler) => {
-      const wsUrl = `${toWebSocketUrl(baseUrl)}/global/ws`
+      let wsUrl = `${toWebSocketUrl(baseUrl)}/global/ws`
       const intervalMs = heartbeatIntervalMs()
       let active = true
       let socket: WebSocket | undefined
       let reconnectTimer: ReturnType<typeof setTimeout> | undefined
       let heartbeatTimer: ReturnType<typeof setInterval> | undefined
       let attempt = 0
+      let lastKnownPort: number | undefined
 
       const send = (message: WsMessage) => {
         if (socket?.readyState === WebSocket.OPEN) {
@@ -194,12 +196,25 @@ export function createWebSocketEventSource(baseUrl: string, auth: string | undef
         startHeartbeat(ws)
       }
 
+      const rediscoverDaemonUrl = async (): Promise<string | undefined> => {
+        const portOpt = await Effect.runPromise(readDaemonPort())
+        if (Option.isNone(portOpt)) return undefined
+        const info: DaemonPort = portOpt.value
+        if (info.port === lastKnownPort) return undefined
+        const alive = await Effect.runPromise(isDaemonAlive(info))
+        if (alive !== "alive") return undefined
+        lastKnownPort = info.port
+        return `${toWebSocketUrl(`http://127.0.0.1:${info.port}`)}/global/ws`
+      }
+
       const scheduleReconnect = () => {
         if (!active || reconnectTimer) return
         attempt += 1
         const delay = Math.min(INITIAL_RETRY_DELAY_MS * 2 ** (attempt - 1), MAX_RETRY_DELAY_MS)
-        reconnectTimer = setTimeout(() => {
+        reconnectTimer = setTimeout(async () => {
           reconnectTimer = undefined
+          const rediscovered = await rediscoverDaemonUrl()
+          if (rediscovered) wsUrl = rediscovered
           connect().then(attach).catch(() => scheduleReconnect())
         }, delay)
       }
