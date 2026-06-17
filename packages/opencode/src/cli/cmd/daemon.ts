@@ -6,6 +6,9 @@ import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { EventCleanup } from "@/event-cleanup"
+import { Database } from "@opencode-ai/core/database/database"
+import { ProjectTable } from "@opencode-ai/core/project/sql"
+import { cleanupStale } from "@/worktree-cleanup"
 import type { Listener } from "../../server/server"
 
 export const DaemonCommand = effectCmd({
@@ -67,6 +70,33 @@ export const DaemonCommand = effectCmd({
     // Run event table cleanup once at startup (dedup + 30-day TTL).
     // Fork detaches so it never blocks daemon readiness or shutdown.
     yield* EventCleanup.compactAndCleanup().pipe(Effect.forkDetach)
+
+    // Run worktree cleanup once at startup — detect and remove stale worktrees
+    // for branches already merged into origin/dev or deleted from remote.
+    yield* Effect.gen(function* () {
+      const { db } = yield* Database.Service
+      const rows = yield* db
+        .select({ worktree: ProjectTable.worktree })
+        .from(ProjectTable)
+        .all()
+        .pipe(Effect.orDie)
+
+      const seen = new Set<string>()
+      for (const row of rows) {
+        const repoRoot = row.worktree as string
+        if (!repoRoot || seen.has(repoRoot)) continue
+        seen.add(repoRoot)
+        yield* Effect.sync(() => {
+          const result = cleanupStale(repoRoot)
+          if (result.removed.length > 0) {
+            console.log(`[worktree-cleanup] removed ${result.removed.length} stale worktree(s) for ${repoRoot}`)
+          }
+          if (result.failed.length > 0) {
+            console.log(`[worktree-cleanup] failed to remove ${result.failed.length} worktree(s) for ${repoRoot}`)
+          }
+        })
+      }
+    }).pipe(Effect.forkDetach)
 
     let shuttingDown = false
     const onSignal = () => {
