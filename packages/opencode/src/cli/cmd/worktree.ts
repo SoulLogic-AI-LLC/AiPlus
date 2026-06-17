@@ -1,5 +1,6 @@
 import { cmd } from "./cmd"
 import { acquire, fencingCheck, list, release, renew } from "../../../../../aiplus/worktree"
+import { cleanupStale, formatResult } from "@/worktree-cleanup"
 
 export const WorktreeCommand = cmd({
   command: "worktree",
@@ -116,6 +117,21 @@ export const WorktreeCommand = cmd({
           console.log(["AiPlus Worktree Release", `  sessionId: ${args.sessionId as string}`].join("\n"))
         },
       )
-      .demandCommand(1, "subcommand required: status | check | acquire | renew | release"),
+      .command(
+        "clean",
+        "detect and remove stale worktrees (merged/deleted branches)",
+        (yargs) =>
+          yargs.option("dry-run", {
+            type: "boolean",
+            default: false,
+            describe: "list stale worktrees without removing them",
+          }),
+        async (args) => {
+          const dryRun = args.dryRun === true
+          const result = cleanupStale(process.cwd(), dryRun)
+          console.log(formatResult(result, dryRun))
+        },
+      )
+      .demandCommand(1, "subcommand required: status | check | acquire | renew | release | clean"),
   async handler() {},
 })
