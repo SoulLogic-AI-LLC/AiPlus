@@ -110,7 +110,7 @@ const BaseParameterFields = {
   command: Schema.optional(Schema.String).annotate({ description: "The command that triggered this task" }),
   model: Schema.optional(Schema.String).annotate({
     description:
-      "Override the model for this task. Valid values: deepseek-v4-pro, deepseek-v4-flash, mimo-v2.5-pro, minimax-m3. If not specified, uses the agent default or parent model.",
+      "Override the model for this task. Valid values: deepseek-v4-pro, deepseek-v4-flash, deepseek-chat, minimax-m3, minimax-m2.7, mimo-v2.5, mimo-v2.5-pro, kimi-k2.7-code, kimi-k2.6, glm-5.1, glm-5, qwen3.7-max, qwen3.7-plus, qwen3.6-plus, gemini-2.5-flash, gemini-2.0-flash, llama-4-maverick, llama-3.3-70b, mistral-small. If not specified, uses the agent default or parent model.",
   }),
   effort: Schema.optional(Schema.String).annotate({
     description: "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
