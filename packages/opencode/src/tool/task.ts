@@ -48,6 +48,37 @@ const SUBAGENT_SOFT_RESERVE_GB = 1.5
 const SUBAGENT_HARD_FLOOR_GB = 0.25
 const activeSubagentSlots = new Set<string>()
 
+// MODEL_MAP at module scope so the parameter description stays in sync.
+const MODEL_MAP: Record<string, { modelID: string; providerID: string }> = {
+  "deepseek-v4-pro": { modelID: "deepseek-v4-pro", providerID: "deepseek" },
+  "deepseek-v4-flash": { modelID: "deepseek-v4-flash", providerID: "deepseek" },
+  "deepseek-chat": { modelID: "deepseek-chat", providerID: "deepseek" },
+  "minimax-m3": { modelID: "minimax-m3", providerID: "minimax-coding-plan" },
+  "minimax-m2.7": { modelID: "minimax-m2.7", providerID: "minimax-coding-plan" },
+  "mimo-v2.5": { modelID: "mimo-v2.5", providerID: "opencode-go" },
+  "mimo-v2.5-pro": { modelID: "mimo-v2.5-pro", providerID: "opencode-go" },
+  "kimi-k2.7-code": { modelID: "kimi-k2.7-code", providerID: "opencode-go" },
+  "kimi-k2.6": { modelID: "kimi-k2.6", providerID: "opencode-go" },
+  "glm-5.1": { modelID: "glm-5.1", providerID: "zai-coding-plan" },
+  "glm-5": { modelID: "glm-5", providerID: "zai-coding-plan" },
+  "qwen3.7-max": { modelID: "qwen3.7-max", providerID: "opencode-go" },
+  "qwen3.7-plus": { modelID: "qwen3.7-plus", providerID: "opencode-go" },
+  "qwen3.6-plus": { modelID: "qwen3.6-plus", providerID: "opencode-go" },
+  "gemini-2.5-flash-direct": { modelID: "gemini-2.5-flash", providerID: "google" },
+  "gemini-3.5-flash-direct": { modelID: "gemini-3.5-flash", providerID: "google" },
+  "groq-llama-3.3-70b": { modelID: "llama-3.3-70b-versatile", providerID: "groq" },
+  "openrouter-deepseek-v3": { modelID: "deepseek/deepseek-chat-v3", providerID: "openrouter" },
+  "openrouter-qwen-coder-32b": { modelID: "qwen/qwen-2.5-coder-32b-instruct", providerID: "openrouter" },
+  "openrouter-llama-3.3-70b": { modelID: "meta-llama/llama-3.3-70b-instruct", providerID: "openrouter" },
+  "openrouter-auto": { modelID: "openrouter/auto", providerID: "openrouter" },
+  // Free tier (opencode-go)
+  "gemini-2.5-flash": { modelID: "gemini-2.5-flash", providerID: "opencode-go" },
+  "gemini-2.0-flash": { modelID: "gemini-2.0-flash", providerID: "opencode-go" },
+  "llama-4-maverick": { modelID: "llama-4-maverick", providerID: "opencode-go" },
+  "llama-3.3-70b": { modelID: "llama-3.3-70b", providerID: "opencode-go" },
+  "mistral-small": { modelID: "mistral-small", providerID: "opencode-go" },
+}
+
 function currentFreeMemoryGb() {
   return os.freemem() / (1024 * 1024 * 1024)
 }
@@ -110,7 +141,9 @@ const BaseParameterFields = {
   command: Schema.optional(Schema.String).annotate({ description: "The command that triggered this task" }),
   model: Schema.optional(Schema.String).annotate({
     description:
-      "Override the model for this task. Valid values: deepseek-v4-pro, deepseek-v4-flash, deepseek-chat, minimax-m3, minimax-m2.7, mimo-v2.5, mimo-v2.5-pro, kimi-k2.7-code, kimi-k2.6, glm-5.1, glm-5, qwen3.7-max, qwen3.7-plus, qwen3.6-plus, gemini-2.5-flash, gemini-2.5-flash-direct, gemini-2.0-flash, llama-4-maverick, llama-3.3-70b, groq-llama-3.3-70b, mistral-small, openrouter-deepseek-v3, openrouter-qwen-coder-32b, openrouter-llama-3.3-70b, openrouter-auto. If not specified, uses the agent default or parent model.",
+      "Override the model for this task. Valid values: " +
+      Object.keys(MODEL_MAP).join(", ") +
+      ". If not specified, uses the agent default or parent model.",
   }),
   effort: Schema.optional(Schema.String).annotate({
     description: "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
@@ -231,39 +264,8 @@ export const TaskTool = Tool.define(
       if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
       const variant = msg.info.variant
 
-      // CEO-specified model overrides agent default and parent inheritance
-      // Each model maps to its native provider (NOT msg.info.providerID) to support
-      // cross-provider dispatch: a CA session on MiniMax can dispatch a subagent on
-      // DeepSeek without looking for DeepSeek models on the MiniMax provider.
-      const MODEL_MAP: Record<string, { modelID: typeof msg.info.modelID; providerID: typeof msg.info.providerID }> = {
-        "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
-        "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
-        "deepseek-chat": { modelID: "deepseek-chat" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
-        "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: "minimax-coding-plan" as typeof msg.info.providerID },
-        "minimax-m2.7": { modelID: "minimax-m2.7" as typeof msg.info.modelID, providerID: "minimax-coding-plan" as typeof msg.info.providerID },
-        "mimo-v2.5": { modelID: "mimo-v2.5" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "mimo-v2.5-pro": { modelID: "mimo-v2.5-pro" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "kimi-k2.7-code": { modelID: "kimi-k2.7-code" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "kimi-k2.6": { modelID: "kimi-k2.6" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "glm-5.1": { modelID: "glm-5.1" as typeof msg.info.modelID, providerID: "zai-coding-plan" as typeof msg.info.providerID },
-        "glm-5": { modelID: "glm-5" as typeof msg.info.modelID, providerID: "zai-coding-plan" as typeof msg.info.providerID },
-        "qwen3.7-max": { modelID: "qwen3.7-max" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "qwen3.7-plus": { modelID: "qwen3.7-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "qwen3.6-plus": { modelID: "qwen3.6-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "gemini-2.5-flash-direct": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: "google" as typeof msg.info.providerID },
-        "gemini-3.5-flash-direct": { modelID: "gemini-3.5-flash" as typeof msg.info.modelID, providerID: "google" as typeof msg.info.providerID },
-        "groq-llama-3.3-70b": { modelID: "llama-3.3-70b-versatile" as typeof msg.info.modelID, providerID: "groq" as typeof msg.info.providerID },
-        "openrouter-deepseek-v3": { modelID: "deepseek/deepseek-chat-v3" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "openrouter-qwen-coder-32b": { modelID: "qwen/qwen-2.5-coder-32b-instruct" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "openrouter-llama-3.3-70b": { modelID: "meta-llama/llama-3.3-70b-instruct" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        "openrouter-auto": { modelID: "openrouter/auto" as typeof msg.info.modelID, providerID: "openrouter" as typeof msg.info.providerID },
-        // Free models (zero cost, always available)
-        "gemini-2.5-flash": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "gemini-2.0-flash": { modelID: "gemini-2.0-flash" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "llama-4-maverick": { modelID: "llama-4-maverick" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "llama-3.3-70b": { modelID: "llama-3.3-70b" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-        "mistral-small": { modelID: "mistral-small" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
-      }
+      // CEO-specified model overrides agent default and parent inheritance.
+      // MODEL_MAP is at module scope — the parameter description auto-syncs.
       if (params.model === "gpt-5.4") {
         yield* ctx.ask({
           permission: id,
@@ -275,9 +277,12 @@ export const TaskTool = Tool.define(
           },
         })
       }
-      const model = params.model
-        ? MODEL_MAP[params.model] ?? { modelID: params.model as typeof msg.info.modelID, providerID: msg.info.providerID }
-        : next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID }
+      const entry = params.model ? MODEL_MAP[params.model] : undefined
+      const model = entry
+        ? { modelID: entry.modelID as typeof msg.info.modelID, providerID: entry.providerID as typeof msg.info.providerID }
+        : params.model
+          ? { modelID: params.model as typeof msg.info.modelID, providerID: msg.info.providerID }
+          : next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID }
       const metadata = {
         parentSessionId: ctx.sessionID,
         sessionId: nextSession.id,
