@@ -251,6 +251,7 @@ export const TaskTool = Tool.define(
         "qwen3.7-plus": { modelID: "qwen3.7-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
         "qwen3.6-plus": { modelID: "qwen3.6-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
         "gemini-2.5-flash-direct": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: "google" as typeof msg.info.providerID },
+        "gemini-3.5-flash-direct": { modelID: "gemini-3.5-flash" as typeof msg.info.modelID, providerID: "google" as typeof msg.info.providerID },
         "groq-llama-3.3-70b": { modelID: "llama-3.3-70b-versatile" as typeof msg.info.modelID, providerID: "groq" as typeof msg.info.providerID },
         // Free models (zero cost, always available)
         "gemini-2.5-flash": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
