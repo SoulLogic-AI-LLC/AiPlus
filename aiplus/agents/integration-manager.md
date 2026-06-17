@@ -10,9 +10,6 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "*"
-    action: deny
-  - permission: "bash"
     pattern: "git merge*"
     action: allow
   - permission: "bash"
@@ -42,12 +39,15 @@ permission:
   - permission: "bash"
     pattern: "git fetch*"
     action: allow
-  - permission: "write"
+  - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/integration-manager/**"
     action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

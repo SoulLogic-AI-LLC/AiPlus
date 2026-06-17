@@ -10,9 +10,6 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "*"
-    action: deny
-  - permission: "bash"
     pattern: "gh pr view*"
     action: allow
   - permission: "bash"
@@ -33,12 +30,15 @@ permission:
   - permission: "bash"
     pattern: "git status*"
     action: allow
-  - permission: "write"
+  - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/release-manager/**"
     action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny
