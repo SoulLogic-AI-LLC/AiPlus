@@ -71,12 +71,6 @@ const MODEL_MAP: Record<string, { modelID: string; providerID: string }> = {
   "openrouter-qwen-coder-32b": { modelID: "qwen/qwen-2.5-coder-32b-instruct", providerID: "openrouter" },
   "openrouter-llama-3.3-70b": { modelID: "meta-llama/llama-3.3-70b-instruct", providerID: "openrouter" },
   "openrouter-auto": { modelID: "openrouter/auto", providerID: "openrouter" },
-  // Free tier (opencode-go)
-  "gemini-2.5-flash": { modelID: "gemini-2.5-flash", providerID: "opencode-go" },
-  "gemini-2.0-flash": { modelID: "gemini-2.0-flash", providerID: "opencode-go" },
-  "llama-4-maverick": { modelID: "llama-4-maverick", providerID: "opencode-go" },
-  "llama-3.3-70b": { modelID: "llama-3.3-70b", providerID: "opencode-go" },
-  "mistral-small": { modelID: "mistral-small", providerID: "opencode-go" },
 }
 
 function currentFreeMemoryGb() {
