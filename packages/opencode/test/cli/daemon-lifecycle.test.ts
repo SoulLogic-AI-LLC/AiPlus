@@ -3,13 +3,12 @@ import { Effect, Exit, Fiber, Scope } from "effect"
 import { DaemonLifecycle } from "../../src/cli/daemon-lifecycle"
 
 describe("DaemonLifecycle", () => {
-  test("increment/decrement active turn and idle/shutdown behavior", () =>
+  test("increment/decrement active turn and idle shutdown behavior", () =>
     Effect.runPromise(
       Effect.scoped(Effect.gen(function* () {
         let shutdownExitCode: number | undefined
 
         const lifecycle = yield* DaemonLifecycle.make({
-          idleTimeoutMs: 50,
           shutdownGraceMs: 5000,
           onShutdown: Effect.void as Effect.Effect<void, never, never>,
           shutdownDaemon: (code) => {
@@ -21,16 +20,16 @@ describe("DaemonLifecycle", () => {
         yield* lifecycle.incrementActiveTurn
         yield* lifecycle.removeConnection
 
-        // Active turn holds off idle timer even with no connections.
-        yield* Effect.sleep(100)
+        // Active turn holds off shutdown even with no connections.
+        yield* Effect.sleep(50)
         expect(shutdownExitCode).toBeUndefined()
 
         yield* lifecycle.decrementActiveTurn
 
-        // After the turn ends the idle timer should fire quickly.
+        // After the turn ends, shutdown fires event-driven — no timer needed.
         yield* Effect.gen(function* () {
           while (shutdownExitCode === undefined) {
-            yield* Effect.sleep(10)
+            yield* Effect.sleep(5)
           }
         }).pipe(Effect.timeout("2 seconds"))
 
@@ -45,7 +44,6 @@ describe("DaemonLifecycle", () => {
       Effect.scoped(Effect.gen(function* () {
         let shutdownExitCode: number | undefined
         const lifecycle = yield* DaemonLifecycle.make({
-          idleTimeoutMs: 50,
           shutdownGraceMs: 5000,
           onShutdown: Effect.void as Effect.Effect<void, never, never>,
           shutdownDaemon: (code) => {
@@ -79,7 +77,6 @@ describe("DaemonLifecycle", () => {
       Effect.scoped(Effect.gen(function* () {
         let shutdownExitCode: number | undefined
         const lifecycle = yield* DaemonLifecycle.make({
-          idleTimeoutMs: 50,
           shutdownGraceMs: 100,
           onShutdown: Effect.void as Effect.Effect<void, never, never>,
           shutdownDaemon: (code) => {
