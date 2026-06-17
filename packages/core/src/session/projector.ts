@@ -22,6 +22,8 @@ import { checkPressure } from "../../../../aiplus/compact/monitor"
 import { writeCapsule } from "../../../../aiplus/compact/capsule"
 import { verify as auditVerify } from "../../../../aiplus/audit/runner"
 import { verifyAndFix } from "../../../../aiplus/managed-blocks/verifier"
+import * as fs from "node:fs"
+import * as path from "node:path"
 
 type DatabaseService = Database.Interface["db"]
 
@@ -132,6 +134,65 @@ function aiplusAudit(directory: string, sessionID: string) {
 /** Fire-and-forget: managed blocks on session create. */
 function aiplusManagedBlocks(directory: string) {
   try { void verifyAndFix(directory) } catch { /* fire-and-forget */ }
+}
+
+// Format C anchor set (Constitution §III). The reply must carry ALL header anchors
+// plus EITHER a complete Chinese set OR a complete English set. Each label anchor is
+// matched at line start to avoid false positives from body prose that merely mentions
+// the keyword. Pure function — unit-tested in packages/core/test/session-projector.test.ts.
+const FORMAT_C_HEADER_LINES = [/^##\s/m, /🕐\s+\d{1,2}:\d{2}(?::\d{2})?\b/m]
+const FORMAT_C_CHINESE_LINES = [/^\s*主线任务\s*$/m, /═+\s*📄\s*正文\s*═+/m, /═+\s*🔚\s*收尾\s*═+/m]
+const FORMAT_C_ENGLISH_LINES = [/^\s*Mission\s*$/m, /^\s*Body\s*$/m, /^\s*Wrap-up\s*$/m]
+export const FORMAT_C_MAX_LEN = 400
+
+export function checkReplyFormatC(text: string): string[] {
+  if (text.length <= FORMAT_C_MAX_LEN) return []
+  if (text.startsWith("[NO_FORMAT]")) return []
+  if (/^<tool_call>[\s\S]+<\/tool_call>\s*$/.test(text.trim())) return []
+  const missing: string[] = []
+  for (const [i, re] of FORMAT_C_HEADER_LINES.entries()) {
+    if (!re.test(text)) missing.push(i === 0 ? "## role heading" : "🕐 HH:MM header")
+  }
+  const cnOk = FORMAT_C_CHINESE_LINES.every((re) => re.test(text))
+  const enOk = FORMAT_C_ENGLISH_LINES.every((re) => re.test(text))
+  if (!cnOk && !enOk) {
+    missing.push(cnOk ? "english" : "chinese")
+    for (const [i, re] of FORMAT_C_CHINESE_LINES.entries()) {
+      if (!re.test(text)) missing.push(["主线任务", "📄 正文", "🔚 收尾"][i]!)
+    }
+    for (const [i, re] of FORMAT_C_ENGLISH_LINES.entries()) {
+      if (!re.test(text)) missing.push(["Mission", "Body", "Wrap-up"][i]!)
+    }
+  }
+  return missing
+}
+
+/** Fire-and-forget: post-reply Format C anchor check. Writes a REVISE marker to
+ * `<directory>/.aiplus/lobby/reply-format-revise-<sessionID>.json` when anchors are
+ * missing. Never throws. Per Constitution §III — header (`##` + `🕐 HH:MM`) and a
+ * complete Chinese OR English anchor set are required for replies > 400 chars. */
+function aiplusReplyFormatCheck(sessionID: string, text: string, directory: string) {
+  try {
+    const missing = checkReplyFormatC(text)
+    if (missing.length === 0) return
+    const dir = path.join(directory, ".aiplus", "lobby")
+    fs.mkdirSync(dir, { recursive: true })
+    const marker = path.join(dir, `reply-format-revise-${sessionID}.json`)
+    fs.writeFileSync(
+      marker,
+      JSON.stringify(
+        {
+          sessionID,
+          missing,
+          timestamp: new Date().toISOString(),
+          rule: "reply-format-anchor-missing",
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    )
+  } catch { /* fire-and-forget */ }
 }
 
 // ---- End AiPlus Hook Helpers -----------------------------------------------
@@ -480,7 +541,18 @@ export const layer = Layer.effectDiscard(
     yield* events.project(SessionEvent.Step.Ended, (event) => run(db, event))
     yield* events.project(SessionEvent.Step.Failed, (event) => run(db, event))
     yield* events.project(SessionEvent.Text.Started, (event) => run(db, event))
-    yield* events.project(SessionEvent.Text.Ended, (event) => run(db, event))
+    yield* events.project(SessionEvent.Text.Ended, (event) =>
+      Effect.gen(function* () {
+        const row = yield* db
+          .select({ directory: SessionTable.directory })
+          .from(SessionTable)
+          .where(eq(SessionTable.id, event.data.sessionID))
+          .get()
+          .pipe(Effect.orDie)
+        yield* run(db, event)
+        if (row) aiplusReplyFormatCheck(event.data.sessionID, event.data.text, row.directory)
+      }),
+    )
     yield* events.project(SessionEvent.Tool.Input.Started, (event) => run(db, event))
     yield* events.project(SessionEvent.Tool.Input.Ended, (event) => run(db, event))
     yield* events.project(SessionEvent.Tool.Called, (event) => run(db, event))

@@ -1,4 +1,4 @@
-import { describe, expect } from "bun:test"
+import { describe, expect, it as bunIt } from "bun:test"
 import { DateTime, Effect, Layer, Schema } from "effect"
 import { asc, eq } from "drizzle-orm"
 import { Database } from "@opencode-ai/core/database/database"
@@ -15,6 +15,7 @@ import { SessionMessage } from "@opencode-ai/core/session/message"
 import { Prompt } from "@opencode-ai/core/session/prompt"
 import { SessionMessageUpdater } from "@opencode-ai/core/session/message-updater"
 import { SessionProjector } from "@opencode-ai/core/session/projector"
+import { checkReplyFormatC } from "@opencode-ai/core/session/projector"
 import { SessionExecution } from "@opencode-ai/core/session/execution"
 import { SessionInput } from "@opencode-ai/core/session/input"
 import { SessionStore } from "@opencode-ai/core/session/store"
@@ -615,4 +616,63 @@ describe("SessionProjector", () => {
       ])
     }),
   )
+})
+
+describe("checkReplyFormatC", () => {
+  const body = "实施修复方案。".repeat(60)
+  const fullChinese = [
+    "## Engineer · opencode/dev",
+    "🕐 14:32:05",
+    "",
+    "主线任务",
+    "",
+    "═════ 📄 正文 ═════",
+    body,
+    "═════ 🔚 收尾 ═════",
+    "完成。",
+  ].join("\n")
+
+  const bodyEn = "Implement the fix. ".repeat(60)
+  const fullEnglish = [
+    "## Engineer · opencode/dev",
+    "🕐 14:32:05",
+    "",
+    "Mission",
+    "",
+    "Body",
+    bodyEn,
+    "Wrap-up",
+    "Done.",
+  ].join("\n")
+
+  bunIt("passes a full Format C reply (Chinese anchors)", () => {
+    expect(checkReplyFormatC(fullChinese)).toEqual([])
+  })
+
+  bunIt("passes a full Format C reply (English anchors)", () => {
+    expect(checkReplyFormatC(fullEnglish)).toEqual([])
+  })
+
+  bunIt("flags a missing 🕐 HH:MM header", () => {
+    const text = "## Engineer · opencode/dev\n\n主线任务\n\n═════ 📄 正文 ═════\n" + body + "\n═════ 🔚 收尾 ═════\n完成。"
+    const missing = checkReplyFormatC(text)
+    expect(missing).toContain("🕐 HH:MM header")
+  })
+
+  bunIt("flags a missing 主线任务 anchor", () => {
+    const text = fullChinese.replace(/^主线任务\s*$/m, "")
+    const missing = checkReplyFormatC(text)
+    expect(missing).toContain("主线任务")
+  })
+
+  bunIt("exempts a reply of 400 chars or fewer", () => {
+    const short = "短回复".repeat(50)
+    expect(short.length).toBeLessThanOrEqual(400)
+    expect(checkReplyFormatC(short)).toEqual([])
+  })
+
+  bunIt("exempts a reply starting with [NO_FORMAT]", () => {
+    const text = "[NO_FORMAT] " + fullChinese
+    expect(checkReplyFormatC(text)).toEqual([])
+  })
 })
