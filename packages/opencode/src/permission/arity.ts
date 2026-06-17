@@ -47,6 +47,7 @@ const ARITY: Record<string, number> = {
   touch: 1, // touch file.txt
   unset: 1, // unset VAR
   which: 1, // which node
+  aiplus: 2, // aiplus velocity
   aws: 3, // aws s3 ls
   az: 3, // az storage blob list
   bazel: 2, // bazel build
@@ -81,7 +82,9 @@ const ARITY: Record<string, number> = {
   gcloud: 3, // gcloud compute instances list
   gh: 3, // gh pr list
   git: 2, // git checkout main
+  "git branch": 3, // git branch feat/my-branch
   "git config": 3, // git config user.name
+  "git push": 3, // git push origin feat/my-branch
   "git remote": 3, // git remote add origin
   "git stash": 3, // git stash pop
   go: 2, // go build
