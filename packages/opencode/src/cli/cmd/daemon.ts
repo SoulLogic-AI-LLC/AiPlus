@@ -32,7 +32,6 @@ export const DaemonCommand = effectCmd({
       }
     }
 
-    const idleTimeoutMs = Number(process.env.OPENCODE_DAEMON_IDLE_TIMEOUT_MS ?? "300000")
     const shutdownGraceMs = Number(process.env.OPENCODE_DAEMON_SHUTDOWN_GRACE_MS ?? "30000")
 
     let server: Listener | undefined
@@ -50,7 +49,6 @@ export const DaemonCommand = effectCmd({
     }
 
     const lifecycle = yield* DaemonLifecycle.make({
-      idleTimeoutMs,
       shutdownGraceMs,
       onShutdown,
       shutdownDaemon,
@@ -64,8 +62,6 @@ export const DaemonCommand = effectCmd({
 
     yield* writeDaemonPort(server.port)
     process.stderr.write(`daemon ready on port ${server.port}\n`)
-
-    yield* lifecycle.startIdleTimer(idleTimeoutMs)
 
     let shuttingDown = false
     const onSignal = () => {
