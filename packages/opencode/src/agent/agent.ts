@@ -309,6 +309,39 @@ export const layer = Layer.effect(
           }
         }
 
+        // Register project-specific agents from --project directory.
+        // Scans aiplus/agents/*.md and agents/*.md for persona markdown
+        // files that aren't part of the built-in PERSONA_ASSETS (e.g.
+        // AdamSmith's 19 economic research agents).
+        const agentDirs = [
+          path.join(ctx.directory, "aiplus", "agents"),
+          path.join(ctx.directory, "agents"),
+        ]
+        for (const dir of agentDirs) {
+          if (!fs.existsSync(dir)) continue
+          const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"))
+          for (const file of files) {
+            const filePath = path.join(dir, file)
+            const fileContent = fs.readFileSync(filePath, "utf-8")
+            const parsed = matter(fileContent)
+            const name = path.basename(file, ".md")
+            if (agents[name]) continue
+            const data = (parsed.data || {}) as Record<string, unknown>
+            agents[name] = {
+              name: (typeof data.name === "string" ? data.name : name),
+              description: typeof data.description === "string" ? data.description : undefined,
+              mode:
+                data.mode === "subagent" || data.mode === "primary" || data.mode === "all"
+                  ? (data.mode as "subagent" | "primary" | "all")
+                  : "subagent",
+              options: {},
+              permission: Permission.merge(defaults, user),
+              native: false,
+              prompt: (parsed.content || "").trim() || undefined,
+            }
+          }
+        }
+
         for (const [key, value] of Object.entries(cfg.agent ?? {})) {
           if (value.disable) {
             delete agents[key]
