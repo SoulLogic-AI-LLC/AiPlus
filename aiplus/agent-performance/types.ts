@@ -20,7 +20,7 @@ export function percentile(sorted: number[], p: number): number {
 export interface PerformanceRecord {
   phase: PerformancePhase
   sessionId: string
-  schemaVersion: "1.0.0"
+  schemaVersion: "1.0.0" | "1.1.0"
   timestamp: string
 
   // Dim 1: Who
@@ -29,6 +29,9 @@ export interface PerformanceRecord {
 
   // Dim 2: What (Tool)
   modelId: string
+
+  // V1.1: Provider dimension (NEW, optional)
+  providerID?: string
 
   // Dim 3: Task
   taskType: string
@@ -87,6 +90,11 @@ export interface PerformanceStats {
   passRateByRole: Record<string, number>
   passRateByModel: Record<string, number>
 
+  // V1.1: Provider aggregations
+  byProvider?: Record<string, DimensionStats>
+  costByProvider?: Record<string, DimensionStats>
+  passRateByProvider?: Record<string, number>
+
   sizeByTaskType: Record<string, DimensionStats>
 }
 
@@ -99,6 +107,7 @@ export interface PerformanceQuery {
   projectRoot: string
   role?: string
   modelId?: string
+  providerID?: string
   taskType?: string
   since?: string
 }

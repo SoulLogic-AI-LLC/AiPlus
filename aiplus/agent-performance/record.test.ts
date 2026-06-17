@@ -43,7 +43,7 @@ describe("agent-performance record", () => {
     expect(entry.actualMs).toBe(0)
     expect(entry.tokensIn).toBe(0)
     expect(entry.costUSD).toBe(0)
-    expect(entry.schemaVersion).toBe("1.0.0")
+    expect(entry.schemaVersion).toBe("1.1.0")
     expect(entry.timestamp).toBeDefined()
   })
 

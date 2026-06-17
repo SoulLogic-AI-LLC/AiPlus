@@ -28,6 +28,7 @@ export function appendPerformanceStart(params: {
   role: string
   agentName: string
   modelId: string
+  providerID?: string
   taskType: string
   taskSummary: string
   estimatedMs?: number | null
@@ -36,11 +37,12 @@ export function appendPerformanceStart(params: {
     const record: PerformanceRecord = {
       phase: "start",
       sessionId: params.sessionId,
-      schemaVersion: "1.0.0",
+      schemaVersion: "1.1.0",
       timestamp: new Date().toISOString(),
       role: params.role,
       agentName: params.agentName,
       modelId: params.modelId,
+      providerID: params.providerID,
       taskType: params.taskType,
       taskSummary: truncateTask(params.taskSummary),
       estimatedMs: params.estimatedMs ?? null,
@@ -76,7 +78,7 @@ export function appendPerformanceComplete(params: {
     const record: PerformanceRecord = {
       phase: "complete",
       sessionId: params.sessionId,
-      schemaVersion: "1.0.0",
+      schemaVersion: "1.1.0",
       timestamp: new Date().toISOString(),
       role: "",
       agentName: "",

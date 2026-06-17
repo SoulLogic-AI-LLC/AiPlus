@@ -40,6 +40,8 @@ export function computePerformanceStats(q: PerformanceQuery): PerformanceStats {
   const byRole = groupBy(records, (r) => r.role)
   const byModel = groupBy(records, (r) => r.modelId)
   const byTaskType = groupBy(records, (r) => r.taskType)
+  const providerRecords = records.filter((r) => r.providerID)
+  const byProvider = groupBy(providerRecords, (r) => r.providerID!)
 
   const speedByRole: Record<string, DimensionStats> = {}
   const costByRole: Record<string, DimensionStats> = {}
@@ -68,6 +70,15 @@ export function computePerformanceStats(q: PerformanceQuery): PerformanceStats {
     sizeByTaskType[taskType] = computeDimensionStats(group, (r) => r.linesChanged)
   }
 
+  const speedByProvider: Record<string, DimensionStats> = {}
+  const costByProvider: Record<string, DimensionStats> = {}
+  const passRateByProvider: Record<string, number> = {}
+  for (const [provider, group] of byProvider) {
+    speedByProvider[provider] = computeDimensionStats(group, (r) => r.actualMs)
+    costByProvider[provider] = computeDimensionStats(group, (r) => r.costUSD)
+    passRateByProvider[provider] = passRate(group)
+  }
+
   return {
     updated: new Date().toISOString(),
     source: q.projectRoot,
@@ -81,5 +92,8 @@ export function computePerformanceStats(q: PerformanceQuery): PerformanceStats {
     passRateByRole,
     passRateByModel,
     sizeByTaskType,
+    byProvider: speedByProvider,
+    costByProvider,
+    passRateByProvider,
   }
 }

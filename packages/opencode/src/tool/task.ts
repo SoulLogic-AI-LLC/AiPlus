@@ -300,6 +300,7 @@ export const TaskTool = Tool.define(
           role: next.name,
           agentName: next.name,
           modelId: model.modelID,
+          providerID: model.providerID,
           taskType: params.description.split(":")[0]?.trim().split(" ")[0]?.toLowerCase() ?? "other",
           taskSummary: params.description,
           estimatedMs: null,

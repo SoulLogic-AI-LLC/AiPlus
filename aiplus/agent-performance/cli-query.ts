@@ -12,7 +12,7 @@
 import { queryByRole, queryBudget, queryRecent } from "./query"
 
 type Mode =
-  | { kind: "byRole"; role: string; taskType: string }
+  | { kind: "byRole"; role: string; taskType: string; provider?: string }
   | { kind: "budget"; date?: string }
   | { kind: "recent"; n: number }
 
@@ -34,13 +34,15 @@ function parseArgs(argv: string[]): Mode {
   if (hasByRole) {
     const roleIdx = argv.indexOf("--role")
     const taskIdx = argv.indexOf("--task-type")
+    const providerIdx = argv.indexOf("--provider")
     const role = roleIdx >= 0 ? argv[roleIdx + 1] : undefined
     const taskType = taskIdx >= 0 ? argv[taskIdx + 1] : undefined
+    const provider = providerIdx >= 0 ? argv[providerIdx + 1] : undefined
     if (!role || !taskType) {
       process.stderr.write("error: --role and --task-type both require values\n")
       process.exit(2)
     }
-    return { kind: "byRole", role, taskType }
+    return { kind: "byRole", role, taskType, provider }
   }
 
   if (hasBudget) {
@@ -72,7 +74,7 @@ const mode = parseArgs(process.argv.slice(2))
 let result: unknown
 
 if (mode.kind === "byRole") {
-  result = queryByRole(mode.role, mode.taskType, { projectRoot })
+  result = queryByRole(mode.role, mode.taskType, { projectRoot, providerID: mode.provider })
 } else if (mode.kind === "budget") {
   result = queryBudget(mode.date, { projectRoot })
 } else {

@@ -54,6 +54,7 @@ export function queryPerformance(q: PerformanceQuery): PerformanceRecord[] {
       role: start.role,
       agentName: start.agentName,
       modelId: start.modelId,
+      providerID: start.providerID,
       taskType: start.taskType,
       taskSummary: start.taskSummary,
       estimatedMs: start.estimatedMs,
@@ -100,6 +101,7 @@ export function queryPerformance(q: PerformanceQuery): PerformanceRecord[] {
   return merged.filter((r) => {
     if (q.role && r.role !== q.role) return false
     if (q.modelId && r.modelId !== q.modelId) return false
+    if (q.providerID && r.providerID !== q.providerID) return false
     if (q.taskType && r.taskType !== q.taskType) return false
     if (q.since && r.timestamp < q.since) return false
     return true
@@ -123,9 +125,22 @@ export interface ByModelEntry {
   p90TokensOut: number
 }
 
+export interface ByProviderEntry {
+  providerID: string
+  count: number
+  successRate: number
+  p50Ms: number
+  p90Ms: number
+  p50TokensIn: number
+  p90TokensIn: number
+  p50TokensOut: number
+  p90TokensOut: number
+}
+
 export interface RecentEntry {
   sessionId: string
   modelId: string
+  providerID?: string
   outcome: string
   actualMs: number
   tokensIn: number
@@ -140,6 +155,7 @@ export interface ByRoleResult {
   taskType: string
   totalSamples: number
   byModel: ByModelEntry[]
+  byProvider: ByProviderEntry[]
   recent: RecentEntry[]
 }
 
@@ -151,10 +167,10 @@ function nextDayIso(date: string): string {
 export function queryByRole(
   role: string,
   taskType: string,
-  opts?: { projectRoot?: string; limitRecent?: number }
+  opts?: { projectRoot?: string; limitRecent?: number; providerID?: string }
 ): ByRoleResult {
   const projectRoot = opts?.projectRoot ?? process.cwd()
-  const records = queryPerformance({ projectRoot, role, taskType })
+  const records = queryPerformance({ projectRoot, role, taskType, providerID: opts?.providerID })
 
   const byModelMap = new Map<string, PerformanceRecord[]>()
   for (const r of records) {
@@ -166,13 +182,38 @@ export function queryByRole(
   const byModel: ByModelEntry[] = []
   for (const [modelId, group] of byModelMap) {
     const success = group.filter((r) => r.outcome === "success").length
-    // AI speed estimate (actualMs), not human-engineer baseline
     const msSorted = group.map((r) => r.actualMs).sort((a, b) => a - b)
-    // AI speed estimate (actualMs), not human-engineer baseline
     const tokensInSorted = group.map((r) => r.tokensIn).sort((a, b) => a - b)
     const tokensOutSorted = group.map((r) => r.tokensOut).sort((a, b) => a - b)
     byModel.push({
       modelId,
+      count: group.length,
+      successRate: group.length === 0 ? 0 : success / group.length,
+      p50Ms: percentile(msSorted, 0.5),
+      p90Ms: percentile(msSorted, 0.9),
+      p50TokensIn: percentile(tokensInSorted, 0.5),
+      p90TokensIn: percentile(tokensInSorted, 0.9),
+      p50TokensOut: percentile(tokensOutSorted, 0.5),
+      p90TokensOut: percentile(tokensOutSorted, 0.9),
+    })
+  }
+
+  const byProviderMap = new Map<string, PerformanceRecord[]>()
+  for (const r of records) {
+    if (!r.providerID) continue
+    const group = byProviderMap.get(r.providerID)
+    if (group) group.push(r)
+    else byProviderMap.set(r.providerID, [r])
+  }
+
+  const byProvider: ByProviderEntry[] = []
+  for (const [providerID, group] of byProviderMap) {
+    const success = group.filter((r) => r.outcome === "success").length
+    const msSorted = group.map((r) => r.actualMs).sort((a, b) => a - b)
+    const tokensInSorted = group.map((r) => r.tokensIn).sort((a, b) => a - b)
+    const tokensOutSorted = group.map((r) => r.tokensOut).sort((a, b) => a - b)
+    byProvider.push({
+      providerID,
       count: group.length,
       successRate: group.length === 0 ? 0 : success / group.length,
       p50Ms: percentile(msSorted, 0.5),
@@ -189,6 +230,7 @@ export function queryByRole(
   const recent: RecentEntry[] = recentSorted.slice(0, limit).map((r) => ({
     sessionId: r.sessionId,
     modelId: r.modelId,
+    providerID: r.providerID,
     outcome: r.outcome,
     actualMs: r.actualMs,
     tokensIn: r.tokensIn,
@@ -203,6 +245,7 @@ export function queryByRole(
     taskType,
     totalSamples: records.length,
     byModel,
+    byProvider,
     recent,
   }
 }
@@ -212,6 +255,7 @@ export interface BudgetResult {
   totals: { tokensIn: number; tokensOut: number; costUSD: number; sessions: number }
   byRole: Record<string, { tokensIn: number; tokensOut: number; costUSD: number; sessions: number }>
   byModel: Record<string, { tokensIn: number; tokensOut: number; costUSD: number; sessions: number }>
+  byProvider: Record<string, { tokensIn: number; tokensOut: number; costUSD: number; sessions: number }>
 }
 
 function emptyBucket() {
@@ -233,6 +277,7 @@ export function queryBudget(
   const totals = emptyBucket()
   const byRole: BudgetResult["byRole"] = {}
   const byModel: BudgetResult["byModel"] = {}
+  const byProvider: BudgetResult["byProvider"] = {}
 
   for (const r of records) {
     totals.tokensIn += r.tokensIn
@@ -253,9 +298,18 @@ export function queryBudget(
     modelBucket.tokensOut += r.tokensOut
     modelBucket.costUSD += r.costUSD
     modelBucket.sessions += 1
+
+    if (r.providerID) {
+      if (!byProvider[r.providerID]) byProvider[r.providerID] = emptyBucket()
+      const providerBucket = byProvider[r.providerID]
+      providerBucket.tokensIn += r.tokensIn
+      providerBucket.tokensOut += r.tokensOut
+      providerBucket.costUSD += r.costUSD
+      providerBucket.sessions += 1
+    }
   }
 
-  return { date: resolvedDate, totals, byRole, byModel }
+  return { date: resolvedDate, totals, byRole, byModel, byProvider }
 }
 
 export type RecentRecord = {
@@ -263,6 +317,7 @@ export type RecentRecord = {
   role: string
   taskType: string
   modelId: string
+  providerID?: string
   outcome: string
   tokensIn: number
   tokensOut: number
@@ -287,6 +342,7 @@ export function queryRecent(
       role: r.role,
       taskType: r.taskType,
       modelId: r.modelId,
+      providerID: r.providerID,
       outcome: r.outcome,
       tokensIn: r.tokensIn,
       tokensOut: r.tokensOut,
