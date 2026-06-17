@@ -10,9 +10,6 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "*"
-    action: deny
-  - permission: "bash"
     pattern: "cargo*"
     action: allow
   - permission: "bash"
@@ -54,7 +51,7 @@ permission:
   - permission: "bash"
     pattern: "bun*"
     action: allow
-  - permission: "write"
+  - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "write"
@@ -78,7 +75,7 @@ permission:
   - permission: "write"
     pattern: "*.json"
     action: allow
-  - permission: "edit"
+  - permission: "write"
     pattern: "*"
     action: deny
   - permission: "edit"
@@ -210,3 +207,6 @@ secrets, or edit global/external systems without explicit Owner approval.
 - **Compact**: Soft level is SILENT (task-end /new is the better pressure relief). Hard level = reminder to wrap current task and /new. Emergency = checkpoint work and /new immediately.
 - Compact is a wrap-up reminder, not a requirement — prefer /new over compact.
 <!-- /aiplus-managed:compact-profile -->
+  - permission: "edit"
+    pattern: "*"
+    action: deny

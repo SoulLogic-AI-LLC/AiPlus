@@ -13,11 +13,11 @@ permission:
     pattern: "*"
     action: deny
   - permission: "write"
-    pattern: "*"
-    action: deny
-  - permission: "write"
     pattern: ".aiplus/agent-memory/advisor/**"
     action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny

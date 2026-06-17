@@ -40,7 +40,7 @@ export function evaluate(permission: string, pattern: string, ...rulesets: Permi
   return (
     rulesets
       .flat()
-      .findLast((rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern)) ?? {
+      .find((rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern)) ?? {
       action: "ask",
       permission,
       pattern: "*",
@@ -217,7 +217,7 @@ export function disabled(tools: string[], ruleset: PermissionV1.Ruleset): Set<st
   return new Set(
     tools.filter((tool) => {
       const permission = edits.includes(tool) ? "edit" : tool
-      const rule = ruleset.findLast((rule) => Wildcard.match(permission, rule.permission))
+      const rule = ruleset.find((rule) => Wildcard.match(permission, rule.permission))
       return rule?.pattern === "*" && rule.action === "deny"
     }),
   )

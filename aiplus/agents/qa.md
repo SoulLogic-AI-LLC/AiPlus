@@ -10,9 +10,6 @@ permission:
     pattern: "*"
     action: deny
   - permission: "bash"
-    pattern: "*"
-    action: deny
-  - permission: "bash"
     pattern: "cargo*"
     action: allow
   - permission: "bash"
@@ -42,12 +39,15 @@ permission:
   - permission: "bash"
     pattern: "git blame*"
     action: allow
-  - permission: "write"
+  - permission: "bash"
     pattern: "*"
     action: deny
   - permission: "write"
     pattern: ".aiplus/agent-memory/qa/**"
     action: allow
+  - permission: "write"
+    pattern: "*"
+    action: deny
   - permission: "edit"
     pattern: "*"
     action: deny
