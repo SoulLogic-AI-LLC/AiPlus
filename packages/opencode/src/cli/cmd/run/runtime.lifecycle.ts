@@ -15,7 +15,6 @@ import { Global } from "@opencode-ai/core/global"
 import { openEditor } from "@opencode-ai/tui/editor"
 import { registerOpencodeKeymap } from "@opencode-ai/tui/keymap"
 import { Session as SessionApi } from "@/session/session"
-import * as Locale from "@/util/locale"
 import { resolveInteractiveStdin } from "./runtime.stdin"
 import { entrySplash, exitSplash, splashMeta } from "./splash"
 import { resolveRunTheme } from "./theme"
@@ -47,7 +46,6 @@ type CycleResult = {
 }
 
 type FooterLabels = {
-  agentLabel: string
   modelLabel: string
 }
 
@@ -70,6 +68,7 @@ export type LifecycleInput = {
   onQuestionReply: (input: QuestionReply) => void | Promise<void>
   onQuestionReject: (input: QuestionReject) => void | Promise<void>
   onCycleVariant?: () => CycleResult | void
+  onAgentSelect?: (agent: string) => void
   onModelSelect?: (model: NonNullable<RunInput["model"]>) => CycleResult | void | Promise<CycleResult | void>
   onVariantSelect?: (variant: string | undefined) => CycleResult | void | Promise<CycleResult | void>
   onInterrupt?: () => void
@@ -122,17 +121,13 @@ function splashInfo(title: string | undefined, history: RunPrompt[]) {
 }
 
 function footerLabels(input: Pick<RunInput, "agent" | "model" | "variant">): FooterLabels {
-  const agentLabel = Locale.titlecase(input.agent ?? "build")
-
   if (!input.model) {
     return {
-      agentLabel,
       modelLabel: "Model default",
     }
   }
 
   return {
-    agentLabel,
     modelLabel: formatModelLabel(input.model, input.variant),
   }
 }
@@ -236,6 +231,7 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
       resources: input.resources,
       sessionID: input.getSessionID ?? (() => input.sessionID),
       ...labels,
+      agent: input.agent,
       model: input.model,
       variant: input.variant,
       first: input.first,
@@ -250,6 +246,7 @@ export async function createRuntimeLifecycle(input: LifecycleInput): Promise<Lif
       onQuestionReply: input.onQuestionReply,
       onQuestionReject: input.onQuestionReject,
       onCycleVariant: input.onCycleVariant,
+      onAgentSelect: input.onAgentSelect,
       onModelSelect: input.onModelSelect,
       onVariantSelect: input.onVariantSelect,
       onInterrupt: input.onInterrupt,
