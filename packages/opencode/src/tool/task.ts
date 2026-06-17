@@ -232,27 +232,30 @@ export const TaskTool = Tool.define(
       const variant = msg.info.variant
 
       // CEO-specified model overrides agent default and parent inheritance
+      // Each model maps to its native provider (NOT msg.info.providerID) to support
+      // cross-provider dispatch: a CA session on MiniMax can dispatch a subagent on
+      // DeepSeek without looking for DeepSeek models on the MiniMax provider.
       const MODEL_MAP: Record<string, { modelID: typeof msg.info.modelID; providerID: typeof msg.info.providerID }> = {
-        "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "minimax-m2.7": { modelID: "minimax-m2.7" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "mimo-v2.5": { modelID: "mimo-v2.5" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "mimo-v2.5-pro": { modelID: "mimo-v2.5-pro" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "kimi-k2.7-code": { modelID: "kimi-k2.7-code" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "kimi-k2.6": { modelID: "kimi-k2.6" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "glm-5.1": { modelID: "glm-5.1" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "glm-5": { modelID: "glm-5" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "qwen3.7-max": { modelID: "qwen3.7-max" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "qwen3.7-plus": { modelID: "qwen3.7-plus" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "qwen3.6-plus": { modelID: "qwen3.6-plus" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "deepseek-v4-pro": { modelID: "deepseek-v4-pro" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
+        "deepseek-v4-flash": { modelID: "deepseek-v4-flash" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
+        "deepseek-chat": { modelID: "deepseek-chat" as typeof msg.info.modelID, providerID: "deepseek" as typeof msg.info.providerID },
+        "minimax-m3": { modelID: "minimax-m3" as typeof msg.info.modelID, providerID: "minimax-coding-plan" as typeof msg.info.providerID },
+        "minimax-m2.7": { modelID: "minimax-m2.7" as typeof msg.info.modelID, providerID: "minimax-coding-plan" as typeof msg.info.providerID },
+        "mimo-v2.5": { modelID: "mimo-v2.5" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "mimo-v2.5-pro": { modelID: "mimo-v2.5-pro" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "kimi-k2.7-code": { modelID: "kimi-k2.7-code" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "kimi-k2.6": { modelID: "kimi-k2.6" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "glm-5.1": { modelID: "glm-5.1" as typeof msg.info.modelID, providerID: "zai-coding-plan" as typeof msg.info.providerID },
+        "glm-5": { modelID: "glm-5" as typeof msg.info.modelID, providerID: "zai-coding-plan" as typeof msg.info.providerID },
+        "qwen3.7-max": { modelID: "qwen3.7-max" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "qwen3.7-plus": { modelID: "qwen3.7-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "qwen3.6-plus": { modelID: "qwen3.6-plus" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
         // Free models (zero cost, always available)
-        "gemini-2.5-flash": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "gemini-2.0-flash": { modelID: "gemini-2.0-flash" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "llama-4-maverick": { modelID: "llama-4-maverick" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "llama-3.3-70b": { modelID: "llama-3.3-70b" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "mistral-small": { modelID: "mistral-small" as typeof msg.info.modelID, providerID: msg.info.providerID },
-        "deepseek-chat": { modelID: "deepseek-chat" as typeof msg.info.modelID, providerID: msg.info.providerID },
+        "gemini-2.5-flash": { modelID: "gemini-2.5-flash" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "gemini-2.0-flash": { modelID: "gemini-2.0-flash" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "llama-4-maverick": { modelID: "llama-4-maverick" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "llama-3.3-70b": { modelID: "llama-3.3-70b" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
+        "mistral-small": { modelID: "mistral-small" as typeof msg.info.modelID, providerID: "opencode-go" as typeof msg.info.providerID },
       }
       if (params.model === "gpt-5.4") {
         yield* ctx.ask({
