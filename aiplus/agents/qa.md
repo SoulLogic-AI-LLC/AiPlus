@@ -25,22 +25,22 @@ permission:
     pattern: "curl*"
     action: allow
   - permission: "bash"
-    pattern: "git log"
+    pattern: "git log*"
     action: allow
   - permission: "bash"
-    pattern: "git diff"
+    pattern: "git diff*"
     action: allow
   - permission: "bash"
-    pattern: "git show"
+    pattern: "git show*"
     action: allow
   - permission: "bash"
-    pattern: "git status"
+    pattern: "git status*"
     action: allow
   - permission: "bash"
-    pattern: "git rev-parse"
+    pattern: "git rev-parse*"
     action: allow
   - permission: "bash"
-    pattern: "git blame"
+    pattern: "git blame*"
     action: allow
   - permission: "write"
     pattern: "*"
