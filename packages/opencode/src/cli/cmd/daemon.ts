@@ -109,6 +109,27 @@ export const DaemonCommand = effectCmd({
       }
     }).pipe(Effect.forkDetach)
 
+    // RSS monitor: check total memory every 30 minutes. Uses rss (OS-level
+    // resident set size) to catch native leaks (SQLite, Buffer) that heapUsed
+    // would miss. Threshold 1.5 GB shared with heap.ts Heap.start().
+    // If exceeded, log a warning and exit gracefully — launchd restarts a
+    // fresh daemon at 160 MB baseline. Configurable via env vars.
+    yield* Effect.gen(function* () {
+      const intervalMs = Number(process.env.OPENCODE_DAEMON_HEAP_CHECK_MS ?? "1800000") // 30 min
+      const limitBytes = Number(process.env.OPENCODE_DAEMON_HEAP_LIMIT_MB ?? "1536") * 1024 * 1024 // 1.5 GB
+      while (true) {
+        yield* Effect.sleep(intervalMs)
+        const used = process.memoryUsage().rss
+        if (used > limitBytes) {
+          process.stderr.write(
+            `[daemon] heap ${(used / 1024 / 1024).toFixed(0)} MB exceeds limit ` +
+              `${(limitBytes / 1024 / 1024).toFixed(0)} MB; restarting\n`,
+          )
+          yield* lifecycle.shutdown
+        }
+      }
+    }).pipe(Effect.forkDetach)
+
     let shuttingDown = false
     const onSignal = () => {
       if (shuttingDown) return
