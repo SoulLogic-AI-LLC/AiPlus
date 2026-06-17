@@ -5,6 +5,7 @@ import { clearDaemonPort, writeDaemonPort, readDaemonPort, isDaemonAlive } from 
 import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
 import { Flag } from "@opencode-ai/core/flag/flag"
+import { EventCleanup } from "@/event-cleanup"
 import type { Listener } from "../../server/server"
 
 export const DaemonCommand = effectCmd({
@@ -62,6 +63,10 @@ export const DaemonCommand = effectCmd({
 
     yield* writeDaemonPort(server.port)
     process.stderr.write(`daemon ready on port ${server.port}\n`)
+
+    // Run event table cleanup once at startup (dedup + 30-day TTL).
+    // Fork detaches so it never blocks daemon readiness or shutdown.
+    yield* EventCleanup.compactAndCleanup().pipe(Effect.forkDetach)
 
     let shuttingDown = false
     const onSignal = () => {
