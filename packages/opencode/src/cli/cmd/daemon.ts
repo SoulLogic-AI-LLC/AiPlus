@@ -71,30 +71,41 @@ export const DaemonCommand = effectCmd({
     // Fork detaches so it never blocks daemon readiness or shutdown.
     yield* EventCleanup.compactAndCleanup().pipe(Effect.forkDetach)
 
-    // Run worktree cleanup once at startup — detect and remove stale worktrees
+    // Run worktree cleanup every 12 hours — detect and remove stale worktrees
     // for branches already merged into origin/dev or deleted from remote.
+    // First run at startup, then repeats on a 12-hour interval.
     yield* Effect.gen(function* () {
       const { db } = yield* Database.Service
-      const rows = yield* db
-        .select({ worktree: ProjectTable.worktree })
-        .from(ProjectTable)
-        .all()
-        .pipe(Effect.orDie)
+      while (true) {
+        const rows = yield* db
+          .select({ worktree: ProjectTable.worktree })
+          .from(ProjectTable)
+          .all()
+          .pipe(Effect.orDie)
 
-      const seen = new Set<string>()
-      for (const row of rows) {
-        const repoRoot = row.worktree as string
-        if (!repoRoot || seen.has(repoRoot)) continue
-        seen.add(repoRoot)
-        yield* Effect.sync(() => {
-          const result = cleanupStale(repoRoot)
-          if (result.removed.length > 0) {
-            console.log(`[worktree-cleanup] removed ${result.removed.length} stale worktree(s) for ${repoRoot}`)
-          }
-          if (result.failed.length > 0) {
-            console.log(`[worktree-cleanup] failed to remove ${result.failed.length} worktree(s) for ${repoRoot}`)
-          }
-        })
+        const seen = new Set<string>()
+        for (const row of rows) {
+          const repoRoot = row.worktree as string
+          if (!repoRoot || seen.has(repoRoot)) continue
+          seen.add(repoRoot)
+          yield* Effect.sync(() => {
+            const result = cleanupStale(repoRoot)
+            if (result.removed.length > 0) {
+              console.log(`[worktree-cleanup] removed ${result.removed.length} stale worktree(s) for ${repoRoot}`)
+            }
+            if (result.failed.length > 0) {
+              console.log(`[worktree-cleanup] failed to remove ${result.failed.length} worktree(s) for ${repoRoot}`)
+            }
+            if (result.skipped.length > 0) {
+              console.log(
+                `[worktree-cleanup] skipped ${result.skipped.length} worktree(s) for ${repoRoot}: ` +
+                  result.skipped.map((s) => `${s.path} (${s.reasons.join(",")})`).join("; "),
+              )
+            }
+          })
+        }
+        // 12-hour interval between cleanup sweeps
+        yield* Effect.sleep("12 hours")
       }
     }).pipe(Effect.forkDetach)
 

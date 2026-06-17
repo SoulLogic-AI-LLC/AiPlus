@@ -12,6 +12,14 @@ export interface StaleWorktree {
   reason: "merged" | "deleted"
 }
 
+export type SkipReason = "active_lease" | "uncommitted_changes" | "current_worktree"
+
+export interface SkippedWorktree {
+  path: string
+  branch: string
+  reasons: SkipReason[]
+}
+
 function runGit(args: string[], cwd: string): string {
   try {
     return execFileSync("git", args, { cwd, encoding: "utf-8", stdio: "pipe" }).trim()
@@ -103,7 +111,7 @@ export function findStaleWorktrees(repoRoot: string): StaleWorktree[] {
     if (!wt.branch) continue // detached HEAD — skip
     if (wt.branch === "dev" || wt.branch === "main" || wt.branch === "master") continue // don't touch primary branches
 
-    // Normalize worktree path for lease comparison
+    // Normalize worktree path for comparisons
     const normalized = path.normalize(wt.path)
 
     if (merged.has(wt.branch)) {
@@ -118,12 +126,50 @@ export function findStaleWorktrees(repoRoot: string): StaleWorktree[] {
   return stale
 }
 
-/**
- * Check if a worktree path has an active lease.
- */
+// ---------------------------------------------------------------------------
+// Safety gates — all four must pass before a worktree is removed.
+// ---------------------------------------------------------------------------
+
+/** Gate ①: No active lease in leases.json. */
 function hasActiveLease(worktreePath: string, repoRoot: string): boolean {
   const leases = listLeases(repoRoot)
   return leases.some((l) => l.status === "active" && path.normalize(l.worktreePath) === worktreePath)
+}
+
+/** Gate ②: Branch is merged or deleted on remote (already baked into findStaleWorktrees). */
+
+/** Gate ③: No uncommitted changes in the worktree. */
+function hasUncommittedChanges(worktreePath: string): boolean {
+  const status = runGit(["status", "--porcelain"], worktreePath)
+  return status.length > 0
+}
+
+/** Gate ④: Not the current worktree (don't remove yourself). */
+function isCurrentWorktree(worktreePath: string): boolean {
+  const cwd = path.resolve(process.cwd())
+  const wt = path.resolve(worktreePath)
+  return cwd === wt || cwd.startsWith(wt + path.sep)
+}
+
+/**
+ * Collect safety gate violations for a stale worktree.
+ * Returns the list of reasons why this worktree should be skipped.
+ * An empty array means all gates pass — safe to remove.
+ */
+function checkSafetyGates(worktreePath: string, repoRoot: string): SkipReason[] {
+  const reasons: SkipReason[] = []
+
+  if (hasActiveLease(worktreePath, repoRoot)) {
+    reasons.push("active_lease")
+  }
+  if (hasUncommittedChanges(worktreePath)) {
+    reasons.push("uncommitted_changes")
+  }
+  if (isCurrentWorktree(worktreePath)) {
+    reasons.push("current_worktree")
+  }
+
+  return reasons
 }
 
 /**
@@ -153,26 +199,33 @@ export function removeWorktree(repoRoot: string, worktreePath: string): boolean 
 
 export interface CleanupResult {
   stale: StaleWorktree[]
-  skipped: StaleWorktree[] // blocked by active lease
-  removed: string[] // paths successfully removed
-  failed: string[] // paths that couldn't be removed
+  skipped: SkippedWorktree[]
+  removed: string[]
+  failed: string[]
 }
 
 /**
  * Find and clean stale worktrees.
+ *
+ * Four safety gates (all must pass):
+ *   ① No active lease in leases.json
+ *   ② Remote branch merged or deleted (via findStaleWorktrees)
+ *   ③ No uncommitted changes (git status --porcelain)
+ *   ④ Not the current worktree
  *
  * @param repoRoot  Main repository path (where git worktree list is run from)
  * @param dryRun    If true, only detect — do not remove.
  */
 export function cleanupStale(repoRoot: string, dryRun: boolean = false): CleanupResult {
   const stale = findStaleWorktrees(repoRoot)
-  const skipped: StaleWorktree[] = []
+  const skipped: SkippedWorktree[] = []
   const removed: string[] = []
   const failed: string[] = []
 
   for (const wt of stale) {
-    if (hasActiveLease(wt.path, repoRoot)) {
-      skipped.push(wt)
+    const reasons = checkSafetyGates(wt.path, repoRoot)
+    if (reasons.length > 0) {
+      skipped.push({ path: wt.path, branch: wt.branch, reasons })
       continue
     }
     if (dryRun) continue
@@ -202,9 +255,15 @@ export function formatResult(result: CleanupResult, dryRun: boolean): string {
   lines.push(`  found ${result.stale.length} stale worktree(s)`)
 
   for (const wt of result.stale) {
-    const skipped = result.skipped.includes(wt)
-    const prefix = skipped ? "  [SKIP lease]" : "  [STALE]"
-    lines.push(`${prefix} ${wt.path} (branch: ${wt.branch}, reason: ${wt.reason})`)
+    const skipped = result.skipped.find((s) => s.path === wt.path)
+    if (skipped) {
+      const reasons = skipped.reasons.join(", ")
+      lines.push(`  [SKIP ${reasons}] ${wt.path} (branch: ${wt.branch}, reason: ${wt.reason})`)
+    } else if (dryRun) {
+      lines.push(`  [DRY-RUN] ${wt.path} (branch: ${wt.branch}, reason: ${wt.reason})`)
+    } else {
+      lines.push(`  [STALE] ${wt.path} (branch: ${wt.branch}, reason: ${wt.reason})`)
+    }
   }
 
   if (!dryRun) {
