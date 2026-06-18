@@ -841,16 +841,16 @@ export class RunFooter implements FooterApi {
     if (next.model) {
       const model = {
         providerID: next.model.providerID,
-        modelID: next.model.id,
+        modelID: next.model.modelID,
       } satisfies NonNullable<RunInput["model"]>
       const variants = Object.keys(
         this.providers()?.find((item) => item.id === model.providerID)?.models?.[model.modelID]?.variants ?? {},
       )
       this.setCurrentModel(model)
       this.setVariants(variants)
-      this.setCurrentVariant(next.model.variant)
+      this.setCurrentVariant(next.variant)
       this.patch({
-        model: formatModelLabel(model, next.model.variant, this.providers()),
+        model: formatModelLabel(model, next.variant, this.providers()),
       })
     }
 

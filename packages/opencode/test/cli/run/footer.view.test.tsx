@@ -190,6 +190,7 @@ async function renderFooter(
           resources={() => []}
           commands={() => input.commands ?? []}
           providers={() => input.providers}
+          currentAgent={() => undefined}
           currentModel={() => input.currentModel}
           variants={() => []}
           currentVariant={() => input.currentVariant}
@@ -199,7 +200,6 @@ async function renderFooter(
           theme={input.theme ?? (() => RUN_THEME_FALLBACK)}
           tuiConfig={config}
           backgroundSubagents={input.backgroundSubagents ?? true}
-          agent="opencode"
           onSubmit={input.onSubmit ?? (() => true)}
           onPermissionReply={() => {}}
           onQuestionReply={() => {}}
@@ -209,6 +209,7 @@ async function renderFooter(
           onEditorOpen={async () => undefined}
           onInputClear={() => {}}
           onExit={() => {}}
+          onAgentSelect={() => {}}
           onModelSelect={() => {}}
           onVariantSelect={() => {}}
           onRows={() => {}}
@@ -370,12 +371,14 @@ test("direct command panel renders grouped command palette", async () => {
       <box width={100} height={RUN_COMMAND_PANEL_ROWS}>
         <RunCommandMenuBody
           theme={() => RUN_THEME_FALLBACK.footer}
+          agents={() => []}
           commands={commands}
           subagents={subagents}
           queued={() => []}
           variants={variants}
           variantCycle="ctrl+t"
           onClose={() => {}}
+          onAgent={() => {}}
           onModel={() => {}}
           onEditor={() => {}}
           onSkill={() => {}}
@@ -511,12 +514,14 @@ test("direct command panel shows subagent entry when available", async () => {
       <box width={100} height={RUN_COMMAND_PANEL_ROWS}>
         <RunCommandMenuBody
           theme={() => RUN_THEME_FALLBACK.footer}
+          agents={() => []}
           commands={commands}
           subagents={subagents}
           queued={() => []}
           variants={variants}
           variantCycle="ctrl+t"
           onClose={() => {}}
+          onAgent={() => {}}
           onModel={() => {}}
           onEditor={() => {}}
           onSkill={() => {}}
@@ -559,12 +564,14 @@ test("direct command panel keeps completed subagents available", async () => {
       <box width={100} height={RUN_COMMAND_PANEL_ROWS}>
         <RunCommandMenuBody
           theme={() => RUN_THEME_FALLBACK.footer}
+          agents={() => []}
           commands={commands}
           subagents={subagents}
           queued={() => []}
           variants={variants}
           variantCycle="ctrl+t"
           onClose={() => {}}
+          onAgent={() => {}}
           onModel={() => {}}
           onEditor={() => {}}
           onSkill={() => {}}
@@ -937,6 +944,7 @@ test("direct footer shows editable prompts and additional queued work while runn
           resources={() => []}
           commands={() => []}
           providers={() => undefined}
+          currentAgent={() => undefined}
           currentModel={() => ({
             providerID: "opencode",
             modelID: "a-model-name-long-enough-to-force-responsive-truncation",
@@ -952,7 +960,6 @@ test("direct footer shows editable prompts and additional queued work while runn
           theme={() => RUN_THEME_FALLBACK}
           tuiConfig={tuiConfig}
           backgroundSubagents={true}
-          agent="opencode"
           onSubmit={() => true}
           onPermissionReply={() => {}}
           onQuestionReply={() => {}}
@@ -962,6 +969,7 @@ test("direct footer shows editable prompts and additional queued work while runn
           onEditorOpen={async () => undefined}
           onInputClear={() => {}}
           onExit={() => {}}
+          onAgentSelect={() => {}}
           onModelSelect={() => {}}
           onVariantSelect={() => {}}
           onRows={() => {}}

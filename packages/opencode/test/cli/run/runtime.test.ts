@@ -254,20 +254,18 @@ describe("run interactive runtime", () => {
     spyOn(sdk.app, "agents").mockImplementation(() =>
       ok([
         {
-          id: "build",
           name: "build",
-          mode: "primary",
+          mode: "primary" as const,
           hidden: false,
-          permissions: [],
-          request: { headers: {}, body: {} },
+          permission: [],
+          options: {},
         },
         {
-          id: "advisor",
           name: "advisor",
-          mode: "primary",
+          mode: "primary" as const,
           hidden: false,
-          permissions: [],
-          request: { headers: {}, body: {} },
+          permission: [],
+          options: {},
         },
       ]),
     )
