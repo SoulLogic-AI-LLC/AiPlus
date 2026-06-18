@@ -36,7 +36,8 @@ import { PROMPT_MAX_ROWS, TEXTAREA_MIN_ROWS } from "./footer.prompt"
 import { RunFooterView } from "./footer.view"
 import { RunScrollbackStream } from "./scrollback.surface"
 import { RUN_THEME_FALLBACK, resolveRunTheme, type RunTheme } from "./theme"
-import { modelInfo } from "./variant.shared"
+import * as Locale from "@/util/locale"
+import { formatModelLabel, modelInfo } from "./variant.shared"
 import type {
   FooterApi,
   FooterEvent,
@@ -75,7 +76,7 @@ type RunFooterOptions = {
   commands?: RunCommand[]
   wrote?: boolean
   sessionID: () => string | undefined
-  agentLabel: string
+  agent: string | undefined
   modelLabel: string
   model: RunInput["model"]
   variant: string | undefined
@@ -90,6 +91,7 @@ type RunFooterOptions = {
   onQuestionReply: (input: QuestionReply) => void | Promise<void>
   onQuestionReject: (input: QuestionReject) => void | Promise<void>
   onCycleVariant?: () => CycleResult | void
+  onAgentSelect?: (agent: string) => void
   onModelSelect?: (model: NonNullable<RunInput["model"]>) => CycleResult | void | Promise<CycleResult | void>
   onVariantSelect?: (variant: string | undefined) => CycleResult | void | Promise<CycleResult | void>
   onInterrupt?: () => void
@@ -182,6 +184,8 @@ export class RunFooter implements FooterApi {
   private setAgents: Setter<RunAgent[]>
   private resources: Accessor<RunResource[]>
   private setResources: Setter<RunResource[]>
+  private currentAgent: Accessor<string | undefined>
+  private setCurrentAgent: Setter<string | undefined>
   private commands: Accessor<RunCommand[] | undefined>
   private setCommands: Setter<RunCommand[] | undefined>
   private providers: Accessor<RunProvider[] | undefined>
@@ -258,6 +262,9 @@ export class RunFooter implements FooterApi {
     const [resources, setResources] = createSignal(options.resources)
     this.resources = resources
     this.setResources = setResources
+    const [currentAgent, setCurrentAgent] = createSignal(options.agent)
+    this.currentAgent = currentAgent
+    this.setCurrentAgent = setCurrentAgent
     const [commands, setCommands] = createSignal<RunCommand[] | undefined>(options.commands)
     this.commands = commands
     this.setCommands = setCommands
@@ -313,6 +320,7 @@ export class RunFooter implements FooterApi {
               agents: footer.agents,
               resources: footer.resources,
               commands: footer.commands,
+              currentAgent: footer.currentAgent,
               providers: footer.providers,
               currentModel: footer.currentModel,
               variants: footer.variants,
@@ -322,7 +330,6 @@ export class RunFooter implements FooterApi {
               tuiConfig: options.tuiConfig,
               backgroundSubagents: options.backgroundSubagents,
               history: options.history,
-              agent: options.agentLabel,
               onSubmit: footer.handlePrompt,
               onPermissionReply: footer.handlePermissionReply,
               onQuestionReply: footer.handleQuestionReply,
@@ -335,6 +342,7 @@ export class RunFooter implements FooterApi {
               onExitRequest: footer.handleExit,
               onRequestExit: footer.setRequestExitHandler,
               onExit: () => footer.close(),
+              onAgentSelect: footer.handleAgentSelect,
               onModelSelect: footer.handleModelSelect,
               onVariantSelect: footer.handleVariantSelect,
               onRows: footer.syncRows,
@@ -394,7 +402,7 @@ export class RunFooter implements FooterApi {
       this.flushing = this.flushing
         .then(() =>
           this.scrollback.writeTurnSummary({
-            agent: this.options.agentLabel,
+            agent: Locale.titlecase(this.currentAgent() ?? "build"),
             model: current ? modelInfo(this.providers(), current).model : this.state().model,
             duration: next.duration,
           }),
@@ -702,19 +710,21 @@ export class RunFooter implements FooterApi {
           ? this.base + QUESTION_ROWS
           : this.promptRoute.type === "command"
             ? 1 + COMMAND_ROWS
-            : this.promptRoute.type === "skill"
-              ? 1 + SKILL_ROWS
-              : this.promptRoute.type === "model"
-                ? 1 + MODEL_ROWS
-                : this.promptRoute.type === "variant"
-                  ? 1 + VARIANT_ROWS
-                  : this.promptRoute.type === "queued-menu"
-                    ? 1 + this.subagentMenuRows
-                    : this.promptRoute.type === "subagent-menu"
+            : this.promptRoute.type === "agent"
+              ? 1 + this.subagentMenuRows
+              : this.promptRoute.type === "skill"
+                ? 1 + SKILL_ROWS
+                : this.promptRoute.type === "model"
+                  ? 1 + MODEL_ROWS
+                  : this.promptRoute.type === "variant"
+                    ? 1 + VARIANT_ROWS
+                    : this.promptRoute.type === "queued-menu"
                       ? 1 + this.subagentMenuRows
-                      : this.promptRoute.type === "subagent"
-                        ? this.base + SUBAGENT_INSPECTOR_ROWS
-                        : this.base + Math.max(TEXTAREA_MIN_ROWS, Math.min(PROMPT_MAX_ROWS, this.rows))
+                      : this.promptRoute.type === "subagent-menu"
+                        ? 1 + this.subagentMenuRows
+                        : this.promptRoute.type === "subagent"
+                          ? this.base + SUBAGENT_INSPECTOR_ROWS
+                          : this.base + Math.max(TEXTAREA_MIN_ROWS, Math.min(PROMPT_MAX_ROWS, this.rows))
 
     if (height !== this.renderer.footerHeight) {
       this.renderer.footerHeight = height
@@ -814,6 +824,38 @@ export class RunFooter implements FooterApi {
 
     this.patch(patch)
     this.setNotice(result.status ?? "variant updated")
+  }
+
+  private handleAgentSelect = (name: string): void => {
+    if (this.isClosed) {
+      return
+    }
+
+    const next = this.agents().find((item) => !item.hidden && item.name === name)
+    if (!next) {
+      this.setNotice(`agent ${name} unavailable`)
+      return
+    }
+
+    this.setCurrentAgent(next.name)
+    if (next.model) {
+      const model = {
+        providerID: next.model.providerID,
+        modelID: next.model.id,
+      } satisfies NonNullable<RunInput["model"]>
+      const variants = Object.keys(
+        this.providers()?.find((item) => item.id === model.providerID)?.models?.[model.modelID]?.variants ?? {},
+      )
+      this.setCurrentModel(model)
+      this.setVariants(variants)
+      this.setCurrentVariant(next.model.variant)
+      this.patch({
+        model: formatModelLabel(model, next.model.variant, this.providers()),
+      })
+    }
+
+    this.options.onAgentSelect?.(next.name)
+    this.setNotice(`agent ${next.name}`)
   }
 
   private handleModelSelect = (model: NonNullable<RunInput["model"]>): void => {

@@ -5,6 +5,10 @@ import type { FooterApi, RunProvider } from "@/cli/cmd/run/types"
 
 type SessionMessage = NonNullable<Awaited<ReturnType<OpencodeClient["session"]["messages"]>>["data"]>[number]
 
+type CapturedLifecycle = {
+  onAgentSelect?: (name: string) => void
+}
+
 const provider: RunProvider = {
   id: "openai",
   name: "OpenAI",
@@ -234,5 +238,104 @@ describe("run interactive runtime", () => {
     await task
 
     expect(transportProviders).toEqual([[provider]])
+  })
+
+  test("uses the footer-selected agent for the next prompt", async () => {
+    const lifecycle: CapturedLifecycle = {}
+    const promptStarted = defer<void>()
+    const promptFinished = defer<void>()
+    const prompt = defer<{ text: string; parts: [] }>()
+    const calls: string[] = []
+
+    const sdk = new OpencodeClient()
+    spyOn(sdk.config, "providers").mockImplementation(() => ok({ providers: [provider], default: {} }))
+    spyOn(sdk.session, "messages").mockImplementation(() => ok([]))
+    spyOn(sdk.session, "get").mockRejectedValue(new Error("not needed"))
+    spyOn(sdk.app, "agents").mockImplementation(() =>
+      ok([
+        {
+          id: "build",
+          name: "build",
+          mode: "primary",
+          hidden: false,
+          permissions: [],
+          request: { headers: {}, body: {} },
+        },
+        {
+          id: "advisor",
+          name: "advisor",
+          mode: "primary",
+          hidden: false,
+          permissions: [],
+          request: { headers: {}, body: {} },
+        },
+      ]),
+    )
+    spyOn(sdk.experimental.resource, "list").mockImplementation(() => ok({}))
+    spyOn(sdk.command, "list").mockImplementation(() => ok([]))
+
+    const task = runInteractiveMode(
+      {
+        sdk,
+        directory: "/tmp",
+        sessionID: "ses-1",
+        sessionTitle: "Session",
+        resume: false,
+        agent: "build",
+        model: {
+          providerID: "openai",
+          modelID: "gpt-5",
+        },
+        variant: undefined,
+        files: [],
+        thinking: true,
+        backgroundSubagents: false,
+      },
+      {
+        createRuntimeLifecycle: async (input) => {
+          lifecycle.onAgentSelect = input.onAgentSelect
+          const nextFooter = footer()
+          return {
+            footer: {
+              ...nextFooter,
+              onPrompt(fn) {
+                queueMicrotask(() => {
+                  lifecycle.onAgentSelect?.("advisor")
+                  promptStarted.resolve()
+                  prompt.promise.then((next) => {
+                    fn(next)
+                    nextFooter.close()
+                  })
+                })
+                return () => {}
+              },
+            },
+            onResize: () => () => {},
+            refreshTheme: () => {},
+            resetForReplay: () => Promise.resolve(),
+            close: () => Promise.resolve(),
+          }
+        },
+        streamTransport: Promise.resolve({
+          createSessionTransport: async () => ({
+            runPromptTurn: async (input: { agent: string | undefined }) => {
+              calls.push(input.agent ?? "")
+              promptFinished.resolve()
+            },
+            selectSubagent: () => {},
+            replayOnResize: async () => false,
+            close: async () => {},
+          }),
+          formatUnknownError: (error: unknown) => (error instanceof Error ? error.message : String(error)),
+        }),
+      },
+    )
+
+    await promptStarted.promise
+    prompt.resolve({ text: "hello", parts: [] })
+    await promptFinished.promise
+    await task
+
+    expect(calls).toEqual(["advisor"])
   })
 })

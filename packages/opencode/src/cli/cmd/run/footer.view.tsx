@@ -14,6 +14,7 @@ import "opentui-spinner/solid"
 import { createColors, createFrames } from "@opencode-ai/tui/ui/spinner"
 import {
   RUN_SUBAGENT_PANEL_ROWS,
+  RunAgentSelectBody,
   RunCommandMenuBody,
   RunModelSelectBody,
   RunQueuedPromptSelectBody,
@@ -77,6 +78,7 @@ type RunFooterViewProps = {
   resources: () => RunResource[]
   commands: () => RunCommand[] | undefined
   providers: () => RunProvider[] | undefined
+  currentAgent: () => string | undefined
   currentModel: () => RunInput["model"]
   variants: () => string[]
   currentVariant: () => string | undefined
@@ -89,7 +91,6 @@ type RunFooterViewProps = {
   tuiConfig: RunTuiConfig
   backgroundSubagents: boolean
   history?: RunPrompt[]
-  agent: string
   onSubmit: (input: RunPrompt) => boolean
   onPermissionReply: (input: PermissionReply) => void | Promise<void>
   onQuestionReply: (input: QuestionReply) => void | Promise<void>
@@ -102,6 +103,7 @@ type RunFooterViewProps = {
   onExitRequest?: () => boolean
   onRequestExit?: (fn: (() => boolean) | undefined) => void
   onExit: () => void
+  onAgentSelect: (name: string) => void
   onModelSelect: (model: NonNullable<RunInput["model"]>) => void
   onVariantSelect: (variant: string | undefined) => void
   onRows: (rows: number) => void
@@ -133,6 +135,7 @@ export function RunFooterView(props: RunFooterViewProps) {
   const queuedPrompts = createMemo(() => props.queuedPrompts?.() ?? [])
   const skills = createMemo(() => (props.commands() ?? []).filter((item) => item.source === "skill"))
   const prompt = createMemo(() => active().type === "prompt" && route().type === "composer")
+  const selectingAgent = createMemo(() => active().type === "prompt" && route().type === "agent")
   const selectingSubagent = createMemo(() => active().type === "prompt" && route().type === "subagent-menu")
   const selectingQueued = createMemo(() => active().type === "prompt" && route().type === "queued-menu")
   const inspecting = createMemo(() => active().type === "prompt" && route().type === "subagent")
@@ -145,6 +148,7 @@ export function RunFooterView(props: RunFooterViewProps) {
       active().type === "permission" ||
       active().type === "question" ||
       selectingQueued() ||
+      selectingAgent() ||
       selectingSubagent() ||
       commanding() ||
       skilling() ||
@@ -285,6 +289,15 @@ export function RunFooterView(props: RunFooterViewProps) {
     return current.type === "composer" ? "prompt" : current.type
   })
 
+  const openAgentMenu = () => {
+    if (!props.agents().some((item) => !item.hidden)) {
+      return
+    }
+
+    setRoute({ type: "agent" })
+    props.onSubagentSelect?.(undefined)
+  }
+
   const openCommand = () => {
     setRoute({ type: "command" })
     props.onSubagentSelect?.(undefined)
@@ -374,6 +387,7 @@ export function RunFooterView(props: RunFooterViewProps) {
     onInputClear: props.onInputClear,
     onExitRequest: props.onExitRequest,
     onExit: props.onExit,
+    onAgentMenu: openAgentMenu,
     onSkillMenu: openSkillMenu,
     onRows: props.onRows,
     onStatus: props.onStatus,
@@ -599,6 +613,7 @@ export function RunFooterView(props: RunFooterViewProps) {
     const current = route()
     if (
       current.type !== "command" &&
+      current.type !== "agent" &&
       current.type !== "skill" &&
       current.type !== "model" &&
       current.type !== "variant" &&
@@ -686,6 +701,19 @@ export function RunFooterView(props: RunFooterViewProps) {
                             onRows={setSubagentMenuRows}
                           />
                         </Match>
+                        <Match when={selectingAgent()}>
+                          <RunAgentSelectBody
+                            theme={theme}
+                            agents={props.agents}
+                            current={props.currentAgent}
+                            onClose={closePanel}
+                            onSelect={(name) => {
+                              props.onAgentSelect(name)
+                              closePanel()
+                            }}
+                            onRows={setSubagentMenuRows}
+                          />
+                        </Match>
                         <Match when={selectingQueued()}>
                           <RunQueuedPromptSelectBody
                             theme={theme}
@@ -703,12 +731,14 @@ export function RunFooterView(props: RunFooterViewProps) {
                         <Match when={commanding()}>
                           <RunCommandMenuBody
                             theme={theme}
+                            agents={props.agents}
                             commands={props.commands}
                             subagents={tabs}
                             queued={queuedPrompts}
                             variants={props.variants}
                             variantCycle={variantCycle()}
                             onClose={closePanel}
+                            onAgent={openAgentMenu}
                             onModel={openModel}
                             onEditor={() => {
                               closePanel()
