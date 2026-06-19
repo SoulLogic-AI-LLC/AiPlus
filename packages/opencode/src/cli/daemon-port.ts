@@ -5,6 +5,7 @@ import { randomUUID } from "crypto"
 import { spawn, spawnSync } from "node:child_process"
 import fs from "fs/promises"
 import fsSync from "fs"
+import os from "os"
 import path from "path"
 
 export const DaemonPortFile = "daemon.port"
@@ -163,20 +164,72 @@ export class DaemonPortBlockedError extends Schema.TaggedErrorClass<DaemonPortBl
 }) {}
 
 type PortOwner = {
+  exePath: string | undefined
   command: string
   pid: number
 }
 
-export function isAllowedDaemonCommand(command: string) {
-  const normalized = command.toLowerCase()
-  return (
-    normalized.includes("aiplus-daemon") ||
-    (normalized.includes("aiplus-native") && normalized.includes(" daemon")) ||
-    normalized.includes("src/index.ts daemon")
-  )
+const FORBIDDEN_EXE_PREFIXES = ["/tmp/", "/var/tmp/", "/dev/shm/"]
+
+function resolveAllowlistedExePrefixes(): string[] {
+  const prefixes: string[] = []
+  // ~/.local/bin/
+  prefixes.push(path.join(os.homedir(), ".local", "bin"))
+  // process.execPath directory
+  prefixes.push(path.dirname(process.execPath))
+  // OPENCODE_DAEMON_ALLOW_PATH override (colon-separated)
+  const envPaths = process.env.OPENCODE_DAEMON_ALLOW_PATH
+  if (envPaths) {
+    for (const p of envPaths.split(":")) {
+      const trimmed = p.trim()
+      if (trimmed) prefixes.push(trimmed)
+    }
+  }
+  return prefixes
 }
 
-function readPortOwner(port: number) {
+/**
+ * Checks whether a process listening on a daemon port is a legitimate daemon
+ * process that may be killed by cleanupStaleDaemonPort.
+ *
+ * Architect guardrails (Architect daemon risk review, P0):
+ * 1. Primary: exe PATH must start with an allowlisted prefix
+ *    (~/.local/bin/, process.execPath directory, or OPENCODE_DAEMON_ALLOW_PATH).
+ * 2. Process args must contain "daemon" as a subcommand token.
+ * 3. Explicitly reject paths from /tmp, /var/tmp, /dev/shm (even if otherwise
+ *    allowlisted).
+ * 4. If the exe path cannot be determined, return false — conservative: do NOT kill.
+ */
+export function isAllowedDaemonCommand(exePath: string | undefined, command: string): boolean {
+  // Conservative: if exePath is unknown, do not allow killing
+  if (!exePath) return false
+
+  // Reject forbidden temp/shm paths
+  for (const forbidden of FORBIDDEN_EXE_PREFIXES) {
+    if (exePath.startsWith(forbidden)) return false
+  }
+
+  // Check allowlisted prefixes
+  const prefixes = resolveAllowlistedExePrefixes()
+  const prefixAllowed = prefixes.some((prefix) => exePath.startsWith(prefix + "/"))
+  if (!prefixAllowed) return false
+
+  // Require "daemon" as a subcommand token in process args
+  const args = command.split(/\s+/).slice(1)
+  return args[0] === "daemon"
+}
+
+function getExePath(pid: number): string | undefined {
+  const lsof = spawnSync("lsof", ["-p", String(pid), "-Fn"], { encoding: "utf8" })
+  if (lsof.status !== 0) return undefined
+  const lines = lsof.stdout.split("\n").map((l) => l.trim()).filter(Boolean)
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (lines[i] === "ftxt" && lines[i + 1]?.startsWith("n")) return lines[i + 1].slice(1)
+  }
+  return undefined
+}
+
+function readPortOwner(port: number): PortOwner | undefined {
   const lsof = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-Fp"], { encoding: "utf8" })
   if (lsof.status !== 0) {
     return undefined
@@ -205,7 +258,9 @@ function readPortOwner(port: number) {
     return undefined
   }
 
-  return { command, pid } satisfies PortOwner
+  const exePath = getExePath(pid)
+
+  return { exePath, command, pid }
 }
 
 function processExists(pid: number) {
@@ -231,7 +286,7 @@ export const cleanupStaleDaemonPort = Effect.fn("Cli.daemon-port.cleanupStale")(
     return { type: "free" as const }
   }
 
-  if (!isAllowedDaemonCommand(owner.command)) {
+  if (!isAllowedDaemonCommand(owner.exePath, owner.command)) {
     return yield* new DaemonPortBlockedError({
       command: owner.command,
       pid: owner.pid,

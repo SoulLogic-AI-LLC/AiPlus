@@ -8,10 +8,13 @@ import { Global } from "@opencode-ai/core/global"
 import { cleanupStaleDaemonPort, clearDaemonPort, daemonPort, daemonSpawnCommand, isAllowedDaemonCommand, isDaemonAlive, readDaemonPort, writeDaemonPort } from "../../src/cli/daemon-port"
 
 const originalDaemonPort = process.env.OPENCODE_DAEMON_PORT
+const originalAllowPath = process.env.OPENCODE_DAEMON_ALLOW_PATH
 
 afterEach(() => {
   if (originalDaemonPort === undefined) delete process.env.OPENCODE_DAEMON_PORT
   else process.env.OPENCODE_DAEMON_PORT = originalDaemonPort
+  if (originalAllowPath === undefined) delete process.env.OPENCODE_DAEMON_ALLOW_PATH
+  else process.env.OPENCODE_DAEMON_ALLOW_PATH = originalAllowPath
 })
 
 function listenForeignServer() {
@@ -39,11 +42,49 @@ describe("daemon port", () => {
     expect(daemonPort()).toBe(40123)
   })
 
-  test("allowlists canonical daemon command names", () => {
-    expect(isAllowedDaemonCommand("/usr/local/bin/aiplus-daemon daemon")).toBe(true)
-    expect(isAllowedDaemonCommand("/usr/local/bin/aiplus-native daemon")).toBe(true)
-    expect(isAllowedDaemonCommand("bun /repo/packages/opencode/src/index.ts daemon")).toBe(true)
-    expect(isAllowedDaemonCommand("python -m http.server")).toBe(false)
+  test("allows daemon command with allowed exe path and daemon subcommand", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/Users/steve/.local/bin"
+    expect(isAllowedDaemonCommand("/Users/steve/.local/bin/aiplus-daemon", "aiplus-daemon daemon")).toBe(true)
+  })
+
+  test("allows daemon command in current runtime directory", () => {
+    const execDir = path.dirname(process.execPath)
+    expect(isAllowedDaemonCommand(path.join(execDir, "aiplus-daemon"), "aiplus-daemon daemon")).toBe(true)
+  })
+
+  test("rejects when exe path is unknown", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/Users/steve/.local/bin"
+    expect(isAllowedDaemonCommand(undefined, "aiplus-daemon daemon")).toBe(false)
+  })
+
+  test("rejects command injection from /tmp even with matching args", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/tmp"
+    expect(isAllowedDaemonCommand("/tmp/aiplus-daemon-fake", "aiplus-daemon-fake daemon")).toBe(false)
+  })
+
+  test("rejects daemon from /var/tmp", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/var/tmp"
+    expect(isAllowedDaemonCommand("/var/tmp/aiplus-daemon", "aiplus-daemon daemon")).toBe(false)
+  })
+
+  test("rejects foreign process (python http.server on daemon port)", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/usr/bin"
+    expect(isAllowedDaemonCommand("/usr/bin/python3", "python3 -m http.server 37367")).toBe(false)
+  })
+
+  test("rejects allowed exe path when args lack daemon subcommand", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/Users/steve/.local/bin"
+    expect(isAllowedDaemonCommand("/Users/steve/.local/bin/aiplus-daemon", "aiplus-daemon status")).toBe(false)
+  })
+
+  test("honors OPENCODE_DAEMON_ALLOW_PATH override", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/custom/bin"
+    expect(isAllowedDaemonCommand("/custom/bin/aiplus-daemon", "aiplus-daemon daemon")).toBe(true)
+  })
+
+  test("rejects paths not in OPENCODE_DAEMON_ALLOW_PATH", () => {
+    process.env.OPENCODE_DAEMON_ALLOW_PATH = "/custom/bin"
+    expect(isAllowedDaemonCommand("/other/bin/aiplus-daemon", "aiplus-daemon daemon")).toBe(false)
   })
 
   test("prefers sibling aiplus-daemon for compiled spawns", async () => {
