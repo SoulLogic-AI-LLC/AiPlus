@@ -77,20 +77,20 @@ export type Event =
   | EventMcpBrowserOpenFailed
   | EventCommandExecuted
   | EventProjectUpdated
+  | EventVcsBranchUpdated
+  | EventServerConnected
+  | EventGlobalDisposed
   | EventSessionStatus
   | EventSessionIdle
   | EventQuestionAsked
   | EventQuestionReplied
   | EventQuestionRejected
   | EventSessionCompacted
-  | EventVcsBranchUpdated
   | EventWorkspaceReady
   | EventWorkspaceFailed
   | EventWorkspaceStatus
   | EventWorktreeReady
   | EventWorktreeFailed
-  | EventServerConnected
-  | EventGlobalDisposed
   | EventServerInstanceDisposed
 
 export type QuestionReplied = {
@@ -1515,6 +1515,27 @@ export type GlobalEvent = {
       }
     | {
         id: string
+        type: "vcs.branch.updated"
+        properties: {
+          branch?: string
+        }
+      }
+    | {
+        id: string
+        type: "server.connected"
+        properties: {
+          [key: string]: unknown
+        }
+      }
+    | {
+        id: string
+        type: "global.disposed"
+        properties: {
+          [key: string]: unknown
+        }
+      }
+    | {
+        id: string
         type: "session.status"
         properties: {
           sessionID: string
@@ -1567,13 +1588,6 @@ export type GlobalEvent = {
       }
     | {
         id: string
-        type: "vcs.branch.updated"
-        properties: {
-          branch?: string
-        }
-      }
-    | {
-        id: string
         type: "workspace.ready"
         properties: {
           name: string
@@ -1607,20 +1621,6 @@ export type GlobalEvent = {
         type: "worktree.failed"
         properties: {
           message: string
-        }
-      }
-    | {
-        id: string
-        type: "server.connected"
-        properties: {
-          [key: string]: unknown
-        }
-      }
-    | {
-        id: string
-        type: "global.disposed"
-        properties: {
-          [key: string]: unknown
         }
       }
     | EventServerInstanceDisposed
@@ -5123,6 +5123,30 @@ export type EventProjectUpdated = {
   }
 }
 
+export type EventVcsBranchUpdated = {
+  id: string
+  type: "vcs.branch.updated"
+  properties: {
+    branch?: string
+  }
+}
+
+export type EventServerConnected = {
+  id: string
+  type: "server.connected"
+  properties: {
+    [key: string]: unknown
+  }
+}
+
+export type EventGlobalDisposed = {
+  id: string
+  type: "global.disposed"
+  properties: {
+    [key: string]: unknown
+  }
+}
+
 export type EventSessionStatus = {
   id: string
   type: "session.status"
@@ -5181,14 +5205,6 @@ export type EventSessionCompacted = {
   }
 }
 
-export type EventVcsBranchUpdated = {
-  id: string
-  type: "vcs.branch.updated"
-  properties: {
-    branch?: string
-  }
-}
-
 export type EventWorkspaceReady = {
   id: string
   type: "workspace.ready"
@@ -5228,22 +5244,6 @@ export type EventWorktreeFailed = {
   type: "worktree.failed"
   properties: {
     message: string
-  }
-}
-
-export type EventServerConnected = {
-  id: string
-  type: "server.connected"
-  properties: {
-    [key: string]: unknown
-  }
-}
-
-export type EventGlobalDisposed = {
-  id: string
-  type: "global.disposed"
-  properties: {
-    [key: string]: unknown
   }
 }
 
@@ -5436,6 +5436,31 @@ export type GlobalEventResponses = {
 }
 
 export type GlobalEventResponse = GlobalEventResponses[keyof GlobalEventResponses]
+
+export type GlobalWsData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/global/ws"
+}
+
+export type GlobalWsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type GlobalWsError = GlobalWsErrors[keyof GlobalWsErrors]
+
+export type GlobalWsResponses = {
+  /**
+   * Connected session
+   */
+  200: boolean
+}
+
+export type GlobalWsResponse = GlobalWsResponses[keyof GlobalWsResponses]
 
 export type GlobalConfigGetData = {
   body?: never
@@ -9372,6 +9397,208 @@ export type ExperimentalWorkspaceWarpResponses = {
 
 export type ExperimentalWorkspaceWarpResponse =
   ExperimentalWorkspaceWarpResponses[keyof ExperimentalWorkspaceWarpResponses]
+
+export type AiplusLobbyStatusData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/aiplus/lobby/status"
+}
+
+export type AiplusLobbyStatusErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AiplusLobbyStatusError = AiplusLobbyStatusErrors[keyof AiplusLobbyStatusErrors]
+
+export type AiplusLobbyStatusResponses = {
+  /**
+   * Lobby status with roles, lanes, and state
+   */
+  200: {
+    roles: Array<{
+      id: string
+      name: string
+      pillar: "coordinator" | "verifier" | "expert"
+      status: "active" | "idle" | "stale"
+      sessionId?: string
+      lastActive?: string
+    }>
+    lanes: Array<{
+      lane: string
+      status: "active" | "idle"
+      sessionId?: string
+      role?: string
+      lastActive?: string
+    }>
+    state: {
+      boundRole: string
+      boundAt: string
+      sessionId: string
+    }
+  }
+}
+
+export type AiplusLobbyStatusResponse = AiplusLobbyStatusResponses[keyof AiplusLobbyStatusResponses]
+
+export type AiplusDispatchGetData = {
+  body?: never
+  path: {
+    sessionId: string
+  }
+  query?: never
+  url: "/aiplus/dispatch/{sessionId}"
+}
+
+export type AiplusDispatchGetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AiplusDispatchGetError = AiplusDispatchGetErrors[keyof AiplusDispatchGetErrors]
+
+export type AiplusDispatchGetResponses = {
+  /**
+   * Dispatch entry for session
+   */
+  200: {
+    dispatchId: string
+    sessionId: string
+    role: string
+    lane?: string
+    tier?: "LIGHT" | "MEDIUM" | "HEAVY"
+    outcome?: "success" | "failed" | "canceled"
+    timestamp: string
+    task?: string
+    reversibility?: string
+    schemaVersion?: string
+  }
+}
+
+export type AiplusDispatchGetResponse = AiplusDispatchGetResponses[keyof AiplusDispatchGetResponses]
+
+export type AiplusDispatchListData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/aiplus/dispatch/list"
+}
+
+export type AiplusDispatchListErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AiplusDispatchListError = AiplusDispatchListErrors[keyof AiplusDispatchListErrors]
+
+export type AiplusDispatchListResponses = {
+  /**
+   * All dispatch entries
+   */
+  200: Array<{
+    dispatchId: string
+    sessionId: string
+    role: string
+    lane?: string
+    tier?: "LIGHT" | "MEDIUM" | "HEAVY"
+    outcome?: "success" | "failed" | "canceled"
+    timestamp: string
+    task?: string
+    reversibility?: string
+    schemaVersion?: string
+  }>
+}
+
+export type AiplusDispatchListResponse = AiplusDispatchListResponses[keyof AiplusDispatchListResponses]
+
+export type AiplusCapsuleGetData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/aiplus/compact/capsule"
+}
+
+export type AiplusCapsuleGetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AiplusCapsuleGetError = AiplusCapsuleGetErrors[keyof AiplusCapsuleGetErrors]
+
+export type AiplusCapsuleGetResponses = {
+  /**
+   * Context capsule with per-model thresholds
+   */
+  200: {
+    capsule: {
+      sessionId: string
+      contextUsage: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+      pressureLevel: "silent" | "soft" | "hard" | "emergency"
+      tokenCount: {
+        used: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+        total: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+      }
+      model: string
+      writtenAt: string
+      recommendation: string
+    }
+    thresholds: {
+      [key: string]: {
+        soft: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+        hard: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+        emergency: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+      }
+    }
+  }
+}
+
+export type AiplusCapsuleGetResponse = AiplusCapsuleGetResponses[keyof AiplusCapsuleGetResponses]
+
+export type AiplusPersonasListData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/aiplus/personas"
+}
+
+export type AiplusPersonasListErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AiplusPersonasListError = AiplusPersonasListErrors[keyof AiplusPersonasListErrors]
+
+export type AiplusPersonasListResponses = {
+  /**
+   * List of all personas
+   */
+  200: Array<{
+    id: string
+    name: string
+    description: string
+    pillar: "coordinator" | "verifier" | "expert"
+    mode: "subagent" | "primary" | "all"
+    hidden: boolean
+    permissions: Array<{
+      permission: string
+      pattern: string
+      action: "allow" | "deny"
+    }>
+  }>
+}
+
+export type AiplusPersonasListResponse = AiplusPersonasListResponses[keyof AiplusPersonasListResponses]
 
 export type V2HealthGetData = {
   body?: never

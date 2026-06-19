@@ -54,7 +54,9 @@ export const writeDaemonPort = Effect.fn("Cli.daemon-port.write")(function* (por
   const file = portFilePath()
   const temp = file + "." + randomUUID() + ".tmp"
   yield* Effect.promise(() => fs.mkdir(Global.Path.data, { recursive: true }))
-  yield* Effect.promise(() => fs.writeFile(temp, JSON.stringify({ port, pid: process.pid, startedAt: Date.now() }), { mode: 0o600 }))
+  yield* Effect.promise(() =>
+    fs.writeFile(temp, JSON.stringify({ port, pid: process.pid, startedAt: Date.now() }), { mode: 0o600 }),
+  )
   yield* Effect.promise(() => fs.rename(temp, file))
 })
 
@@ -145,9 +147,7 @@ export const probeDaemonPort = Effect.fn("Cli.daemon-port.probe")(function* (por
  * response (caller must NOT delete the port file), and `"dead"` for any
  * connection error, timeout, or other non-2xx response.
  */
-export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (
-  info: DaemonPort,
-) {
+export const isDaemonAlive = Effect.fn("Cli.daemon-port.isAlive")(function* (info: DaemonPort) {
   return yield* probeDaemonPort(info.port)
 })
 
@@ -155,13 +155,19 @@ export class DaemonAuthError extends Schema.TaggedErrorClass<DaemonAuthError>()(
   port: Schema.Int,
 }) {}
 
-export class DaemonSpawnTimeoutError extends Schema.TaggedErrorClass<DaemonSpawnTimeoutError>()("CliDaemonSpawnTimeoutError", {}) {}
+export class DaemonSpawnTimeoutError extends Schema.TaggedErrorClass<DaemonSpawnTimeoutError>()(
+  "CliDaemonSpawnTimeoutError",
+  {},
+) {}
 
-export class DaemonPortBlockedError extends Schema.TaggedErrorClass<DaemonPortBlockedError>()("CliDaemonPortBlockedError", {
-  port: Schema.Int,
-  pid: Schema.Int,
-  command: Schema.String,
-}) {}
+export class DaemonPortBlockedError extends Schema.TaggedErrorClass<DaemonPortBlockedError>()(
+  "CliDaemonPortBlockedError",
+  {
+    port: Schema.Int,
+    pid: Schema.Int,
+    command: Schema.String,
+  },
+) {}
 
 type PortOwner = {
   exePath: string | undefined
@@ -222,7 +228,10 @@ export function isAllowedDaemonCommand(exePath: string | undefined, command: str
 function getExePath(pid: number): string | undefined {
   const lsof = spawnSync("lsof", ["-p", String(pid), "-Fn"], { encoding: "utf8" })
   if (lsof.status !== 0) return undefined
-  const lines = lsof.stdout.split("\n").map((l) => l.trim()).filter(Boolean)
+  const lines = lsof.stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
   for (let i = 0; i < lines.length - 1; i++) {
     if (lines[i] === "ftxt" && lines[i + 1]?.startsWith("n")) return lines[i + 1].slice(1)
   }

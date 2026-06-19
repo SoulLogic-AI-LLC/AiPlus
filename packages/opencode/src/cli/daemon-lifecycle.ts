@@ -33,10 +33,7 @@ export const make = (args: {
     const waitForActiveTurns = Effect.gen(function* () {
       const turns = yield* Ref.get(activeTurns)
       if (turns === 0) return
-      yield* Deferred.await(turnsZero).pipe(
-        Effect.timeout(args.shutdownGraceMs),
-        Effect.ignore,
-      )
+      yield* Deferred.await(turnsZero).pipe(Effect.timeout(args.shutdownGraceMs), Effect.ignore)
     })
 
     const shutdown = Effect.gen(function* () {
@@ -56,19 +53,19 @@ export const make = (args: {
     )
 
     const addConnection = Effect.gen(function* () {
-      yield* Ref.update(openConnections, n => n + 1)
+      yield* Ref.update(openConnections, (n) => n + 1)
     })
 
     const removeConnection = Effect.gen(function* () {
-      yield* Ref.update(openConnections, n => Math.max(0, n - 1))
+      yield* Ref.update(openConnections, (n) => Math.max(0, n - 1))
     })
 
     const incrementActiveTurn = Effect.gen(function* () {
-      yield* Ref.update(activeTurns, n => n + 1)
+      yield* Ref.update(activeTurns, (n) => n + 1)
     })
 
     const decrementActiveTurn = Effect.gen(function* () {
-      const previous = yield* Ref.getAndUpdate(activeTurns, n => Math.max(0, n - 1))
+      const previous = yield* Ref.getAndUpdate(activeTurns, (n) => Math.max(0, n - 1))
       if (previous === 1) {
         yield* Deferred.succeed(turnsZero, void 0)
       }

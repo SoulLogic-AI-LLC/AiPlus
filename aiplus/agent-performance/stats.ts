@@ -19,8 +19,14 @@ function groupBy<K>(items: PerformanceRecord[], keyFn: (r: PerformanceRecord) =>
   return map
 }
 
-function computeDimensionStats(records: PerformanceRecord[], extractFn: (r: PerformanceRecord) => number): DimensionStats {
-  const values = records.map(extractFn).filter((v) => v > 0).sort((a, b) => a - b)
+function computeDimensionStats(
+  records: PerformanceRecord[],
+  extractFn: (r: PerformanceRecord) => number,
+): DimensionStats {
+  const values = records
+    .map(extractFn)
+    .filter((v) => v > 0)
+    .sort((a, b) => a - b)
   return {
     p50: percentile(values, 0.5),
     p90: percentile(values, 0.9),

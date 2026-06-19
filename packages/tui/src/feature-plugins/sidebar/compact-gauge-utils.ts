@@ -22,7 +22,10 @@ export function pressureFg(level: PressureLevel, theme: TuiThemeCurrent): TuiThe
 }
 
 /** Filter helper: should this capsule render in the sidebar? */
-export function shouldRender(capsule: { sessionId: string; pressureLevel: PressureLevel } | null, currentSessionId: string): boolean {
+export function shouldRender(
+  capsule: { sessionId: string; pressureLevel: PressureLevel } | null,
+  currentSessionId: string,
+): boolean {
   if (!capsule) return false
   if (capsule.sessionId !== currentSessionId) return false
   if (capsule.pressureLevel === "silent") return false
@@ -37,7 +40,7 @@ export type Thresholds = Record<string, ThresholdEntry>
  * Falls back to a safe default when the model is missing.
  */
 export function lookupThreshold(thresholds: Thresholds, modelId: string): ThresholdEntry {
-  return thresholds[modelId] ?? { soft: 0.30, hard: 0.45, emergency: 0.60 }
+  return thresholds[modelId] ?? { soft: 0.3, hard: 0.45, emergency: 0.6 }
 }
 
 /** Type guard for B0 response shape. */

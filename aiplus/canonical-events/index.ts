@@ -90,7 +90,11 @@ export function appendCanonicalEvent(projectRoot: string, input: CanonicalEventI
     }
     const logPath = path.join(projectRoot, CANONICAL_EVENTS_FILE)
     fs.mkdirSync(path.dirname(logPath), { recursive: true })
-    fs.appendFileSync(logPath, applyRedaction(JSON.stringify(event)).replaceAll("[REDACTED_TOKEN]", CANONICAL_REDACTION_TOKEN) + "\n", "utf-8")
+    fs.appendFileSync(
+      logPath,
+      applyRedaction(JSON.stringify(event)).replaceAll("[REDACTED_TOKEN]", CANONICAL_REDACTION_TOKEN) + "\n",
+      "utf-8",
+    )
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     recordCanonicalDivergence(projectRoot, input, msg)

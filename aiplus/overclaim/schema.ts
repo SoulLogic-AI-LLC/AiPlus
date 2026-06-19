@@ -8,12 +8,12 @@
 // ---- Evidence Levels (ascending strength) --------------------------------
 
 export type EvidenceLevel =
-  | "L0_Asserted"   // "I believe X" — no evidence. Default.
-  | "L1_Code"       // Code exists/changed (commit SHA + git read)
-  | "L2_Built"      // Compiles/lints clean
-  | "L3_Tested"     // Tests pass. Gate floor for anti-bypass.
-  | "L4_Reviewed"   // Reviewer/QA verdict
-  | "L5_Live"       // User-visible feature works (dogfood transcript)
+  | "L0_Asserted" // "I believe X" — no evidence. Default.
+  | "L1_Code" // Code exists/changed (commit SHA + git read)
+  | "L2_Built" // Compiles/lints clean
+  | "L3_Tested" // Tests pass. Gate floor for anti-bypass.
+  | "L4_Reviewed" // Reviewer/QA verdict
+  | "L5_Live" // User-visible feature works (dogfood transcript)
 
 export const LEVEL_ORDER: Record<EvidenceLevel, number> = {
   L0_Asserted: 0,
@@ -116,10 +116,7 @@ export interface EvidencePacket {
 
 // ---- Gate Violation -------------------------------------------------------
 
-export type GateViolationKind =
-  | "EvidenceContradicts"
-  | "UnderEvidencedNotRerunnable"
-  | "UnderEvidencedNoArtifact"
+export type GateViolationKind = "EvidenceContradicts" | "UnderEvidencedNotRerunnable" | "UnderEvidencedNoArtifact"
 
 export interface GateViolation {
   claim_id: string

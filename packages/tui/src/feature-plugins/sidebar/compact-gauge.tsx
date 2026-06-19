@@ -34,7 +34,7 @@ type CapsuleResponse = { capsule: ContextCapsule | null; thresholds: Thresholds 
 
 /** Safe threshold lookup with safe fallback when HTTP omits a model. */
 function lookupThreshold(thresholds: Thresholds, modelId: string): ThresholdEntry {
-  return thresholds[modelId] ?? { soft: 0.30, hard: 0.45, emergency: 0.60 }
+  return thresholds[modelId] ?? { soft: 0.3, hard: 0.45, emergency: 0.6 }
 }
 
 async function fetchCapsule(): Promise<CapsuleResponse | null> {
@@ -75,7 +75,8 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
               {c.tokenCount.used.toLocaleString()} / {c.tokenCount.total.toLocaleString()} · {c.model}
             </text>
             <text fg={theme.textMuted}>
-              thresholds: soft {threshold.soft * 100}% / hard {threshold.hard * 100}% / emergency {threshold.emergency * 100}%
+              thresholds: soft {threshold.soft * 100}% / hard {threshold.hard * 100}% / emergency{" "}
+              {threshold.emergency * 100}%
             </text>
           </box>
         )

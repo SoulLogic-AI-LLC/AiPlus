@@ -36,7 +36,8 @@ export function DialogAgent() {
   const options = () => {
     const list = agents()
     const ceoAgents = list.filter((a) => CEO_PATTERN.test(a.name))
-    const allOccupied = ceoAgents.length > 0 && ceoAgents.every((a) => (a.description ?? "").includes("currently in use"))
+    const allOccupied =
+      ceoAgents.length > 0 && ceoAgents.every((a) => (a.description ?? "").includes("currently in use"))
 
     const items = list
       .filter((a) => !allOccupied || !CEO_PATTERN.test(a.name))
@@ -68,7 +69,11 @@ export function DialogAgent() {
       options={options()}
       onSelect={(option) => {
         if (!option.value) {
-          toast.show({ variant: "warning", message: "All CEO lanes in use (3/3). Close a CEO session to free a lane.", duration: 4000 })
+          toast.show({
+            variant: "warning",
+            message: "All CEO lanes in use (3/3). Close a CEO session to free a lane.",
+            duration: 4000,
+          })
           return
         }
         local.agent.set(option.value)

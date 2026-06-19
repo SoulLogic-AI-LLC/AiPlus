@@ -20,10 +20,14 @@ import { levelGte, LEVEL_ORDER } from "./schema"
 
 function resultLabel(result?: RerunResult): string {
   switch (result) {
-    case "LiteralPass": return "LITERAL_PASS"
-    case "LiteralFail": return "LITERAL_FAIL"
-    case "NotRerunnable": return "NOT_RERUNNABLE"
-    default: return "PENDING"
+    case "LiteralPass":
+      return "LITERAL_PASS"
+    case "LiteralFail":
+      return "LITERAL_FAIL"
+    case "NotRerunnable":
+      return "NOT_RERUNNABLE"
+    default:
+      return "PENDING"
   }
 }
 
@@ -33,9 +37,12 @@ function kindLabel(kind: ClaimKind): string {
 
 function scopeLabel(scope: SessionScope): string {
   switch (scope) {
-    case "OwnCommits": return "OWN_COMMITS"
-    case "RepoStateInWindow": return "REPO_WINDOW"
-    case "Global": return "GLOBAL"
+    case "OwnCommits":
+      return "OWN_COMMITS"
+    case "RepoStateInWindow":
+      return "REPO_WINDOW"
+    case "Global":
+      return "GLOBAL"
   }
 }
 
@@ -68,13 +75,13 @@ export function renderTable(packet: EvidencePacket): string {
   const lines: string[] = []
 
   // Header
-  lines.push("=" .repeat(80))
+  lines.push("=".repeat(80))
   lines.push(`EVIDENCE PACKET: ${packet.packet_id}`)
   lines.push(`Claims: ${packet.claims.length}  Drift events: ${packet.protocol_drift_events?.length ?? 0}`)
   if (packet.source_packet_path) {
     lines.push(`Source: ${packet.source_packet_path}`)
   }
-  lines.push("=" .repeat(80))
+  lines.push("=".repeat(80))
   lines.push("")
 
   // Per-claim rows
@@ -83,9 +90,9 @@ export function renderTable(packet: EvidencePacket): string {
 
     lines.push(
       `${claim.claim_id.padEnd(12)} ${kindLabel(claim.claim_kind).padEnd(16)} ` +
-      `${scopeLabel(claim.session_scope).padEnd(14)} ` +
-      `${levelLabel(claim.level).padEnd(12)} ` +
-      `${resultLabel(claim.rerun.result)}${divergent}  ${shaShort(claim.rerun.actual_sha256)}`,
+        `${scopeLabel(claim.session_scope).padEnd(14)} ` +
+        `${levelLabel(claim.level).padEnd(12)} ` +
+        `${resultLabel(claim.rerun.result)}${divergent}  ${shaShort(claim.rerun.actual_sha256)}`,
     )
     lines.push(`  ${truncateInline(claim.claim_text)}`)
     lines.push(`  cmd:      ${claim.rerun.cmd}`)
@@ -122,13 +129,13 @@ export function renderTable(packet: EvidencePacket): string {
     for (const ev of packet.protocol_drift_events) {
       lines.push(
         `${ev.event_id.padEnd(12)} ${ev.drift_kind.padEnd(20)} ` +
-        `${ev.related_claim_id ?? "--".padEnd(12)}  ${truncateInline(ev.description)}`,
+          `${ev.related_claim_id ?? "--".padEnd(12)}  ${truncateInline(ev.description)}`,
       )
     }
     lines.push("")
   }
 
-  lines.push("=" .repeat(80))
+  lines.push("=".repeat(80))
   return lines.join("\n")
 }
 

@@ -47,9 +47,7 @@ const apiLayer = HttpRouter.serve(
   Layer.provide(ServerAuth.Config.layer({ password: Option.none(), username: "opencode" })),
 )
 
-const serverUrl = HttpServer.HttpServer.use((server) =>
-  Effect.succeed(HttpServer.formatAddress(server.address)),
-)
+const serverUrl = HttpServer.HttpServer.use((server) => Effect.succeed(HttpServer.formatAddress(server.address)))
 
 function openWebSocket(url: string): Effect.Effect<WebSocket> {
   return Effect.promise(
@@ -102,9 +100,7 @@ describe("daemon WebSocket events", () => {
           }),
         )
         expect(connected.type).toBe("event")
-        expect((connected.payload as { payload: { type: string } }).payload.type).toBe(
-          "server.connected",
-        )
+        expect((connected.payload as { payload: { type: string } }).payload.type).toBe("server.connected")
 
         yield* send(socket, wsPing())
         const pong = yield* nextMessage(socket).pipe(
@@ -128,9 +124,7 @@ describe("daemon WebSocket events", () => {
         )
         expect(busEvent.type).toBe("event")
         expect((busEvent.payload as { directory: string }).directory).toBe("test")
-        expect(
-          (busEvent.payload as { payload: { type: string } }).payload.type,
-        ).toBe("plugin.added")
+        expect((busEvent.payload as { payload: { type: string } }).payload.type).toBe("plugin.added")
 
         socket.close()
       }).pipe(Effect.provide(apiLayer), Effect.runPromise),

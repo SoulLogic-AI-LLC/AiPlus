@@ -19,22 +19,19 @@ export const TEAM: RoleSpec[] = [
     slug: "advisor",
     persona: "Advisor",
     category: "core",
-    description:
-      "Frames decisions, challenges premises, distinguishes reversible from irreversible choices",
+    description: "Frames decisions, challenges premises, distinguishes reversible from irreversible choices",
   },
   {
     slug: "ceo",
     persona: "CEO",
     category: "core",
-    description:
-      "Owns task scoping, role staffing, sequencing, and status reporting",
+    description: "Owns task scoping, role staffing, sequencing, and status reporting",
   },
   {
     slug: "architect",
     persona: "Architect",
     category: "core",
-    description:
-      "Data flow, coupling, failure modes, long-term reversibility",
+    description: "Data flow, coupling, failure modes, long-term reversibility",
   },
   {
     slug: "pm",
@@ -46,8 +43,7 @@ export const TEAM: RoleSpec[] = [
     slug: "ui-designer",
     persona: "UI Designer",
     category: "core",
-    description:
-      "User paths, interaction flow, states, recovery, usability, design consistency",
+    description: "User paths, interaction flow, states, recovery, usability, design consistency",
   },
   {
     slug: "ai-integration",
@@ -67,29 +63,25 @@ export const TEAM: RoleSpec[] = [
     slug: "engineer-b",
     persona: "Engineer B",
     category: "core",
-    description:
-      "Secondary implementation specialist — parallel builder with strict file-ownership boundaries",
+    description: "Secondary implementation specialist — parallel builder with strict file-ownership boundaries",
   },
   {
     slug: "integration-manager",
     persona: "Integration Manager",
     category: "core",
-    description:
-      "Neutral lane integration coordinator — discovers, dry-run checks, plans merge order",
+    description: "Neutral lane integration coordinator — discovers, dry-run checks, plans merge order",
   },
   {
     slug: "reviewer",
     persona: "Reviewer",
     category: "core",
-    description:
-      "Adversarial verification, judges diffs against acceptance criteria with PASS/REVISE/BLOCKED verdicts",
+    description: "Adversarial verification, judges diffs against acceptance criteria with PASS/REVISE/BLOCKED verdicts",
   },
   {
     slug: "security-reviewer",
     persona: "Security Reviewer",
     category: "core",
-    description:
-      "Secrets, auth, privacy, billing, user data, automation side effects",
+    description: "Secrets, auth, privacy, billing, user data, automation side effects",
   },
   {
     slug: "qa",
@@ -104,43 +96,37 @@ export const TEAM: RoleSpec[] = [
     slug: "tech-writer",
     persona: "Tech Writer",
     category: "expert",
-    description:
-      "README, docs, error messages, onboarding flow, every sentence is a UI",
+    description: "README, docs, error messages, onboarding flow, every sentence is a UI",
   },
   {
     slug: "devops",
     persona: "DevOps",
     category: "expert",
-    description:
-      "CI/CD, deploy, rollback, monitoring, SLOs, on-call ergonomics",
+    description: "CI/CD, deploy, rollback, monitoring, SLOs, on-call ergonomics",
   },
   {
     slug: "researcher",
     persona: "Researcher",
     category: "expert",
-    description:
-      "Best-practice hunter, benchmark methodology checker, dissenting-opinion reader",
+    description: "Best-practice hunter, benchmark methodology checker, dissenting-opinion reader",
   },
   {
     slug: "performance-engineer",
     persona: "Performance Engineer",
     category: "expert",
-    description:
-      "Profiling, benchmarking, latency/throughput optimization, resource usage, bottleneck identification",
+    description: "Profiling, benchmarking, latency/throughput optimization, resource usage, bottleneck identification",
   },
   {
     slug: "cqo",
     persona: "CQO",
     category: "expert",
-    description:
-      "Quality-chain judge, cross-verifies AC/implementation/reviewer findings",
+    description: "Quality-chain judge, cross-verifies AC/implementation/reviewer findings",
   },
   {
     slug: "performance-auditor",
     persona: "Performance Auditor",
     category: "expert",
-    description:
-      "Runs aiplus velocity data, cross-analyzes agent performance, produces quantitative reports",
+    description: "Runs aiplus velocity data, cross-analyzes agent performance, produces quantitative reports",
   },
 
   // ── Bench (3) ──────────────────────────────────────────────────────
@@ -148,22 +134,19 @@ export const TEAM: RoleSpec[] = [
     slug: "release-manager",
     persona: "Release Manager",
     category: "bench",
-    description:
-      "Verifies PR status, CI/checks, release checklist, tag/release/smoke/assets",
+    description: "Verifies PR status, CI/checks, release checklist, tag/release/smoke/assets",
   },
   {
     slug: "evidence-auditor",
     persona: "Evidence Auditor",
     category: "bench",
-    description:
-      "Compares CEO/worker claims against git diff, CI, artifacts, dogfood transcripts",
+    description: "Compares CEO/worker claims against git diff, CI, artifacts, dogfood transcripts",
   },
   {
     slug: "chief-auditor",
     persona: "Chief Auditor",
     category: "bench",
-    description:
-      "Read-only verification coordinator, plans independent verification fan-out and gate evidence checks",
+    description: "Read-only verification coordinator, plans independent verification fan-out and gate evidence checks",
   },
 ]
 

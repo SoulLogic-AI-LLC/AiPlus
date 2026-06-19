@@ -23,14 +23,21 @@ describe("read layer", () => {
   it("readActive filters out superseded entries", () => {
     appendTeamEntry({ projectRoot: tmpDir, id: "t1", subject: "s1", summary: "active one", source: "a" })
     appendTeamEntry({ projectRoot: tmpDir, id: "t2", subject: "s2", summary: "also active", source: "b" })
-    appendTeamEntry({ projectRoot: tmpDir, id: "t3", subject: "s3", summary: "gone", source: "c", status: "superseded" })
+    appendTeamEntry({
+      projectRoot: tmpDir,
+      id: "t3",
+      subject: "s3",
+      summary: "gone",
+      source: "c",
+      status: "superseded",
+    })
 
     const all = readAll(tmpDir, "team")
     expect(all.length).toBe(3)
 
     const active = readActive(tmpDir, "team")
     expect(active.length).toBe(2)
-    expect(active.every(e => e.status !== "superseded")).toBe(true)
+    expect(active.every((e) => e.status !== "superseded")).toBe(true)
   })
 
   it("findById returns entry or null", () => {
@@ -46,9 +53,30 @@ describe("read layer", () => {
   })
 
   it("findByQuery is case-insensitive and searches summary/tags", () => {
-    appendTeamEntry({ projectRoot: tmpDir, id: "q1", subject: "s", summary: "OOM on Mac", source: "a", tags: ["performance"] })
-    appendTeamEntry({ projectRoot: tmpDir, id: "q2", subject: "s", summary: "all good", source: "b", tags: ["oom-fix"] })
-    appendTeamEntry({ projectRoot: tmpDir, id: "q3", subject: "s", summary: "nothing here", source: "c", tags: ["other"] })
+    appendTeamEntry({
+      projectRoot: tmpDir,
+      id: "q1",
+      subject: "s",
+      summary: "OOM on Mac",
+      source: "a",
+      tags: ["performance"],
+    })
+    appendTeamEntry({
+      projectRoot: tmpDir,
+      id: "q2",
+      subject: "s",
+      summary: "all good",
+      source: "b",
+      tags: ["oom-fix"],
+    })
+    appendTeamEntry({
+      projectRoot: tmpDir,
+      id: "q3",
+      subject: "s",
+      summary: "nothing here",
+      source: "c",
+      tags: ["other"],
+    })
 
     const results = findByQuery(tmpDir, "team", "oom")
     expect(results.length).toBe(2)

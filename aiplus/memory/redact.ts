@@ -36,7 +36,8 @@ const RULES: RedactionRule[] = [
   // r4: Private key block (PEM)
   {
     name: "private_key_pem",
-    pattern: /-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g,
+    pattern:
+      /-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g,
     replacement: "[REDACTED_KEY]",
     description: "PEM-encoded private key block",
   },
@@ -78,7 +79,8 @@ const RULES: RedactionRule[] = [
   // r10: Private IPv4 (10.x, 192.168.x, 172.16-31.x)
   {
     name: "private_ip",
-    pattern: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b/g,
+    pattern:
+      /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b/g,
     replacement: "[REDACTED_IP]",
     description: "Private IPv4 address (10/8, 192.168/16, 172.16/12)",
   },
@@ -92,7 +94,8 @@ const RULES: RedactionRule[] = [
   // r12: Private email (non-public domains)
   {
     name: "private_email",
-    pattern: /\b[A-Za-z0-9._%+-]+@(?!gmail\.com|outlook\.com|yahoo\.com|icloud\.com|hotmail\.com)[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
+    pattern:
+      /\b[A-Za-z0-9._%+-]+@(?!gmail\.com|outlook\.com|yahoo\.com|icloud\.com|hotmail\.com)[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
     replacement: "[REDACTED_EMAIL]",
     description: "Email on non-public-mailbox domains (company/internal)",
   },

@@ -15,10 +15,7 @@ import { createHash } from "node:crypto"
  * The key is deterministic: same tool + same args + same day = same key.
  * This allows detecting duplicate dangerous operations within a day.
  */
-export function generateIdempotencyKey(
-  toolName: string,
-  toolArgs: Record<string, unknown>,
-): string {
+export function generateIdempotencyKey(toolName: string, toolArgs: Record<string, unknown>): string {
   const payload = JSON.stringify({ toolName, toolArgs })
   const hash = createHash("sha256").update(payload).digest("hex").slice(0, 8)
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, "")

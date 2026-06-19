@@ -28,7 +28,7 @@ export function readLeases(projectRoot: string): LeaseEntry[] {
 /** Get lane statuses for CEO lanes (ceo-1, ceo-2, ceo-3). */
 export function getLaneStatuses(projectRoot: string): LaneStatus[] {
   const leases = readLeases(projectRoot)
-  const lanes: LaneStatus[] = ["ceo-1", "ceo-2", "ceo-3"].map(lane => ({
+  const lanes: LaneStatus[] = ["ceo-1", "ceo-2", "ceo-3"].map((lane) => ({
     lane,
     status: "idle" as const,
   }))
@@ -37,7 +37,7 @@ export function getLaneStatuses(projectRoot: string): LaneStatus[] {
   const STALE_MS = 24 * 60 * 60 * 1000 // 24h
 
   for (const lease of leases) {
-    const lane = lanes.find(l => l.lane === lease.lane)
+    const lane = lanes.find((l) => l.lane === lease.lane)
     if (!lane) continue
 
     // Ignore orphaned leases: the session was never created because the prompt

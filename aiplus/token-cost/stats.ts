@@ -17,10 +17,7 @@ const STATS_DIR = ".aiplus/token-cost"
  * Fire-and-forget: errors are logged to stderr, never thrown.
  * Returns the stats object on success, null on failure.
  */
-export function writeStats(
-  projectRoot: string,
-  options: TokenCostOptions = {},
-): TokenCostStats | null {
+export function writeStats(projectRoot: string, options: TokenCostOptions = {}): TokenCostStats | null {
   try {
     const stats = computeStats(options)
     const dir = path.join(projectRoot, STATS_DIR)

@@ -9,7 +9,14 @@ import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
 import { Effect, Option } from "effect"
 import { DaemonAuth } from "@/cli/daemon-auth"
-import { clearDaemonPort, daemonPort, isDaemonAlive, probeDaemonPort, readDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
+import {
+  clearDaemonPort,
+  daemonPort,
+  isDaemonAlive,
+  probeDaemonPort,
+  readDaemonPort,
+  spawnDaemonProcess,
+} from "@/cli/daemon-port"
 import { createDaemonFetch, createHybridEventSource } from "../tui/daemon-transport"
 
 async function input(value?: string) {

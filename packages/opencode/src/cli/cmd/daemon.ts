@@ -85,7 +85,9 @@ export const DaemonCommand = effectCmd({
     }).pipe(Effect.asVoid)
 
     const shutdownDaemon = (exitCode: number) => {
-      Effect.runPromise(clearDaemonPort()).catch(() => {}).finally(() => process.exit(exitCode))
+      Effect.runPromise(clearDaemonPort())
+        .catch(() => {})
+        .finally(() => process.exit(exitCode))
     }
 
     const lifecycle = yield* DaemonLifecycle.make({
@@ -96,9 +98,7 @@ export const DaemonCommand = effectCmd({
 
     const context = Context.make(DaemonLifecycle.Service, lifecycle)
 
-    server = yield* Effect.promise(() =>
-      Server.listen({ port, hostname: "127.0.0.1" }, context),
-    )
+    server = yield* Effect.promise(() => Server.listen({ port, hostname: "127.0.0.1" }, context))
 
     yield* writeDaemonPort(server.port)
     process.stderr.write(`daemon ready on port ${server.port}\n`)
@@ -113,11 +113,7 @@ export const DaemonCommand = effectCmd({
     yield* Effect.gen(function* () {
       const { db } = yield* Database.Service
       while (true) {
-        const rows = yield* db
-          .select({ worktree: ProjectTable.worktree })
-          .from(ProjectTable)
-          .all()
-          .pipe(Effect.orDie)
+        const rows = yield* db.select({ worktree: ProjectTable.worktree }).from(ProjectTable).all().pipe(Effect.orDie)
 
         const seen = new Set<string>()
         for (const row of rows) {

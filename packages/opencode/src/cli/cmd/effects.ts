@@ -1,7 +1,12 @@
 import { cmd } from "./cmd"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { classifyToolEffect, generateIdempotencyKey, interceptToolCall, type EffectLogEntry } from "../../../../../aiplus/effects"
+import {
+  classifyToolEffect,
+  generateIdempotencyKey,
+  interceptToolCall,
+  type EffectLogEntry,
+} from "../../../../../aiplus/effects"
 
 function readEffectLog(projectRoot: string): EffectLogEntry[] {
   const filePath = path.join(projectRoot, ".aiplus", "effects", "effect-log.jsonl")
@@ -17,9 +22,7 @@ function parseArgsJson(raw: string | undefined): Record<string, unknown> {
   if (!raw) return {}
   try {
     const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : {}
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {}
   } catch {
     return {}
   }
@@ -42,13 +45,15 @@ export const EffectsCommand = cmd({
           const toolArgs = parseArgsJson(typeof args.args === "string" ? args.args : undefined)
           const result = classifyToolEffect(toolName, toolArgs)
           const key = generateIdempotencyKey(toolName, toolArgs)
-          console.log([
-            "AiPlus Effects",
-            `  tool: ${toolName}`,
-            `  sideEffectClass: ${result.sideEffectClass}`,
-            `  retryPolicy: ${result.retryPolicy}`,
-            `  idempotencyKey: ${key}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Effects",
+              `  tool: ${toolName}`,
+              `  sideEffectClass: ${result.sideEffectClass}`,
+              `  retryPolicy: ${result.retryPolicy}`,
+              `  idempotencyKey: ${key}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -70,12 +75,14 @@ export const EffectsCommand = cmd({
             role: args.role as string,
             projectRoot: process.cwd(),
           })
-          console.log([
-            "AiPlus Effects",
-            `  tool: ${toolName}`,
-            `  allowed: ${result.allowed}`,
-            `  reason: ${result.reason ?? "(none)"}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Effects",
+              `  tool: ${toolName}`,
+              `  allowed: ${result.allowed}`,
+              `  reason: ${result.reason ?? "(none)"}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -91,21 +98,25 @@ export const EffectsCommand = cmd({
             console.log("AiPlus Effects\n  no effect-log entries recorded")
             return
           }
-          console.log([
-            "AiPlus Effects",
-            ...recent.map((entry, index) => [
-              `entry ${index + 1}`,
-              `  toolName: ${entry.toolName}`,
-              `  sideEffectClass: ${entry.sideEffectClass}`,
-              `  retryPolicy: ${entry.retryPolicy}`,
-              `  outcome: ${entry.outcome}`,
-              `  sessionId: ${entry.sessionId}`,
-              `  role: ${entry.role}`,
-              `  timestamp: ${entry.timestamp}`,
-              `  idempotencyKey: ${entry.idempotencyKey}`,
-              `  blockReason: ${entry.blockReason ?? "(none)"}`,
-            ].join("\n")),
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Effects",
+              ...recent.map((entry, index) =>
+                [
+                  `entry ${index + 1}`,
+                  `  toolName: ${entry.toolName}`,
+                  `  sideEffectClass: ${entry.sideEffectClass}`,
+                  `  retryPolicy: ${entry.retryPolicy}`,
+                  `  outcome: ${entry.outcome}`,
+                  `  sessionId: ${entry.sessionId}`,
+                  `  role: ${entry.role}`,
+                  `  timestamp: ${entry.timestamp}`,
+                  `  idempotencyKey: ${entry.idempotencyKey}`,
+                  `  blockReason: ${entry.blockReason ?? "(none)"}`,
+                ].join("\n"),
+              ),
+            ].join("\n"),
+          )
         },
       )
       .demandCommand(1, "subcommand required: classify | check | log"),

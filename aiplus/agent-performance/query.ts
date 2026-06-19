@@ -17,7 +17,10 @@ function readRecords(projectRoot: string): PerformanceRecord[] {
   const filePath = path.join(projectRoot, PERF_DIR, PERF_FILE)
   if (!fs.existsSync(filePath)) return []
   const content = fs.readFileSync(filePath, "utf-8")
-  const lines = content.trim().split("\n").filter((l) => l.length > 0)
+  const lines = content
+    .trim()
+    .split("\n")
+    .filter((l) => l.length > 0)
   const records: PerformanceRecord[] = []
   for (const line of lines) {
     try {
@@ -167,7 +170,7 @@ function nextDayIso(date: string): string {
 export function queryByRole(
   role: string,
   taskType: string,
-  opts?: { projectRoot?: string; limitRecent?: number; providerID?: string }
+  opts?: { projectRoot?: string; limitRecent?: number; providerID?: string },
 ): ByRoleResult {
   const projectRoot = opts?.projectRoot ?? process.cwd()
   const records = queryPerformance({ projectRoot, role, taskType, providerID: opts?.providerID })
@@ -262,10 +265,7 @@ function emptyBucket() {
   return { tokensIn: 0, tokensOut: 0, costUSD: 0, sessions: 0 }
 }
 
-export function queryBudget(
-  date?: string,
-  opts?: { projectRoot?: string }
-): BudgetResult {
+export function queryBudget(date?: string, opts?: { projectRoot?: string }): BudgetResult {
   const projectRoot = opts?.projectRoot ?? process.cwd()
   const resolvedDate = date ?? new Date().toISOString().slice(0, 10)
   const since = `${resolvedDate}T00:00:00.000Z`
@@ -327,10 +327,7 @@ export type RecentRecord = {
   taskSummary: string
 }
 
-export function queryRecent(
-  n?: number,
-  opts?: { projectRoot?: string }
-): RecentRecord[] {
+export function queryRecent(n?: number, opts?: { projectRoot?: string }): RecentRecord[] {
   const projectRoot = opts?.projectRoot ?? process.cwd()
   const limit = n ?? 10
   const records = queryPerformance({ projectRoot })

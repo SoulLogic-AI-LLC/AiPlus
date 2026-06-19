@@ -14,9 +14,9 @@ export interface DispatchEntry {
 
 /** Filter state for dispatch board. */
 export interface FilterState {
-  role: string | null  // null = all
-  lane: string | null  // null = all
-  status: string | null  // null = all
+  role: string | null // null = all
+  lane: string | null // null = all
+  status: string | null // null = all
 }
 
 /** Status display info. */
@@ -35,6 +35,6 @@ export function getDisplayStatus(entry: DispatchEntry): StatusType {
 
 /** Get all unique roles from entries. */
 export function getUniqueRoles(entries: DispatchEntry[]): string[] {
-  const roles = new Set(entries.map(e => e.role))
+  const roles = new Set(entries.map((e) => e.role))
   return Array.from(roles).sort()
 }

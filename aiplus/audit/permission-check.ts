@@ -17,10 +17,7 @@ export interface RuntimeAgentConfig {
 /** D3: verify persona permissions align with pillar expectations.
  *  GAP-3: reads runtime AgentV2 store when provided, falls back to disk.
  */
-export function checkPersonaPermissions(
-  projectRoot: string,
-  runtimeAgents?: RuntimeAgentConfig[],
-): AuditCheck {
+export function checkPersonaPermissions(projectRoot: string, runtimeAgents?: RuntimeAgentConfig[]): AuditCheck {
   // Use runtime agents if provided (GAP-3: disk-not-runtime fix)
   if (runtimeAgents && runtimeAgents.length > 0) {
     return checkRuntimePermissions(runtimeAgents)
@@ -40,8 +37,8 @@ function checkRuntimePermissions(agents: RuntimeAgentConfig[]): AuditCheck {
     results.push(`${agent.id}: ${ruleCount} rules (mode=${agent.mode}, hidden=${agent.hidden})`)
 
     // Check for suspicious patterns
-    const hasDenyAll = agent.permissions.some(p => p.resource === "*" && p.effect === "deny")
-    const hasAllowAll = agent.permissions.some(p => p.resource === "*" && p.effect === "allow")
+    const hasDenyAll = agent.permissions.some((p) => p.resource === "*" && p.effect === "deny")
+    const hasAllowAll = agent.permissions.some((p) => p.resource === "*" && p.effect === "allow")
 
     if (hasAllowAll && !hasDenyAll) {
       issues.push(`${agent.id}: allow-all without deny-all — may be over-permissive`)
@@ -80,7 +77,7 @@ function checkDiskPermissions(projectRoot: string): AuditCheck {
     const match = content.match(/^---\n([\s\S]*?)\n---/)
     if (!match) continue
     const frontmatter = match[1]
-    results.push(`${file}: OK (${frontmatter.split("\n").filter(l => l.startsWith("- permission:")).length} rules)`)
+    results.push(`${file}: OK (${frontmatter.split("\n").filter((l) => l.startsWith("- permission:")).length} rules)`)
   }
 
   return {

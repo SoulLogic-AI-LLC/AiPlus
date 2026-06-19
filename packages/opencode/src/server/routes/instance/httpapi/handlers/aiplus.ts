@@ -20,8 +20,11 @@ function readJsonFile<T>(filePath: string): T | null {
 function readJsonlFile<T>(filePath: string): T[] {
   try {
     if (!fs.existsSync(filePath)) return []
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n").filter(l => l.trim())
-    return lines.map(l => JSON.parse(l) as T)
+    const lines = fs
+      .readFileSync(filePath, "utf-8")
+      .split("\n")
+      .filter((l) => l.trim())
+    return lines.map((l) => JSON.parse(l) as T)
   } catch {
     return []
   }
@@ -87,46 +90,46 @@ interface MemoryEntry {
 // ===== Pillar Mapping =====
 
 const PILLAR_MAP: Record<string, "coordinator" | "verifier" | "expert"> = {
-  "ceo": "coordinator",
-  "advisor": "coordinator",
-  "pm": "coordinator",
-  "architect": "coordinator",
-  "reviewer": "verifier",
-  "qa": "verifier",
+  ceo: "coordinator",
+  advisor: "coordinator",
+  pm: "coordinator",
+  architect: "coordinator",
+  reviewer: "verifier",
+  qa: "verifier",
   "security-reviewer": "verifier",
   "chief-auditor": "verifier",
   "evidence-auditor": "verifier",
   "release-manager": "verifier",
-  "cqo": "verifier",
+  cqo: "verifier",
   "performance-auditor": "verifier",
   "engineer-a": "expert",
   "engineer-b": "expert",
-  "devops": "expert",
+  devops: "expert",
   "tech-writer": "expert",
-  "researcher": "expert",
+  researcher: "expert",
   "ai-integration": "expert",
   "integration-manager": "expert",
   "ui-designer": "expert",
 }
 
 const DISPLAY_NAMES: Record<string, string> = {
-  "ceo": "CEO",
-  "advisor": "Advisor",
-  "pm": "PM",
-  "architect": "Architect",
-  "reviewer": "Reviewer",
-  "qa": "QA",
+  ceo: "CEO",
+  advisor: "Advisor",
+  pm: "PM",
+  architect: "Architect",
+  reviewer: "Reviewer",
+  qa: "QA",
   "security-reviewer": "Security Reviewer",
   "chief-auditor": "Chief Auditor",
   "evidence-auditor": "Evidence Auditor",
   "release-manager": "Release Manager",
-  "cqo": "CQO",
+  cqo: "CQO",
   "performance-auditor": "Performance Auditor",
   "engineer-a": "Engineer A",
   "engineer-b": "Engineer B",
-  "devops": "DevOps",
+  devops: "DevOps",
   "tech-writer": "Tech Writer",
-  "researcher": "Researcher",
+  researcher: "Researcher",
   "ai-integration": "AI Integration",
   "integration-manager": "Integration Manager",
   "ui-designer": "UI Designer",
@@ -147,20 +150,20 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
 
       // Read dispatch entries
       const dispatchEntries = readJsonlFile<DispatchEntry>(dispatchLogPath)
-      const recentEntries = dispatchEntries.filter(e => {
+      const recentEntries = dispatchEntries.filter((e) => {
         const age = Date.now() - new Date(e.timestamp).getTime()
         return age < 24 * 60 * 60 * 1000 // 24h
       })
 
       // Build role statuses
-      const roles: RoleStatus[] = Object.keys(PILLAR_MAP).map(roleId => {
+      const roles: RoleStatus[] = Object.keys(PILLAR_MAP).map((roleId) => {
         const latest = dispatchEntries
-          .filter(e => e.role === roleId)
+          .filter((e) => e.role === roleId)
           .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
 
         let status: "active" | "idle" | "stale" = "idle"
         if (latest) {
-          const isRecent = recentEntries.some(e => e.dispatchId === latest.dispatchId)
+          const isRecent = recentEntries.some((e) => e.dispatchId === latest.dispatchId)
           if (isRecent && latest.outcome !== "failed" && latest.outcome !== "canceled") {
             status = "active"
           } else if (!isRecent) {
@@ -179,10 +182,12 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
       })
 
       // Read lease statuses
-      const leasesData = readJsonFile<{ leases?: Array<{ lane: string; status: string; sessionId: string; acquiredAt: string; expiresAt: string }> }>(leasesPath)
+      const leasesData = readJsonFile<{
+        leases?: Array<{ lane: string; status: string; sessionId: string; acquiredAt: string; expiresAt: string }>
+      }>(leasesPath)
       const leases = leasesData?.leases ?? []
-      const lanes: LaneStatus[] = ["ceo-1", "ceo-2", "ceo-3"].map(lane => {
-        const lease = leases.find(l => l.lane === lane && l.status === "active")
+      const lanes: LaneStatus[] = ["ceo-1", "ceo-2", "ceo-3"].map((lane) => {
+        const lease = leases.find((l) => l.lane === lane && l.status === "active")
         const isExpired = lease ? new Date(lease.expiresAt).getTime() < Date.now() : true
         const isStale = lease ? Date.now() - new Date(lease.acquiredAt).getTime() > 24 * 60 * 60 * 1000 : false
 
@@ -214,7 +219,7 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
       const entries = readJsonlFile<DispatchEntry>(dispatchLogPath)
 
       // Find by sessionId (extracted from dispatchId or direct match)
-      const entry = entries.find(e => {
+      const entry = entries.find((e) => {
         const match = e.dispatchId.match(/^dispatch-(\d+)-/)
         const extractedId = e.sessionId ?? (match ? `session-${match[1]}` : e.dispatchId)
         return extractedId === ctx.params.sessionId || e.dispatchId === ctx.params.sessionId
@@ -240,7 +245,7 @@ export const aiplusHandlers = HttpApiBuilder.group(InstanceHttpApi, "aiplus", (h
       const entries = readJsonlFile<DispatchEntry>(dispatchLogPath)
 
       // Extract sessionId from dispatchId if not present
-      return entries.map(e => {
+      return entries.map((e) => {
         const match = e.dispatchId.match(/^dispatch-(\d+)-/)
         const sessionId = e.sessionId ?? (match ? `session-${match[1]}` : e.dispatchId)
         return { ...e, sessionId }

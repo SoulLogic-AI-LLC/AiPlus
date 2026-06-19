@@ -118,9 +118,10 @@ export const layer = Layer.effect(
       // 📓 craft-marker hook can fire-and-forget without re-querying.
       // Falls back to globalThis.process.cwd() (Node global) — local
       // `process` below shadows `process.cwd`.
-      const projectRoot = yield* session
-        .get(input.sessionID)
-        .pipe(Effect.map((info) => info.directory), Effect.orElseSucceed(() => globalThis.process.cwd()))
+      const projectRoot = yield* session.get(input.sessionID).pipe(
+        Effect.map((info) => info.directory),
+        Effect.orElseSucceed(() => globalThis.process.cwd()),
+      )
       const ctx: ProcessorContext = {
         assistantMessage: input.assistantMessage,
         sessionID: input.sessionID,

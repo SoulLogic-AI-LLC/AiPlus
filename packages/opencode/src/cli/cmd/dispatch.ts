@@ -43,13 +43,11 @@ export const DispatchCommand = cmd({
             console.log("AiPlus Dispatch\n  no dispatch entries recorded")
             return
           }
-          console.log([
-            "AiPlus Dispatch",
-            ...recent.flatMap((entry, index) => [
-              `entry ${index + 1}`,
-              formatEntry(entry),
-            ]),
-          ].join("\n"))
+          console.log(
+            ["AiPlus Dispatch", ...recent.flatMap((entry, index) => [`entry ${index + 1}`, formatEntry(entry)])].join(
+              "\n",
+            ),
+          )
         },
       )
       .command(

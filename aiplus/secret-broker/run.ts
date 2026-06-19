@@ -34,7 +34,10 @@ function parseArgs(argv: string[]): RunArgs {
       aliases.push(args[i + 1])
       i += 2
     } else if (arg === "--aliases" && i + 1 < args.length) {
-      const names = args[i + 1].split(",").map(s => s.trim()).filter(Boolean)
+      const names = args[i + 1]
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
       aliases.push(...names)
       i += 2
     } else if (arg === "--") {
@@ -58,10 +61,7 @@ function parseArgs(argv: string[]): RunArgs {
  *
  * Errors: missing alias, unreadable source, missing command → exit 1.
  */
-export async function runWithSecrets(
-  aliases: string[],
-  command: string[],
-): Promise<number> {
+export async function runWithSecrets(aliases: string[], command: string[]): Promise<number> {
   if (command.length === 0) {
     process.stderr.write("[secret-broker] error: no command after --\n")
     return 1

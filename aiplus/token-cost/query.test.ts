@@ -48,7 +48,17 @@ describe("token-cost query", () => {
     db.run(
       `INSERT INTO session (id, title, agent, model, directory, cost, tokens_input, tokens_output, time_created)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["ses-1", "CEO-3 fix bug", "agent-team-ceo", '{"id":"MiniMax-M3"}', "/projects/aiplus", 0.05, 10000, 500, now - 1000],
+      [
+        "ses-1",
+        "CEO-3 fix bug",
+        "agent-team-ceo",
+        '{"id":"MiniMax-M3"}',
+        "/projects/aiplus",
+        0.05,
+        10000,
+        500,
+        now - 1000,
+      ],
     )
     db.close()
 
@@ -74,10 +84,34 @@ describe("token-cost query", () => {
       time_created INTEGER NOT NULL
     )`)
     const now = Date.now()
-    db.run(`INSERT INTO session VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      ["s1", "QA test", null, '{"id":"DeepSeek-V4"}', "/p/a", 0.1, 5000, 100, 0, 0, 0, now - 2000])
-    db.run(`INSERT INTO session VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      ["s2", "Architect review", "agent-team-architect", '{"id":"MiniMax-M3"}', "/p/b", 0.2, 8000, 200, 0, 0, 0, now - 1000])
+    db.run(`INSERT INTO session VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`, [
+      "s1",
+      "QA test",
+      null,
+      '{"id":"DeepSeek-V4"}',
+      "/p/a",
+      0.1,
+      5000,
+      100,
+      0,
+      0,
+      0,
+      now - 2000,
+    ])
+    db.run(`INSERT INTO session VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`, [
+      "s2",
+      "Architect review",
+      "agent-team-architect",
+      '{"id":"MiniMax-M3"}',
+      "/p/b",
+      0.2,
+      8000,
+      200,
+      0,
+      0,
+      0,
+      now - 1000,
+    ])
     db.close()
 
     const stats = computeStats({ dbPath, windowStart: now - 10000 })

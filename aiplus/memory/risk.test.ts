@@ -54,19 +54,17 @@ describe("autoCapture", () => {
   })
 
   it("blocks low-risk when autoLowRisk is false", () => {
-    const result = autoCapture(
-      "/tmp", "style preference: use tabs", "workflow_rule", "personal",
-      { autoLowRisk: false },
-    )
+    const result = autoCapture("/tmp", "style preference: use tabs", "workflow_rule", "personal", {
+      autoLowRisk: false,
+    })
     expect(result.written).toBe(false)
     expect(result.riskLevel).toBe("low")
   })
 
   it("blocks medium-risk when autoMediumRisk is false", () => {
-    const result = autoCapture(
-      "/tmp", "architecture decision made", "unknown_type", "personal",
-      { autoMediumRisk: false },
-    )
+    const result = autoCapture("/tmp", "architecture decision made", "unknown_type", "personal", {
+      autoMediumRisk: false,
+    })
     expect(result.written).toBe(false)
     expect(result.riskLevel).toBe("medium")
   })

@@ -74,12 +74,7 @@ export function fencingCheck(projectRoot: string, lane: string): FencingResult {
 }
 
 /** Acquire a worktree lease for a session. */
-export function acquire(
-  projectRoot: string,
-  sessionId: string,
-  lane: string,
-  worktreePath: string,
-): WorktreeLease {
+export function acquire(projectRoot: string, sessionId: string, lane: string, worktreePath: string): WorktreeLease {
   const state = readState(projectRoot)
   // Remove expired leases
   state.leases = state.leases.filter((l) => !isExpired(l) || l.status !== "active")

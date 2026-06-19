@@ -8,16 +8,16 @@
 
 /** Side effect classification. */
 export type SideEffectClass =
-  | "READ_ONLY"      // ✅ 可无限重放 (read, grep, glob)
-  | "MUTATING"       // ⚠️ 需确认无冲突 (write, edit)
-  | "EXTERNAL"       // ❌ 不可重放 (网络请求)
-  | "IRREVERSIBLE"   // 🛑 需 Owner gate (rm -rf, force-push, DROP TABLE)
+  | "READ_ONLY" // ✅ 可无限重放 (read, grep, glob)
+  | "MUTATING" // ⚠️ 需确认无冲突 (write, edit)
+  | "EXTERNAL" // ❌ 不可重放 (网络请求)
+  | "IRREVERSIBLE" // 🛑 需 Owner gate (rm -rf, force-push, DROP TABLE)
 
 /** Retry policy. */
 export type RetryPolicy =
-  | "NO_RETRY"              // 不自动重试
-  | "LINEAR_BACKOFF"        // 线性退避重试
-  | "EXPONENTIAL_BACKOFF"   // 指数退避重试
+  | "NO_RETRY" // 不自动重试
+  | "LINEAR_BACKOFF" // 线性退避重试
+  | "EXPONENTIAL_BACKOFF" // 指数退避重试
 
 /** Tool call outcome. */
 export type EffectOutcome = "allowed" | "blocked"

@@ -10,13 +10,13 @@ export type CEOLane = "ceo-1" | "ceo-2" | "ceo-3"
 
 const LANE_ALIASES: Record<string, CEOLane> = {
   "ceo-1": "ceo-1",
-  "lane1": "ceo-1",
+  lane1: "ceo-1",
   "lane-1": "ceo-1",
   "ceo-2": "ceo-2",
-  "lane2": "ceo-2",
+  lane2: "ceo-2",
   "lane-2": "ceo-2",
   "ceo-3": "ceo-3",
-  "lane3": "ceo-3",
+  lane3: "ceo-3",
   "lane-3": "ceo-3",
 }
 
@@ -27,9 +27,9 @@ const LANE_TO_TOKEN: Record<CEOLane, string> = {
 }
 
 const TOKEN_TO_LANE: Record<string, CEOLane> = {
-  "lane1": "ceo-1",
-  "lane2": "ceo-2",
-  "lane3": "ceo-3",
+  lane1: "ceo-1",
+  lane2: "ceo-2",
+  lane3: "ceo-3",
 }
 
 /** Normalize a lane input string to a canonical CEOLane. */

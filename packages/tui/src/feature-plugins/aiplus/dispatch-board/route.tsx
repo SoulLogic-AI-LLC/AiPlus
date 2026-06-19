@@ -117,20 +117,22 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
   const filtered = createMemo(() => {
     const entries = data() ?? []
     const f = filter()
-    return entries.filter((e) => {
-      if (f.role && e.role !== f.role) return false
-      if (f.lane && (e.lane ?? "—") !== f.lane) return false
-      if (f.status && getDisplayStatus(e) !== f.status) return false
-      return true
-    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    return entries
+      .filter((e) => {
+        if (f.role && e.role !== f.role) return false
+        if (f.lane && (e.lane ?? "—") !== f.lane) return false
+        if (f.status && getDisplayStatus(e) !== f.status) return false
+        return true
+      })
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   })
 
   // Stats
   const stats = createMemo(() => {
     const entries = data() ?? []
-    const running = entries.filter(e => getDisplayStatus(e) === "running").length
-    const completed = entries.filter(e => getDisplayStatus(e) === "completed").length
-    const failed = entries.filter(e => getDisplayStatus(e) === "failed").length
+    const running = entries.filter((e) => getDisplayStatus(e) === "running").length
+    const completed = entries.filter((e) => getDisplayStatus(e) === "completed").length
+    const failed = entries.filter((e) => getDisplayStatus(e) === "failed").length
     return { total: entries.length, running, completed, failed }
   })
 
@@ -140,7 +142,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
   // Available lanes for filter
   const lanes = createMemo(() => {
     const entries = data() ?? []
-    const laneSet = new Set(entries.map(e => e.lane ?? "—"))
+    const laneSet = new Set(entries.map((e) => e.lane ?? "—"))
     return Array.from(laneSet).sort()
   })
 
@@ -150,13 +152,13 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     if (r.length === 0) return
     const current = filter().role
     if (!current) {
-      setFilter(f => ({ ...f, role: r[0] }))
+      setFilter((f) => ({ ...f, role: r[0] }))
     } else {
       const idx = r.indexOf(current)
       if (idx === r.length - 1) {
-        setFilter(f => ({ ...f, role: null }))
+        setFilter((f) => ({ ...f, role: null }))
       } else {
-        setFilter(f => ({ ...f, role: r[idx + 1] }))
+        setFilter((f) => ({ ...f, role: r[idx + 1] }))
       }
     }
   }
@@ -167,13 +169,13 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     if (l.length === 0) return
     const current = filter().lane
     if (!current) {
-      setFilter(f => ({ ...f, lane: l[0] }))
+      setFilter((f) => ({ ...f, lane: l[0] }))
     } else {
       const idx = l.indexOf(current)
       if (idx === l.length - 1) {
-        setFilter(f => ({ ...f, lane: null }))
+        setFilter((f) => ({ ...f, lane: null }))
       } else {
-        setFilter(f => ({ ...f, lane: l[idx + 1] }))
+        setFilter((f) => ({ ...f, lane: l[idx + 1] }))
       }
     }
   }
@@ -185,7 +187,7 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
     const current = filter().status
     const idx = STATUS_OPTIONS.indexOf(current)
     const next = STATUS_OPTIONS[(idx + 1) % STATUS_OPTIONS.length]
-    setFilter(f => ({ ...f, status: next }))
+    setFilter((f) => ({ ...f, status: next }))
   }
 
   // Wire up external store for keymap commands
@@ -203,14 +205,12 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
         </text>
         <text fg={theme().textMuted}>— Session Dispatch Status</text>
         <box flexGrow={1} />
-        <text fg={theme().textMuted}>
-          [R refresh] [F role] [L lane] [S status] [Esc back]
-        </text>
+        <text fg={theme().textMuted}>[R refresh] [F role] [L lane] [S status] [Esc back]</text>
       </box>
 
       {/* Separator */}
       <box width="100%" height={1}>
-        <text fg={theme().borderSubtle}>{'─'.repeat(90)}</text>
+        <text fg={theme().borderSubtle}>{"─".repeat(90)}</text>
       </box>
 
       {/* Filters */}
@@ -219,14 +219,14 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
         <FilterLabel label="Lane" value={filter().lane} theme={theme()} />
         <FilterLabel label="Status" value={filter().status} theme={theme()} />
         <box flexGrow={1} />
-        <text fg={theme().textMuted}>
-          {filtered().length} entries
-        </text>
+        <text fg={theme().textMuted}>{filtered().length} entries</text>
       </box>
 
       {/* Column header */}
       <box flexDirection="row" gap={1} paddingLeft={2} paddingTop={1}>
-        <text fg={theme().textMuted} width={3}> </text>
+        <text fg={theme().textMuted} width={3}>
+          {" "}
+        </text>
         <text fg={theme().textMuted} width={20}>
           <b>Session ID</b>
         </text>
@@ -248,18 +248,30 @@ export function DispatchBoardRoute(props: { api: TuiPluginApi }) {
       </box>
 
       {/* Entries */}
-      <Show when={!data.loading} fallback={<text fg={theme().textMuted} paddingLeft={2}>Loading...</text>}>
-        <Show when={filtered().length > 0} fallback={<text fg={theme().textMuted} paddingLeft={2}>No dispatch entries found</text>}>
-          <For each={filtered()}>
-            {(entry) => <EntryRow entry={entry} theme={theme()} />}
-          </For>
+      <Show
+        when={!data.loading}
+        fallback={
+          <text fg={theme().textMuted} paddingLeft={2}>
+            Loading...
+          </text>
+        }
+      >
+        <Show
+          when={filtered().length > 0}
+          fallback={
+            <text fg={theme().textMuted} paddingLeft={2}>
+              No dispatch entries found
+            </text>
+          }
+        >
+          <For each={filtered()}>{(entry) => <EntryRow entry={entry} theme={theme()} />}</For>
         </Show>
       </Show>
 
       {/* Footer */}
       <box flexGrow={1} />
       <box width="100%" height={1}>
-        <text fg={theme().borderSubtle}>{'─'.repeat(90)}</text>
+        <text fg={theme().borderSubtle}>{"─".repeat(90)}</text>
       </box>
       <box flexDirection="row" paddingLeft={2} paddingRight={2} gap={2}>
         <text fg={theme().textMuted}>AiPlus Dispatch Board v0.0.3</text>

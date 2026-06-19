@@ -52,10 +52,10 @@ export function createDaemonFetch(url: string, auth: string | undefined) {
     if (auth && !headers.has("authorization") && !headers.has("Authorization")) {
       headers.set("Authorization", auth)
     }
-    return globalThis.fetch(
-      typeof input === "string" && !input.startsWith("http") ? `${url}${input}` : input,
-      { ...init, headers },
-    )
+    return globalThis.fetch(typeof input === "string" && !input.startsWith("http") ? `${url}${input}` : input, {
+      ...init,
+      headers,
+    })
   }
   return fn as typeof fetch
 }
@@ -68,9 +68,7 @@ export function createSSEEventSource(baseUrl: string, auth: string | undefined):
   return {
     subscribe: async (handler) => {
       const ctrl = new AbortController()
-      const events = await client.global
-        .event({ signal: ctrl.signal, sseMaxRetryAttempts: 0 })
-        .catch(() => undefined)
+      const events = await client.global.event({ signal: ctrl.signal, sseMaxRetryAttempts: 0 }).catch(() => undefined)
       if (!events) {
         return () => {}
       }
@@ -215,7 +213,9 @@ export function createWebSocketEventSource(baseUrl: string, auth: string | undef
           reconnectTimer = undefined
           const rediscovered = await rediscoverDaemonUrl()
           if (rediscovered) wsUrl = rediscovered
-          connect().then(attach).catch(() => scheduleReconnect())
+          connect()
+            .then(attach)
+            .catch(() => scheduleReconnect())
         }, delay)
       }
 

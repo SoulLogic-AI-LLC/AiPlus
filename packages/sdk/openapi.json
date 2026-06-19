@@ -358,6 +358,44 @@
         ]
       }
     },
+    "/global/ws": {
+      "get": {
+        "tags": ["global"],
+        "operationId": "global.ws",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Connected session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "description": "Connected session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Establish a WebSocket connection to receive global events from the OpenCode system.",
+        "summary": "Connect to global events",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.global.ws({\n  ...\n})"
+          }
+        ]
+      }
+    },
     "/global/config": {
       "get": {
         "tags": ["global"],
@@ -9766,6 +9804,593 @@
         ]
       }
     },
+    "/aiplus/lobby/status": {
+      "get": {
+        "tags": ["aiplus"],
+        "operationId": "aiplus.lobbyStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lobby status with roles, lanes, and state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "pillar": {
+                            "type": "string",
+                            "enum": ["coordinator", "verifier", "expert"]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["active", "idle", "stale"]
+                          },
+                          "sessionId": {
+                            "type": "string"
+                          },
+                          "lastActive": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "name", "pillar", "status"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "lanes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "lane": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["active", "idle"]
+                          },
+                          "sessionId": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "lastActive": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["lane", "status"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "state": {
+                      "type": "object",
+                      "properties": {
+                        "boundRole": {
+                          "type": "string"
+                        },
+                        "boundAt": {
+                          "type": "string"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["boundRole", "boundAt", "sessionId"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["roles", "lanes", "state"],
+                  "additionalProperties": false,
+                  "description": "Lobby status with roles, lanes, and state"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve lobby status including pillar-grouped roles, CEO lane status, and bound state.",
+        "summary": "Get lobby status",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.aiplus.lobbyStatus({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/aiplus/dispatch/{sessionId}": {
+      "get": {
+        "tags": ["aiplus"],
+        "operationId": "aiplus.dispatchGet",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dispatch entry for session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dispatchId": {
+                      "type": "string"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    },
+                    "lane": {
+                      "type": "string"
+                    },
+                    "tier": {
+                      "type": "string",
+                      "enum": ["LIGHT", "MEDIUM", "HEAVY"]
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "enum": ["success", "failed", "canceled"]
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    },
+                    "task": {
+                      "type": "string"
+                    },
+                    "reversibility": {
+                      "type": "string"
+                    },
+                    "schemaVersion": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["dispatchId", "sessionId", "role", "timestamp"],
+                  "additionalProperties": false,
+                  "description": "Dispatch entry for session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve the dispatch log entry for a specific session.",
+        "summary": "Get dispatch entry",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.aiplus.dispatchGet({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/aiplus/dispatch/list": {
+      "get": {
+        "tags": ["aiplus"],
+        "operationId": "aiplus.dispatchList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All dispatch entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "dispatchId": {
+                        "type": "string"
+                      },
+                      "sessionId": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string"
+                      },
+                      "lane": {
+                        "type": "string"
+                      },
+                      "tier": {
+                        "type": "string",
+                        "enum": ["LIGHT", "MEDIUM", "HEAVY"]
+                      },
+                      "outcome": {
+                        "type": "string",
+                        "enum": ["success", "failed", "canceled"]
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      },
+                      "task": {
+                        "type": "string"
+                      },
+                      "reversibility": {
+                        "type": "string"
+                      },
+                      "schemaVersion": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["dispatchId", "sessionId", "role", "timestamp"],
+                    "additionalProperties": false
+                  },
+                  "description": "All dispatch entries"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve all dispatch log entries.",
+        "summary": "List all dispatch entries",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.aiplus.dispatchList({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/aiplus/compact/capsule": {
+      "get": {
+        "tags": ["aiplus"],
+        "operationId": "aiplus.capsuleGet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Context capsule with per-model thresholds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "capsule": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "contextUsage": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "enum": ["NaN"]
+                            },
+                            {
+                              "type": "string",
+                              "enum": ["Infinity"]
+                            },
+                            {
+                              "type": "string",
+                              "enum": ["-Infinity"]
+                            },
+                            {
+                              "type": "string",
+                              "enum": ["Infinity", "-Infinity", "NaN"]
+                            }
+                          ]
+                        },
+                        "pressureLevel": {
+                          "type": "string",
+                          "enum": ["silent", "soft", "hard", "emergency"]
+                        },
+                        "tokenCount": {
+                          "type": "object",
+                          "properties": {
+                            "used": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["NaN"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["Infinity"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["-Infinity"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["Infinity", "-Infinity", "NaN"]
+                                }
+                              ]
+                            },
+                            "total": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["NaN"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["Infinity"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["-Infinity"]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": ["Infinity", "-Infinity", "NaN"]
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["used", "total"],
+                          "additionalProperties": false
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "writtenAt": {
+                          "type": "string"
+                        },
+                        "recommendation": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sessionId",
+                        "contextUsage",
+                        "pressureLevel",
+                        "tokenCount",
+                        "model",
+                        "writtenAt",
+                        "recommendation"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "thresholds": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "soft": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["NaN"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["-Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity", "-Infinity", "NaN"]
+                              }
+                            ]
+                          },
+                          "hard": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["NaN"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["-Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity", "-Infinity", "NaN"]
+                              }
+                            ]
+                          },
+                          "emergency": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["NaN"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["-Infinity"]
+                              },
+                              {
+                                "type": "string",
+                                "enum": ["Infinity", "-Infinity", "NaN"]
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["soft", "hard", "emergency"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["capsule", "thresholds"],
+                  "additionalProperties": false,
+                  "description": "Context capsule with per-model thresholds"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve the current context pressure capsule with per-model thresholds.",
+        "summary": "Get compact capsule",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.aiplus.capsuleGet({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/aiplus/personas": {
+      "get": {
+        "tags": ["aiplus"],
+        "operationId": "aiplus.personasList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all personas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "pillar": {
+                        "type": "string",
+                        "enum": ["coordinator", "verifier", "expert"]
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": ["subagent", "primary", "all"]
+                      },
+                      "hidden": {
+                        "type": "boolean"
+                      },
+                      "permissions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "permission": {
+                              "type": "string"
+                            },
+                            "pattern": {
+                              "type": "string"
+                            },
+                            "action": {
+                              "type": "string",
+                              "enum": ["allow", "deny"]
+                            }
+                          },
+                          "required": ["permission", "pattern", "action"],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": ["id", "name", "description", "pillar", "mode", "hidden", "permissions"],
+                    "additionalProperties": false
+                  },
+                  "description": "List of all personas"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retrieve all AiPlus Agent Team personas with their permissions.",
+        "summary": "List personas",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.aiplus.personasList({\n  ...\n})"
+          }
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "tags": ["opencode HttpApi"],
@@ -13887,6 +14512,15 @@
             "$ref": "#/components/schemas/EventProjectUpdated"
           },
           {
+            "$ref": "#/components/schemas/EventVcsBranchUpdated"
+          },
+          {
+            "$ref": "#/components/schemas/EventServerConnected"
+          },
+          {
+            "$ref": "#/components/schemas/EventGlobalDisposed"
+          },
+          {
             "$ref": "#/components/schemas/EventSessionStatus"
           },
           {
@@ -13905,9 +14539,6 @@
             "$ref": "#/components/schemas/EventSessionCompacted"
           },
           {
-            "$ref": "#/components/schemas/EventVcsBranchUpdated"
-          },
-          {
             "$ref": "#/components/schemas/EventWorkspaceReady"
           },
           {
@@ -13921,12 +14552,6 @@
           },
           {
             "$ref": "#/components/schemas/EventWorktreeFailed"
-          },
-          {
-            "$ref": "#/components/schemas/EventServerConnected"
-          },
-          {
-            "$ref": "#/components/schemas/EventGlobalDisposed"
           },
           {
             "$ref": "#/components/schemas/EventServerInstanceDisposed"
@@ -18483,6 +19108,68 @@
                   },
                   "type": {
                     "type": "string",
+                    "enum": ["vcs.branch.updated"]
+                  },
+                  "properties": {
+                    "type": "object",
+                    "properties": {
+                      "branch": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["id", "type", "properties"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^evt_"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["server.connected"]
+                  },
+                  "properties": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": ["id", "type", "properties"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^evt_"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["global.disposed"]
+                  },
+                  "properties": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": ["id", "type", "properties"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^evt_"
+                  },
+                  "type": {
+                    "type": "string",
                     "enum": ["session.status"]
                   },
                   "properties": {
@@ -18670,30 +19357,6 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["vcs.branch.updated"]
-                  },
-                  "properties": {
-                    "type": "object",
-                    "properties": {
-                      "branch": {
-                        "type": "string"
-                      }
-                    },
-                    "additionalProperties": false
-                  }
-                },
-                "required": ["id", "type", "properties"],
-                "additionalProperties": false
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^evt_"
-                  },
-                  "type": {
-                    "type": "string",
                     "enum": ["workspace.ready"]
                   },
                   "properties": {
@@ -18813,44 +19476,6 @@
                     },
                     "required": ["message"],
                     "additionalProperties": false
-                  }
-                },
-                "required": ["id", "type", "properties"],
-                "additionalProperties": false
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^evt_"
-                  },
-                  "type": {
-                    "type": "string",
-                    "enum": ["server.connected"]
-                  },
-                  "properties": {
-                    "type": "object",
-                    "properties": {}
-                  }
-                },
-                "required": ["id", "type", "properties"],
-                "additionalProperties": false
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^evt_"
-                  },
-                  "type": {
-                    "type": "string",
-                    "enum": ["global.disposed"]
-                  },
-                  "properties": {
-                    "type": "object",
-                    "properties": {}
                   }
                 },
                 "required": ["id", "type", "properties"],
@@ -29891,6 +30516,68 @@
         "required": ["id", "type", "properties"],
         "additionalProperties": false
       },
+      "EventVcsBranchUpdated": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^evt_"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["vcs.branch.updated"]
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "branch": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "type", "properties"],
+        "additionalProperties": false
+      },
+      "EventServerConnected": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^evt_"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["server.connected"]
+          },
+          "properties": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "required": ["id", "type", "properties"],
+        "additionalProperties": false
+      },
+      "EventGlobalDisposed": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^evt_"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["global.disposed"]
+          },
+          "properties": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "required": ["id", "type", "properties"],
+        "additionalProperties": false
+      },
       "EventSessionStatus": {
         "type": "object",
         "properties": {
@@ -30078,30 +30765,6 @@
         "required": ["id", "type", "properties"],
         "additionalProperties": false
       },
-      "EventVcsBranchUpdated": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^evt_"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["vcs.branch.updated"]
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "branch": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "required": ["id", "type", "properties"],
-        "additionalProperties": false
-      },
       "EventWorkspaceReady": {
         "type": "object",
         "properties": {
@@ -30235,44 +30898,6 @@
         "required": ["id", "type", "properties"],
         "additionalProperties": false
       },
-      "EventServerConnected": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^evt_"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["server.connected"]
-          },
-          "properties": {
-            "type": "object",
-            "properties": {}
-          }
-        },
-        "required": ["id", "type", "properties"],
-        "additionalProperties": false
-      },
-      "EventGlobalDisposed": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^evt_"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["global.disposed"]
-          },
-          "properties": {
-            "type": "object",
-            "properties": {}
-          }
-        },
-        "required": ["id", "type", "properties"],
-        "additionalProperties": false
-      },
       "BadRequestError": {
         "type": "object",
         "required": ["name", "data"],
@@ -30375,6 +31000,9 @@
     {
       "name": "workspace",
       "description": "Experimental HttpApi workspace routes."
+    },
+    {
+      "name": "aiplus"
     },
     {
       "name": "opencode HttpApi",

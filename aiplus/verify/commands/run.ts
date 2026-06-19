@@ -16,14 +16,10 @@ import type { AuditVerdict } from "../../audit/types"
 export function runCommand(projectRoot: string, sessionId?: string): string {
   const start = Date.now()
 
-  const checks = [
-    checkDispatchChain(projectRoot),
-    checkMemoryMatch(projectRoot),
-    checkPersonaPermissions(projectRoot),
-  ]
+  const checks = [checkDispatchChain(projectRoot), checkMemoryMatch(projectRoot), checkPersonaPermissions(projectRoot)]
 
-  const hasBlocked = checks.some(c => c.status === "BLOCKED")
-  const hasRevise = checks.some(c => c.status === "REVISE")
+  const hasBlocked = checks.some((c) => c.status === "BLOCKED")
+  const hasRevise = checks.some((c) => c.status === "REVISE")
   const verdict: AuditVerdict = hasBlocked ? "BLOCKED" : hasRevise ? "REVISE" : "PASS"
 
   const entry: VerifyEntry = {

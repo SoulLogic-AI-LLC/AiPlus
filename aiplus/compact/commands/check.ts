@@ -17,12 +17,7 @@ export function checkCommand(
   role?: string,
   sessionId?: string,
 ): string {
-  const result = checkPressure(
-    projectRoot,
-    sessionId ?? "cli-check",
-    { used, total, model },
-    role,
-  )
+  const result = checkPressure(projectRoot, sessionId ?? "cli-check", { used, total, model }, role)
 
   // Write capsule if not silent
   if (!result.action.silent) {

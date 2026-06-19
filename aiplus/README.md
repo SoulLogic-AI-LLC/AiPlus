@@ -24,11 +24,13 @@ aiplus/
 ## PR #3 scope notes (Owner-approved 2026-06-13)
 
 ### Lease file locking
+
 - `.aiplus/worktree/leases.json` is a single JSON file (array), not JSONL
 - Concurrent writes from multiple sessions MUST use flock (advisory file lock)
 - No append-only — read-modify-write under flock
 
 ### GC exit for orphan worktrees
+
 - Expired leases (24h past `expiresAt`) → auto `git worktree remove` on doctor/lobby startup
 - Prevents orphan accumulation (known issue from W2 cleanup in AiPlus-Source)
 - Keep the "don't remove on destroy" safety — GC is the cleanup path

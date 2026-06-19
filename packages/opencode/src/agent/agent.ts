@@ -51,9 +51,7 @@ registerDisposer(async (directory: string) => {
     if (!fs.existsSync(leasePath)) return
     const data = JSON.parse(fs.readFileSync(leasePath, "utf-8"))
     const leaseIdSet = new Set(leases.values())
-    data.leases = (data.leases ?? []).filter(
-      (l: { leaseId?: string }) => !l.leaseId || !leaseIdSet.has(l.leaseId),
-    )
+    data.leases = (data.leases ?? []).filter((l: { leaseId?: string }) => !l.leaseId || !leaseIdSet.has(l.leaseId))
     fs.writeFileSync(leasePath, JSON.stringify(data, null, 2))
     activeCEOLeaseIds.delete(directory)
   } catch {
@@ -313,10 +311,7 @@ export const layer = Layer.effect(
         // Scans aiplus/agents/*.md and agents/*.md for persona markdown
         // files that aren't part of the built-in PERSONA_ASSETS (e.g.
         // AdamSmith's 19 economic research agents).
-        const agentDirs = [
-          path.join(ctx.directory, "aiplus", "agents"),
-          path.join(ctx.directory, "agents"),
-        ]
+        const agentDirs = [path.join(ctx.directory, "aiplus", "agents"), path.join(ctx.directory, "agents")]
         for (const dir of agentDirs) {
           if (!fs.existsSync(dir)) continue
           const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"))
@@ -328,7 +323,7 @@ export const layer = Layer.effect(
             if (agents[name]) continue
             const data = (parsed.data || {}) as Record<string, unknown>
             agents[name] = {
-              name: (typeof data.name === "string" ? data.name : name),
+              name: typeof data.name === "string" ? data.name : name,
               description: typeof data.description === "string" ? data.description : undefined,
               mode:
                 data.mode === "subagent" || data.mode === "primary" || data.mode === "all"
@@ -457,12 +452,10 @@ export const layer = Layer.effect(
                 : { leases: [] }
               const now = Date.now()
               const STALE_MS = 24 * 60 * 60 * 1000
-              existing.leases = (existing.leases ?? []).filter(
-                (l: { acquiredAt?: string; expiresAt?: string }) => {
-                  if (!l.acquiredAt) return false
-                  return now - new Date(l.acquiredAt).getTime() <= STALE_MS
-                },
-              )
+              existing.leases = (existing.leases ?? []).filter((l: { acquiredAt?: string; expiresAt?: string }) => {
+                if (!l.acquiredAt) return false
+                return now - new Date(l.acquiredAt).getTime() <= STALE_MS
+              })
               const hasActive = existing.leases.some(
                 (l: { lane?: string; expiresAt?: string }) =>
                   l.lane === ceoLane && l.expiresAt && new Date(l.expiresAt).getTime() > now,
@@ -497,11 +490,7 @@ export const layer = Layer.effect(
         const list = Effect.fnUntraced(function* () {
           const cfg = yield* config.get()
           // Filter out base "CEO" from agents — we add CEO lane agents dynamically
-          const baseAgents = pipe(
-            agents,
-            values(),
-            (items) => items.filter((a) => a.name !== "CEO"),
-          )
+          const baseAgents = pipe(agents, values(), (items) => items.filter((a) => a.name !== "CEO"))
           // Add CEO lane agents based on current lease occupancy
           const ceoAgents = buildCEOLaneAgents()
           const allAgents = [...baseAgents, ...ceoAgents]

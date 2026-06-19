@@ -10,18 +10,21 @@ import { Database } from "bun:sqlite"
 import { computeVelocity } from "./query"
 import { writeVelocity } from "./stats"
 
-function seedSessions(db: Database, rows: Array<{
-  durationMs: number
-  title: string
-  agent?: string | null
-  timeCreated: number
-}>) {
+function seedSessions(
+  db: Database,
+  rows: Array<{
+    durationMs: number
+    title: string
+    agent?: string | null
+    timeCreated: number
+  }>,
+) {
   for (const r of rows) {
     const timeUpdated = r.timeCreated + r.durationMs
     db.run(
       `INSERT INTO session (id, title, agent, time_created, time_updated)
        VALUES (?, ?, ?, ?, ?)`,
-      [`ses-${Math.random().toString(36).slice(2,8)}`, r.title, r.agent ?? null, r.timeCreated, timeUpdated],
+      [`ses-${Math.random().toString(36).slice(2, 8)}`, r.title, r.agent ?? null, r.timeCreated, timeUpdated],
     )
   }
 }
@@ -115,9 +118,7 @@ describe("velocity writeStats", () => {
   it("writes stats.json to project directory", () => {
     const { db, tmpDir } = createDb()
     const now = Date.now()
-    seedSessions(db, [
-      { durationMs: 3 * 60000, title: "test session", agent: null, timeCreated: now - 1000 },
-    ])
+    seedSessions(db, [{ durationMs: 3 * 60000, title: "test session", agent: null, timeCreated: now - 1000 }])
     const dbPath = path.join(tmpDir, "test.db")
     db.close()
 

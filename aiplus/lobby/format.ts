@@ -84,11 +84,7 @@ function formatTimeAgo(isoStr: string): string {
 }
 
 /** Format full lobby status. */
-export function formatLobbyStatus(
-  roles: RoleStatus[],
-  lanes: LaneStatus[],
-  state: LobbyState,
-): string {
+export function formatLobbyStatus(roles: RoleStatus[], lanes: LaneStatus[], state: LobbyState): string {
   const lines: string[] = []
 
   // Header
@@ -102,27 +98,26 @@ export function formatLobbyStatus(
   let roleIndex = 1
 
   for (const pillar of pillars) {
-    const pillarRoles = roles.filter(r => r.pillar === pillar)
+    const pillarRoles = roles.filter((r) => r.pillar === pillar)
     if (pillarRoles.length === 0) continue
 
     const label = getPillarLabel(pillar)
     const color = PILLAR_COLORS[pillar]
     lines.push(`║ ${color}${COLORS.bold}${label}${COLORS.reset}`)
 
-      for (const role of pillarRoles) {
-        const isActive = state.boundRole === role.id
-        const line = formatRole(role, roleIndex)
-        if (isActive) {
-          const activeCount = lanes.filter((l) => l.status === "active").length
-          const laneTag = state.lane && role.id === "ceo"
-            ? ` [${laneDisplayName(role.id, state.lane as CEOLane, activeCount)}]`
-            : ""
-          lines.push(`${COLORS.bold}${line} ← bound${laneTag}${COLORS.reset}`)
-        } else {
-          lines.push(line)
-        }
-        roleIndex++
+    for (const role of pillarRoles) {
+      const isActive = state.boundRole === role.id
+      const line = formatRole(role, roleIndex)
+      if (isActive) {
+        const activeCount = lanes.filter((l) => l.status === "active").length
+        const laneTag =
+          state.lane && role.id === "ceo" ? ` [${laneDisplayName(role.id, state.lane as CEOLane, activeCount)}]` : ""
+        lines.push(`${COLORS.bold}${line} ← bound${laneTag}${COLORS.reset}`)
+      } else {
+        lines.push(line)
       }
+      roleIndex++
+    }
 
     lines.push("║")
   }

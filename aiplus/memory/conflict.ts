@@ -18,10 +18,7 @@ export interface ConflictCapable {
 
 export interface ConflictReport {
   readonly recordId: string
-  readonly conflictType:
-    | "conflict_group_divergence"
-    | "missing_superseded"
-    | "circular_supersede"
+  readonly conflictType: "conflict_group_divergence" | "missing_superseded" | "circular_supersede"
   readonly description: string
   readonly relatedIds: readonly string[]
 }
@@ -41,10 +38,8 @@ export interface StaleReport {
  *    that doesn't exist in the provided records.
  * 3. circular_supersede: A.supersedes contains B and B.supersedes contains A.
  */
-export function detectConflicts(
-  records: readonly ConflictCapable[],
-): readonly ConflictReport[] {
-  const byId = new Map(records.map(r => [r.id, r]))
+export function detectConflicts(records: readonly ConflictCapable[]): readonly ConflictReport[] {
+  const byId = new Map(records.map((r) => [r.id, r]))
   const reports: ConflictReport[] = []
 
   // 1. conflict_group_divergence
@@ -56,9 +51,9 @@ export function detectConflicts(
     groups.set(r.conflictGroup, existing)
   }
   for (const [groupName, members] of groups) {
-    const uniqueSummaries = new Set(members.map(m => m.summary))
+    const uniqueSummaries = new Set(members.map((m) => m.summary))
     if (uniqueSummaries.size >= 2) {
-      const relatedIds = members.map(m => m.id)
+      const relatedIds = members.map((m) => m.id)
       for (const member of members) {
         reports.push({
           recordId: member.id,
@@ -116,10 +111,7 @@ export function detectConflicts(
  * 2. expired: now > parseInt(expiresAt)
  * 3. stale_after_elapsed: now > parseInt(staleAfter)
  */
-export function detectStale(
-  records: readonly ConflictCapable[],
-  now?: number,
-): readonly StaleReport[] {
+export function detectStale(records: readonly ConflictCapable[], now?: number): readonly StaleReport[] {
   const currentTime = now ?? Date.now()
   const reports: StaleReport[] = []
 

@@ -32,12 +32,17 @@ export function readLedger(projectRoot: string): VerifyEntry[] {
   try {
     const p = ledgerPath(projectRoot)
     if (!fs.existsSync(p)) return []
-    const lines = fs.readFileSync(p, "utf-8").split("\n").filter(l => l.trim())
+    const lines = fs
+      .readFileSync(p, "utf-8")
+      .split("\n")
+      .filter((l) => l.trim())
     const entries: VerifyEntry[] = []
     for (const line of lines) {
       try {
         entries.push(JSON.parse(line))
-      } catch { /* skip malformed */ }
+      } catch {
+        /* skip malformed */
+      }
     }
     return entries
   } catch {

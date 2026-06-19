@@ -33,7 +33,9 @@ const tests = [
 for (const t of tests) {
   const result = classifyToolEffect(t.tool, t.args)
   const pass = result.sideEffectClass === t.expected
-  console.log(`   ${pass ? "✅" : "❌"} ${t.tool}(${JSON.stringify(t.args).slice(0, 40)}) → ${result.sideEffectClass} (expected: ${t.expected})`)
+  console.log(
+    `   ${pass ? "✅" : "❌"} ${t.tool}(${JSON.stringify(t.args).slice(0, 40)}) → ${result.sideEffectClass} (expected: ${t.expected})`,
+  )
 }
 console.log()
 

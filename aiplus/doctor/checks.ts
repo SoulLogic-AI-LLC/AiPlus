@@ -23,11 +23,11 @@ export function checkAudit(projectRoot: string): DoctorCheck {
       checkPersonaPermissions(projectRoot),
     ]
 
-    const hasBlocked = checks.some(c => c.status === "BLOCKED")
-    const hasRevise = checks.some(c => c.status === "REVISE")
+    const hasBlocked = checks.some((c) => c.status === "BLOCKED")
+    const hasRevise = checks.some((c) => c.status === "REVISE")
     const status = hasBlocked ? "BLOCKED" : hasRevise ? "REVISE" : "PASS"
 
-    const summary = checks.map(c => `${c.id}:${c.status}`).join(", ")
+    const summary = checks.map((c) => `${c.id}:${c.status}`).join(", ")
     return {
       id: "audit",
       name: "Audit (D1/D2/D3)",
@@ -71,7 +71,10 @@ export function checkLobby(projectRoot: string): DoctorCheck {
 
     const parts = []
     if (hasDispatch) {
-      const lines = fs.readFileSync(dispatchLog, "utf-8").split("\n").filter(l => l.trim())
+      const lines = fs
+        .readFileSync(dispatchLog, "utf-8")
+        .split("\n")
+        .filter((l) => l.trim())
       parts.push(`dispatch:${lines.length} entries`)
     }
     if (hasLeases) parts.push("leases:ok")
@@ -108,8 +111,8 @@ export function checkSecretBroker(): DoctorCheck {
     }
 
     const bySource = {
-      auth: aliases.filter(a => a.source === "auth.json").length,
-      db: aliases.filter(a => a.source === "credential_db").length,
+      auth: aliases.filter((a) => a.source === "auth.json").length,
+      db: aliases.filter((a) => a.source === "credential_db").length,
     }
 
     return {

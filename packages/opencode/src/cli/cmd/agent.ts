@@ -301,9 +301,7 @@ const AgentBundledCommand = cmd({
 
     process.stdout.write(`AiPlus Bundled Personas (${bundled.length})` + EOL)
     for (const agent of bundled) {
-      process.stdout.write(
-        `- ${agent.displayName} (${agent.role}) · ${agent.pillar} · ${agent.mode}` + EOL,
-      )
+      process.stdout.write(`- ${agent.displayName} (${agent.role}) · ${agent.pillar} · ${agent.mode}` + EOL)
       process.stdout.write(`  ${agent.description}` + EOL)
     }
   },
@@ -312,6 +310,7 @@ const AgentBundledCommand = cmd({
 export const AgentCommand = cmd({
   command: "agent",
   describe: "manage agents",
-  builder: (yargs) => yargs.command(AgentCreateCommand).command(AgentListCommand).command(AgentBundledCommand).demandCommand(),
+  builder: (yargs) =>
+    yargs.command(AgentCreateCommand).command(AgentListCommand).command(AgentBundledCommand).demandCommand(),
   async handler() {},
 })

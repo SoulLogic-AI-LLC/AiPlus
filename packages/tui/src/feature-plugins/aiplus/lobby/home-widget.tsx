@@ -39,9 +39,7 @@ export function LobbyHomeWidget(props: { api: TuiPluginApi }) {
           <text fg={theme().text}>
             <b>AiPlus Lobby</b>
           </text>
-          <text fg={theme().textMuted}>
-            [{activeLanes().length}/3 lanes active] [F2 details]
-          </text>
+          <text fg={theme().textMuted}>[{activeLanes().length}/3 lanes active] [F2 details]</text>
         </box>
 
         {/* Pillar groups */}
@@ -66,7 +64,15 @@ export function LobbyHomeWidget(props: { api: TuiPluginApi }) {
                   </text>
                   <box flexDirection="row" gap={1} flexGrow={1}>
                     {roles.slice(0, 6).map((r) => (
-                      <text fg={r.status === "active" ? theme().success : r.status === "stale" ? theme().warning : theme().textMuted}>
+                      <text
+                        fg={
+                          r.status === "active"
+                            ? theme().success
+                            : r.status === "stale"
+                              ? theme().warning
+                              : theme().textMuted
+                        }
+                      >
                         {statusSymbol(r.status)} {truncate(r.name, 10)}
                       </text>
                     ))}

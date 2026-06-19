@@ -4,6 +4,16 @@ import { client } from "./client.gen.js"
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from "./client/index.js"
 import type {
   AgentPartInput,
+  AiplusCapsuleGetErrors,
+  AiplusCapsuleGetResponses,
+  AiplusDispatchGetErrors,
+  AiplusDispatchGetResponses,
+  AiplusDispatchListErrors,
+  AiplusDispatchListResponses,
+  AiplusLobbyStatusErrors,
+  AiplusLobbyStatusResponses,
+  AiplusPersonasListErrors,
+  AiplusPersonasListResponses,
   AppAgentsErrors,
   AppAgentsResponses,
   AppLogErrors,
@@ -86,6 +96,8 @@ import type {
   GlobalHealthResponses,
   GlobalUpgradeErrors,
   GlobalUpgradeResponses,
+  GlobalWsErrors,
+  GlobalWsResponses,
   InstanceDisposeErrors,
   InstanceDisposeResponses,
   LocationRef,
@@ -1251,6 +1263,18 @@ export class Global extends HeyApiClient {
   public event<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
     return (options?.client ?? this.client).sse.get<GlobalEventResponses, GlobalEventErrors, ThrowOnError>({
       url: "/global/event",
+      ...options,
+    })
+  }
+
+  /**
+   * Connect to global events
+   *
+   * Establish a WebSocket connection to receive global events from the OpenCode system.
+   */
+  public ws<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<GlobalWsResponses, GlobalWsErrors, ThrowOnError>({
+      url: "/global/ws",
       ...options,
     })
   }
@@ -4945,6 +4969,75 @@ export class Tui extends HeyApiClient {
   }
 }
 
+export class Aiplus extends HeyApiClient {
+  /**
+   * Get lobby status
+   *
+   * Retrieve lobby status including pillar-grouped roles, CEO lane status, and bound state.
+   */
+  public lobbyStatus<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<AiplusLobbyStatusResponses, AiplusLobbyStatusErrors, ThrowOnError>({
+      url: "/aiplus/lobby/status",
+      ...options,
+    })
+  }
+
+  /**
+   * Get dispatch entry
+   *
+   * Retrieve the dispatch log entry for a specific session.
+   */
+  public dispatchGet<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionId: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "sessionId" }] }])
+    return (options?.client ?? this.client).get<AiplusDispatchGetResponses, AiplusDispatchGetErrors, ThrowOnError>({
+      url: "/aiplus/dispatch/{sessionId}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * List all dispatch entries
+   *
+   * Retrieve all dispatch log entries.
+   */
+  public dispatchList<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<AiplusDispatchListResponses, AiplusDispatchListErrors, ThrowOnError>({
+      url: "/aiplus/dispatch/list",
+      ...options,
+    })
+  }
+
+  /**
+   * Get compact capsule
+   *
+   * Retrieve the current context pressure capsule with per-model thresholds.
+   */
+  public capsuleGet<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<AiplusCapsuleGetResponses, AiplusCapsuleGetErrors, ThrowOnError>({
+      url: "/aiplus/compact/capsule",
+      ...options,
+    })
+  }
+
+  /**
+   * List personas
+   *
+   * Retrieve all AiPlus Agent Team personas with their permissions.
+   */
+  public personasList<ThrowOnError extends boolean = false>(options?: Options<never, ThrowOnError>) {
+    return (options?.client ?? this.client).get<AiplusPersonasListResponses, AiplusPersonasListErrors, ThrowOnError>({
+      url: "/aiplus/personas",
+      ...options,
+    })
+  }
+}
+
 export class Health extends HeyApiClient {
   /**
    * Check server health
@@ -6494,6 +6587,11 @@ export class OpencodeClient extends HeyApiClient {
   private _tui?: Tui
   get tui(): Tui {
     return (this._tui ??= new Tui({ client: this.client }))
+  }
+
+  private _aiplus?: Aiplus
+  get aiplus(): Aiplus {
+    return (this._aiplus ??= new Aiplus({ client: this.client }))
   }
 
   private _v2?: V2

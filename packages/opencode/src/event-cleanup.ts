@@ -75,9 +75,7 @@ export const cleanupOldSessions = (days: number = 30): Effect.Effect<void, never
       .pipe(Effect.orDie)
 
     yield* db
-      .run(
-        `DELETE FROM event_sequence WHERE aggregate_id IN (SELECT id FROM session WHERE time_updated < ${cutoff})`,
-      )
+      .run(`DELETE FROM event_sequence WHERE aggregate_id IN (SELECT id FROM session WHERE time_updated < ${cutoff})`)
       .pipe(Effect.orDie)
 
     yield* Effect.logInfo("EventCleanup: TTL cleanup done")

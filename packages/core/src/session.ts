@@ -47,12 +47,13 @@ function appendDispatchLogEntry(entry: {
     const projectRoot = entry.worktreePath
     const logDir = `${projectRoot}/.aiplus/agents`
     fs.mkdirSync(logDir, { recursive: true })
-    const line = JSON.stringify({
-      ...entry,
-      status: "created",
-      timestamp: new Date().toISOString(),
-      // OBS-1: gh release create on ceo.md has no Owner gate annotation yet
-    }) + "\n"
+    const line =
+      JSON.stringify({
+        ...entry,
+        status: "created",
+        timestamp: new Date().toISOString(),
+        // OBS-1: gh release create on ceo.md has no Owner gate annotation yet
+      }) + "\n"
     fs.appendFileSync(`${logDir}/dispatch-log.jsonl`, applyRedaction(line), "utf-8")
     appendCanonicalEvent(projectRoot, {
       eventType: "dispatch.created",

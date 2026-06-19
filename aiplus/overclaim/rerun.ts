@@ -79,11 +79,7 @@ function execSandboxed(argv: string[], root: string): Promise<ExecOutcome> {
 
     child.on("close", (code, signal) => {
       clearTimeout(timer)
-      const error = timedOut
-        ? `timeout after ${TIMEOUT_MS}ms`
-        : signal
-          ? `killed by signal ${signal}`
-          : undefined
+      const error = timedOut ? `timeout after ${TIMEOUT_MS}ms` : signal ? `killed by signal ${signal}` : undefined
 
       resolve({
         stdout: stdout.slice(0, MAX_OUTPUT_BYTES),
@@ -115,11 +111,7 @@ function execSandboxed(argv: string[], root: string): Promise<ExecOutcome> {
  * 3. Compare actual output against expected substring.
  * 4. Return RunOutcome with verdict.
  */
-export async function rerunClaim(
-  rawCmd: string,
-  expected: string,
-  root: string,
-): Promise<RunOutcome> {
+export async function rerunClaim(rawCmd: string, expected: string, root: string): Promise<RunOutcome> {
   const classification = classify(rawCmd, root)
   if (!classification.accepted) {
     return {

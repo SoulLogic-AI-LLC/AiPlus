@@ -13,11 +13,7 @@ const MEMORY_DIR = ".aiplus/agent-memory"
  * - team:     .aiplus/agent-memory/_team/memory.jsonl
  * - project:  .aiplus/agent-memory/project/memory.jsonl
  */
-export function resolveLayerPath(
-  projectRoot: string,
-  layer: "personal" | "team" | "project",
-  role?: string,
-): string {
+export function resolveLayerPath(projectRoot: string, layer: "personal" | "team" | "project", role?: string): string {
   switch (layer) {
     case "personal": {
       if (!role) throw new Error("personal layer requires role")

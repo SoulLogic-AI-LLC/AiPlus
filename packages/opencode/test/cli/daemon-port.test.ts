@@ -5,7 +5,16 @@ import fs from "fs/promises"
 import path from "path"
 import { tmpdir } from "../fixture/fixture"
 import { Global } from "@opencode-ai/core/global"
-import { cleanupStaleDaemonPort, clearDaemonPort, daemonPort, daemonSpawnCommand, isAllowedDaemonCommand, isDaemonAlive, readDaemonPort, writeDaemonPort } from "../../src/cli/daemon-port"
+import {
+  cleanupStaleDaemonPort,
+  clearDaemonPort,
+  daemonPort,
+  daemonSpawnCommand,
+  isAllowedDaemonCommand,
+  isDaemonAlive,
+  readDaemonPort,
+  writeDaemonPort,
+} from "../../src/cli/daemon-port"
 
 const originalDaemonPort = process.env.OPENCODE_DAEMON_PORT
 const originalAllowPath = process.env.OPENCODE_DAEMON_ALLOW_PATH
@@ -150,7 +159,9 @@ describe("daemon port", () => {
 
     try {
       // Backup existing port file
-      try { await fs.copyFile(portFilePath, backup) } catch {}
+      try {
+        await fs.copyFile(portFilePath, backup)
+      } catch {}
       // Write a port file pointing to the fake daemon on its random port
       await Effect.runPromise(writeDaemonPort(addr.port))
 
@@ -180,7 +191,13 @@ describe("daemon port", () => {
     } finally {
       server.close()
       // Restore backup
-      try { await fs.rename(backup, portFilePath) } catch { try { await fs.unlink(portFilePath) } catch {} }
+      try {
+        await fs.rename(backup, portFilePath)
+      } catch {
+        try {
+          await fs.unlink(portFilePath)
+        } catch {}
+      }
     }
   })
 
@@ -190,15 +207,15 @@ describe("daemon port", () => {
 
     try {
       // Backup existing port file
-      try { await fs.copyFile(portFilePath, backup) } catch {}
+      try {
+        await fs.copyFile(portFilePath, backup)
+      } catch {}
       // Write a port file pointing to a port where nothing is listening (unlikely to be alive)
       const deadPort = 65530
       await Effect.runPromise(writeDaemonPort(deadPort))
 
       // Verify daemon on recorded port is dead
-      const aliveStatus = await Effect.runPromise(
-        isDaemonAlive({ port: deadPort, pid: 99999, startedAt: Date.now() }),
-      )
+      const aliveStatus = await Effect.runPromise(isDaemonAlive({ port: deadPort, pid: 99999, startedAt: Date.now() }))
       expect(aliveStatus).toBe("dead")
 
       // Simulate the fixed logic: clear only when dead
@@ -211,7 +228,13 @@ describe("daemon port", () => {
       expect(Option.isNone(portOpt)).toBe(true)
     } finally {
       // Restore backup (if clearDaemonPort succeeded, file won't exist)
-      try { await fs.rename(backup, portFilePath) } catch { try { await fs.unlink(portFilePath) } catch {} }
+      try {
+        await fs.rename(backup, portFilePath)
+      } catch {
+        try {
+          await fs.unlink(portFilePath)
+        } catch {}
+      }
     }
   })
 })

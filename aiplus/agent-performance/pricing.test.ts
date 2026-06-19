@@ -9,19 +9,26 @@ import * as os from "node:os"
 import { estimateCostUSD, suggestCostEstimate } from "./pricing"
 import { appendPerformanceStart, appendPerformanceComplete } from "./record"
 
-function seedPair(
-  dir: string,
-  sessionId: string,
-  opts: { role?: string; taskType?: string; costUSD?: number },
-) {
+function seedPair(dir: string, sessionId: string, opts: { role?: string; taskType?: string; costUSD?: number }) {
   appendPerformanceStart({
-    projectRoot: dir, sessionId, role: opts.role ?? "engineer",
-    agentName: "test", modelId: "m", taskType: opts.taskType ?? "feat", taskSummary: "t",
+    projectRoot: dir,
+    sessionId,
+    role: opts.role ?? "engineer",
+    agentName: "test",
+    modelId: "m",
+    taskType: opts.taskType ?? "feat",
+    taskSummary: "t",
   })
   appendPerformanceComplete({
-    projectRoot: dir, sessionId, actualMs: 1000, tokensIn: 100,
-    tokensOut: 50, costUSD: opts.costUSD ?? 0.01, outcome: "success",
-    linesChanged: 10, filesChanged: 1,
+    projectRoot: dir,
+    sessionId,
+    actualMs: 1000,
+    tokensIn: 100,
+    tokensOut: 50,
+    costUSD: opts.costUSD ?? 0.01,
+    outcome: "success",
+    linesChanged: 10,
+    filesChanged: 1,
   })
 }
 
@@ -38,7 +45,7 @@ describe("agent-performance pricing", () => {
 
   it("known model → correct USD", () => {
     const cost = estimateCostUSD("claude-sonnet-4-20250514", 10000, 5000)
-    expect(cost).toBe(10000 / 1000 * 0.003 + 5000 / 1000 * 0.015)
+    expect(cost).toBe((10000 / 1000) * 0.003 + (5000 / 1000) * 0.015)
   })
 
   it("unknown model → returns 0", () => {
@@ -57,7 +64,7 @@ describe("agent-performance pricing", () => {
   })
 
   it("suggestCostEstimate with ≥ 5 cost records → correct p50/p90", () => {
-    const costs = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]
+    const costs = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
     for (let i = 0; i < costs.length; i++) {
       seedPair(tmpDir, `s${i}`, { costUSD: costs[i] })
     }

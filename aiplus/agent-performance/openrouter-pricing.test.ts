@@ -28,7 +28,9 @@ function fakeApiResponse(models: Array<{ id: string; prompt: number; completion:
 function mockFetch(response: Response) {
   const orig = globalThis.fetch
   globalThis.fetch = mock(() => Promise.resolve(response))
-  return () => { globalThis.fetch = orig }
+  return () => {
+    globalThis.fetch = orig
+  }
 }
 
 describe("openrouter-pricing", () => {
@@ -43,9 +45,7 @@ describe("openrouter-pricing", () => {
   })
 
   it("fetch converts per-token pricing to per-1k", async () => {
-    const apiModels = fakeApiResponse([
-      { id: "a/b", prompt: 0.003, completion: 0.015 },
-    ])
+    const apiModels = fakeApiResponse([{ id: "a/b", prompt: 0.003, completion: 0.015 }])
     const restore = mockFetch(new Response(JSON.stringify(apiModels), { status: 200 }))
 
     const result = await getCachedPricing(tmpDir, "sk-test")
@@ -57,9 +57,7 @@ describe("openrouter-pricing", () => {
   })
 
   it("cache write/read round-trip via getCachedPricing", async () => {
-    const apiModels = fakeApiResponse([
-      { id: "x/y", prompt: 0.001, completion: 0.005 },
-    ])
+    const apiModels = fakeApiResponse([{ id: "x/y", prompt: 0.001, completion: 0.005 }])
     const restore = mockFetch(new Response(JSON.stringify(apiModels), { status: 200 }))
 
     const result1 = await getCachedPricing(tmpDir, "sk-test")
@@ -76,10 +74,7 @@ describe("openrouter-pricing", () => {
   it("isCacheFresh returns true within TTL, false when expired", () => {
     const cacheFile = cachePath(tmpDir)
     fs.mkdirSync(path.dirname(cacheFile), { recursive: true })
-    fs.writeFileSync(
-      cacheFile,
-      JSON.stringify({ fetchedAt: new Date().toISOString(), byModelId: {} }),
-    )
+    fs.writeFileSync(cacheFile, JSON.stringify({ fetchedAt: new Date().toISOString(), byModelId: {} }))
     expect(isCacheFresh(tmpDir)).toBe(true)
 
     fs.writeFileSync(
@@ -131,9 +126,7 @@ describe("openrouter-pricing", () => {
       }),
     )
 
-    const apiModels = fakeApiResponse([
-      { id: "fresh/model", prompt: 0.002, completion: 0.008 },
-    ])
+    const apiModels = fakeApiResponse([{ id: "fresh/model", prompt: 0.002, completion: 0.008 }])
     const restore = mockFetch(new Response(JSON.stringify(apiModels), { status: 200 }))
 
     const result = await getCachedPricing(tmpDir, "sk-test")
@@ -146,10 +139,7 @@ describe("openrouter-pricing", () => {
   it("clearCache removes cache file", () => {
     const cacheFile = cachePath(tmpDir)
     fs.mkdirSync(path.dirname(cacheFile), { recursive: true })
-    fs.writeFileSync(
-      cacheFile,
-      JSON.stringify({ fetchedAt: new Date().toISOString(), byModelId: {} }),
-    )
+    fs.writeFileSync(cacheFile, JSON.stringify({ fetchedAt: new Date().toISOString(), byModelId: {} }))
     expect(fs.existsSync(cacheFile)).toBe(true)
 
     clearCache(tmpDir)

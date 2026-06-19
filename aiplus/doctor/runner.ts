@@ -11,9 +11,12 @@ function computeVerdict(checks: DoctorCheck[]): DoctorVerdict {
 /** Map verdict to exit code. */
 export function doctorVerdictToExitCode(verdict: DoctorVerdict): number {
   switch (verdict) {
-    case "PASS": return 0
-    case "REVISE": return 1
-    case "BLOCKED": return 2
+    case "PASS":
+      return 0
+    case "REVISE":
+      return 1
+    case "BLOCKED":
+      return 2
   }
 }
 
@@ -30,18 +33,24 @@ const C = {
 /** Color for verdict. */
 function verdictColor(v: DoctorVerdict): string {
   switch (v) {
-    case "PASS": return C.green
-    case "REVISE": return C.yellow
-    case "BLOCKED": return C.red
+    case "PASS":
+      return C.green
+    case "REVISE":
+      return C.yellow
+    case "BLOCKED":
+      return C.red
   }
 }
 
 /** Icon for verdict. */
 function verdictIcon(v: DoctorVerdict): string {
   switch (v) {
-    case "PASS": return "✓"
-    case "REVISE": return "⚠"
-    case "BLOCKED": return "✗"
+    case "PASS":
+      return "✓"
+    case "REVISE":
+      return "⚠"
+    case "BLOCKED":
+      return "✗"
   }
 }
 
@@ -77,12 +86,7 @@ export function formatDoctorReport(report: DoctorReport): string {
 
 /** Run all checks and produce report. */
 export function runDoctor(projectRoot: string): DoctorReport {
-  const checks: DoctorCheck[] = [
-    checkAudit(projectRoot),
-    checkLobby(projectRoot),
-    checkSecretBroker(),
-    checkCompact(),
-  ]
+  const checks: DoctorCheck[] = [checkAudit(projectRoot), checkLobby(projectRoot), checkSecretBroker(), checkCompact()]
 
   const verdict = computeVerdict(checks)
 

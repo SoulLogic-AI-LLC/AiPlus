@@ -34,9 +34,18 @@ export interface CraftScanOutcome {
 }
 
 export const ALLOWED_CRAFT_ROLES: readonly string[] = [
-  "advisor", "ceo", "architect", "pm", "ui-designer",
-  "ai-integration", "engineer-a", "engineer-b", "integration-manager",
-  "qa", "reviewer", "security-reviewer",
+  "advisor",
+  "ceo",
+  "architect",
+  "pm",
+  "ui-designer",
+  "ai-integration",
+  "engineer-a",
+  "engineer-b",
+  "integration-manager",
+  "qa",
+  "reviewer",
+  "security-reviewer",
 ]
 
 export function parseCraftMarkers(text: string): CraftMarker[] {
@@ -70,18 +79,17 @@ export function isAllowedCraftRole(role: string): boolean {
 }
 
 function normalizeLesson(lesson: string): string {
-  return lesson.trim().replace(/\s{2,}/g, " ").slice(0, 500)
+  return lesson
+    .trim()
+    .replace(/\s{2,}/g, " ")
+    .slice(0, 500)
 }
 
 function buildCraftId(lesson: string): string {
   return `craft_${Date.now()}_${hashEntry(lesson).slice(0, 12)}`
 }
 
-function writeFeedback(
-  projectRoot: string,
-  level: "WARN" | "BLOCKED",
-  message: string,
-): string {
+function writeFeedback(projectRoot: string, level: "WARN" | "BLOCKED", message: string): string {
   const feedbackDir = path.join(projectRoot, ".aiplus", "agents")
   fs.mkdirSync(feedbackDir, { recursive: true })
   const feedbackFile = path.join(feedbackDir, "stop-hook-feedback.jsonl")
@@ -182,11 +190,7 @@ export function processCraftMarkers(
     const memFile = resolveLayerPath(projectRoot, "personal", marker.role)
     const existingHashes = readExistingHashes(memFile)
     if (existingHashes.has(contentHash)) {
-      const fb = writeFeedback(
-        projectRoot,
-        "WARN",
-        `craft_memory skip: duplicate hash for role=${marker.role}`,
-      )
+      const fb = writeFeedback(projectRoot, "WARN", `craft_memory skip: duplicate hash for role=${marker.role}`)
       feedbackLines.push(fb)
       captures.push({
         marker,
@@ -240,11 +244,7 @@ export function processCraftMarkers(
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      const fb = writeFeedback(
-        projectRoot,
-        "BLOCKED",
-        `craft_memory write failed: ${msg}`,
-      )
+      const fb = writeFeedback(projectRoot, "BLOCKED", `craft_memory write failed: ${msg}`)
       feedbackLines.push(fb)
       captures.push({
         marker,

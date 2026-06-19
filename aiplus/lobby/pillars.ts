@@ -10,27 +10,27 @@ import type { Pillar } from "./types"
 /** Role → Pillar mapping. */
 const PILLAR_MAP: Record<string, Pillar> = {
   // CORE (Coordinator)
-  "ceo": "coordinator",
-  "advisor": "coordinator",
-  "pm": "coordinator",
-  "architect": "coordinator",
+  ceo: "coordinator",
+  advisor: "coordinator",
+  pm: "coordinator",
+  architect: "coordinator",
 
   // REVIEWER (Verifier)
-  "reviewer": "verifier",
-  "qa": "verifier",
+  reviewer: "verifier",
+  qa: "verifier",
   "security-reviewer": "verifier",
   "chief-auditor": "verifier",
   "evidence-auditor": "verifier",
   "release-manager": "verifier",
-  "cqo": "verifier",
+  cqo: "verifier",
   "performance-auditor": "verifier",
 
   // BUILDER (Expert)
   "engineer-a": "expert",
   "engineer-b": "expert",
-  "devops": "expert",
+  devops: "expert",
   "tech-writer": "expert",
-  "researcher": "expert",
+  researcher: "expert",
   "ai-integration": "expert",
   "integration-manager": "expert",
   "ui-designer": "expert",
@@ -38,23 +38,23 @@ const PILLAR_MAP: Record<string, Pillar> = {
 
 /** Display names for roles. */
 const DISPLAY_NAMES: Record<string, string> = {
-  "ceo": "CEO",
-  "advisor": "Advisor",
-  "pm": "PM",
-  "architect": "Architect",
-  "reviewer": "Reviewer",
-  "qa": "QA",
+  ceo: "CEO",
+  advisor: "Advisor",
+  pm: "PM",
+  architect: "Architect",
+  reviewer: "Reviewer",
+  qa: "QA",
   "security-reviewer": "Security Reviewer",
   "chief-auditor": "Chief Auditor",
   "evidence-auditor": "Evidence Auditor",
   "release-manager": "Release Manager",
-  "cqo": "CQO",
+  cqo: "CQO",
   "performance-auditor": "Performance Auditor",
   "engineer-a": "Engineer A",
   "engineer-b": "Engineer B",
-  "devops": "DevOps",
+  devops: "DevOps",
   "tech-writer": "Tech Writer",
-  "researcher": "Researcher",
+  researcher: "Researcher",
   "ai-integration": "AI Integration",
   "integration-manager": "Integration Manager",
   "ui-designer": "UI Designer",
@@ -85,9 +85,12 @@ export function getPillarOrder(): Pillar[] {
 /** Get pillar display label. */
 export function getPillarLabel(pillar: Pillar): string {
   switch (pillar) {
-    case "coordinator": return "🟢 CORE (Coordinator)"
-    case "verifier": return "🔵 REVIEWER (Verifier)"
-    case "expert": return "🟡 BUILDER (Expert)"
+    case "coordinator":
+      return "🟢 CORE (Coordinator)"
+    case "verifier":
+      return "🔵 REVIEWER (Verifier)"
+    case "expert":
+      return "🟡 BUILDER (Expert)"
   }
 }
 

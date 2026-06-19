@@ -22,7 +22,9 @@ async function restorePortFile() {
   try {
     await fs.rename(backupPath, portFilePath)
   } catch {
-    try { await fs.unlink(portFilePath) } catch {}
+    try {
+      await fs.unlink(portFilePath)
+    } catch {}
   }
 }
 
@@ -35,7 +37,9 @@ async function writePortFile(port: number) {
 }
 
 /** Start an HTTP server that responds to /global/health and upgrades to WebSocket. */
-function startDaemonServer(port = 0): Promise<{ port: number; ws: WebSocketServer; http: http.Server; connections: number }> {
+function startDaemonServer(
+  port = 0,
+): Promise<{ port: number; ws: WebSocketServer; http: http.Server; connections: number }> {
   return new Promise((resolve) => {
     const state = { connections: 0 }
     const httpServer = http.createServer((req, res) => {
@@ -44,10 +48,19 @@ function startDaemonServer(port = 0): Promise<{ port: number; ws: WebSocketServe
       }
     })
     const wss = new WebSocketServer({ server: httpServer })
-    wss.on("connection", () => { state.connections++ })
+    wss.on("connection", () => {
+      state.connections++
+    })
     httpServer.listen(port, () => {
       const addr = httpServer.address() as { port: number }
-      resolve({ port: addr.port, ws: wss, http: httpServer, get connections() { return state.connections } })
+      resolve({
+        port: addr.port,
+        ws: wss,
+        http: httpServer,
+        get connections() {
+          return state.connections
+        },
+      })
     })
   })
 }
@@ -130,7 +143,9 @@ describe("daemon-transport port rediscovery", () => {
     const previousInterval = process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS
     process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS = "0"
 
-    const unsubscribe = await createWebSocketEventSource(`http://127.0.0.1:${serverA.port}`, undefined).subscribe(() => {})
+    const unsubscribe = await createWebSocketEventSource(`http://127.0.0.1:${serverA.port}`, undefined).subscribe(
+      () => {},
+    )
 
     // Verify initial connection succeeded
     expect(serverA.connections).toBe(1)
@@ -171,7 +186,9 @@ describe("daemon-transport port rediscovery", () => {
     const previousInterval = process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS
     process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS = "0"
 
-    const unsubscribe = await createWebSocketEventSource(`http://127.0.0.1:${serverA.port}`, undefined).subscribe(() => {})
+    const unsubscribe = await createWebSocketEventSource(`http://127.0.0.1:${serverA.port}`, undefined).subscribe(
+      () => {},
+    )
     expect(serverA.connections).toBe(1)
 
     serverA.ws.clients.forEach((client) => client.terminate())

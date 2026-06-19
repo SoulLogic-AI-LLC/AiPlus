@@ -22,10 +22,10 @@ export function ghCommand(repo?: string, prNumber?: number): string {
 
 /** Get check status for a specific PR. */
 function getPrCheck(pr: number): GhPrCheck {
-  const raw = execSync(
-    `gh pr view ${pr} --json number,title,state,statusCheckRollup,url`,
-    { encoding: "utf-8", timeout: 15000 },
-  )
+  const raw = execSync(`gh pr view ${pr} --json number,title,state,statusCheckRollup,url`, {
+    encoding: "utf-8",
+    timeout: 15000,
+  })
   const data = JSON.parse(raw)
   return {
     pr: data.number,
@@ -39,10 +39,10 @@ function getPrCheck(pr: number): GhPrCheck {
 /** Get check statuses for all open PRs. */
 function getOpenPrChecks(repo?: string): GhPrCheck[] {
   const repoFlag = repo ? `--repo ${repo}` : ""
-  const raw = execSync(
-    `gh pr list ${repoFlag} --json number,title,state,statusCheckRollup,url --limit 10`,
-    { encoding: "utf-8", timeout: 15000 },
-  )
+  const raw = execSync(`gh pr list ${repoFlag} --json number,title,state,statusCheckRollup,url --limit 10`, {
+    encoding: "utf-8",
+    timeout: 15000,
+  })
   const data = JSON.parse(raw) as Array<{
     number: number
     title: string
@@ -50,11 +50,13 @@ function getOpenPrChecks(repo?: string): GhPrCheck[] {
     statusCheckRollup: { conclusion?: string; state?: string } | null
     url: string
   }>
-  return data.map(pr => ({
+  return data.map((pr) => ({
     pr: pr.number,
     title: pr.title,
     state: pr.state as GhPrCheck["state"],
-    statusCheckRollup: (pr.statusCheckRollup?.conclusion ?? pr.statusCheckRollup?.state ?? null) as GhPrCheck["statusCheckRollup"],
+    statusCheckRollup: (pr.statusCheckRollup?.conclusion ??
+      pr.statusCheckRollup?.state ??
+      null) as GhPrCheck["statusCheckRollup"],
     url: pr.url,
   }))
 }

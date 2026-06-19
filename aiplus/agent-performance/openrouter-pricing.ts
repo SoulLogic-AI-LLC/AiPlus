@@ -88,10 +88,7 @@ export function clearCache(projectRoot: string): void {
   if (existsSync(p)) unlinkSync(p)
 }
 
-export async function getCachedPricing(
-  projectRoot: string,
-  apiKey: string,
-): Promise<PricingCache> {
+export async function getCachedPricing(projectRoot: string, apiKey: string): Promise<PricingCache> {
   const cached = readCache(projectRoot)
   if (cached && isCacheFresh(projectRoot)) return cached
 

@@ -22,9 +22,15 @@ function formatStats(stats: ReturnType<typeof computeStats>): string {
     `  models tracked: ${Object.keys(stats.byModel).length}`,
     `  roles tracked: ${Object.keys(stats.byRole).length}`,
     topModels.length > 0 ? "  top models:" : "  top models: none",
-    ...topModels.map(([model, entry]) => `    - ${model}: ${formatUsd(entry.cost)} · ${entry.tokens} tokens · ${entry.sessions} sessions`),
+    ...topModels.map(
+      ([model, entry]) =>
+        `    - ${model}: ${formatUsd(entry.cost)} · ${entry.tokens} tokens · ${entry.sessions} sessions`,
+    ),
     topRoles.length > 0 ? "  top roles:" : "  top roles: none",
-    ...topRoles.map(([role, entry]) => `    - ${role}: ${formatUsd(entry.cost)} · ${entry.tokens} tokens · ${entry.sessions} sessions`),
+    ...topRoles.map(
+      ([role, entry]) =>
+        `    - ${role}: ${formatUsd(entry.cost)} · ${entry.tokens} tokens · ${entry.sessions} sessions`,
+    ),
   ].join("\n")
 }
 

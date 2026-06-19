@@ -17,20 +17,24 @@ export const WorktreeCommand = cmd({
             console.log("AiPlus Worktree\n  no leases recorded")
             return
           }
-          console.log([
-            "AiPlus Worktree",
-            ...leases.map((lease, index) => [
-              `lease ${index + 1}`,
-              `  leaseId: ${lease.leaseId}`,
-              `  sessionId: ${lease.sessionId}`,
-              `  lane: ${lease.lane}`,
-              `  status: ${lease.status}`,
-              `  worktreePath: ${lease.worktreePath}`,
-              `  baseCommit: ${lease.baseCommit}`,
-              `  acquiredAt: ${lease.acquiredAt}`,
-              `  expiresAt: ${lease.expiresAt ?? "(none)"}`,
-            ].join("\n")),
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Worktree",
+              ...leases.map((lease, index) =>
+                [
+                  `lease ${index + 1}`,
+                  `  leaseId: ${lease.leaseId}`,
+                  `  sessionId: ${lease.sessionId}`,
+                  `  lane: ${lease.lane}`,
+                  `  status: ${lease.status}`,
+                  `  worktreePath: ${lease.worktreePath}`,
+                  `  baseCommit: ${lease.baseCommit}`,
+                  `  acquiredAt: ${lease.acquiredAt}`,
+                  `  expiresAt: ${lease.expiresAt ?? "(none)"}`,
+                ].join("\n"),
+              ),
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -49,11 +53,9 @@ export const WorktreeCommand = cmd({
             console.log(`AiPlus Worktree\n  lane ${lane}: allowed`)
             return
           }
-          console.log([
-            "AiPlus Worktree",
-            `  lane ${lane}: blocked`,
-            `  reason: ${result.reason ?? "unknown"}`,
-          ].join("\n"))
+          console.log(
+            ["AiPlus Worktree", `  lane ${lane}: blocked`, `  reason: ${result.reason ?? "unknown"}`].join("\n"),
+          )
         },
       )
       .command(
@@ -78,15 +80,17 @@ export const WorktreeCommand = cmd({
         async (args) => {
           const worktreePath = typeof args.worktreePath === "string" ? args.worktreePath : process.cwd()
           const lease = acquire(process.cwd(), args.sessionId as string, args.lane as string, worktreePath)
-          console.log([
-            "AiPlus Worktree Acquire",
-            `  leaseId: ${lease.leaseId}`,
-            `  sessionId: ${lease.sessionId}`,
-            `  lane: ${lease.lane}`,
-            `  status: ${lease.status}`,
-            `  worktreePath: ${lease.worktreePath}`,
-            `  baseCommit: ${lease.baseCommit}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Worktree Acquire",
+              `  leaseId: ${lease.leaseId}`,
+              `  sessionId: ${lease.sessionId}`,
+              `  lane: ${lease.lane}`,
+              `  status: ${lease.status}`,
+              `  worktreePath: ${lease.worktreePath}`,
+              `  baseCommit: ${lease.baseCommit}`,
+            ].join("\n"),
+          )
         },
       )
       .command(

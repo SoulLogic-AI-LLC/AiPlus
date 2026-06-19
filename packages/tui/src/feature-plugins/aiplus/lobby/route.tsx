@@ -42,7 +42,10 @@ function RoleRow(props: { role: RoleStatus; theme: TuiThemeCurrent }) {
       <text fg={t.textMuted} width={12}>
         {pillarLabel(props.role.pillar)}
       </text>
-      <text fg={props.role.status === "active" ? t.success : props.role.status === "stale" ? t.warning : t.textMuted} width={8}>
+      <text
+        fg={props.role.status === "active" ? t.success : props.role.status === "stale" ? t.warning : t.textMuted}
+        width={8}
+      >
         {props.role.status}
       </text>
       <text fg={t.textMuted} width={12}>
@@ -81,19 +84,19 @@ export function LobbyRoute(props: { api: TuiPluginApi }) {
         <Show when={boundInfo()}>
           <text fg={theme().info}>{boundInfo()}</text>
         </Show>
-        <text fg={theme().textMuted}>
-          [R refresh] [Esc back]
-        </text>
+        <text fg={theme().textMuted}>[R refresh] [Esc back]</text>
       </box>
 
       {/* Separator */}
       <box width="100%" height={1}>
-        <text fg={theme().borderSubtle}>{'─'.repeat(75)}</text>
+        <text fg={theme().borderSubtle}>{"─".repeat(75)}</text>
       </box>
 
       {/* Column header */}
       <box flexDirection="row" gap={1} paddingLeft={2} paddingTop={1}>
-        <text fg={theme().textMuted} width={3}> </text>
+        <text fg={theme().textMuted} width={3}>
+          {" "}
+        </text>
         <text fg={theme().textMuted} width={18}>
           <b>Role</b>
         </text>
@@ -126,12 +129,11 @@ export function LobbyRoute(props: { api: TuiPluginApi }) {
                   <b>▸ {pillarLabel(pillar)}</b>
                 </text>
                 <text fg={theme().textMuted}>
-                  {" "}({roles.filter((r) => r.status === "active").length} active / {roles.length} total)
+                  {" "}
+                  ({roles.filter((r) => r.status === "active").length} active / {roles.length} total)
                 </text>
               </box>
-              <For each={roles}>
-                {(role) => <RoleRow role={role} theme={theme()} />}
-              </For>
+              <For each={roles}>{(role) => <RoleRow role={role} theme={theme()} />}</For>
             </box>
           )
         })}
@@ -159,14 +161,12 @@ export function LobbyRoute(props: { api: TuiPluginApi }) {
       {/* Footer */}
       <box flexGrow={1} />
       <box width="100%" height={1}>
-        <text fg={theme().borderSubtle}>{'─'.repeat(75)}</text>
+        <text fg={theme().borderSubtle}>{"─".repeat(75)}</text>
       </box>
       <box flexDirection="row" paddingLeft={2} paddingRight={2} gap={2}>
         <text fg={theme().textMuted}>AiPlus Lobby v0.0.3</text>
         <box flexGrow={1} />
-        <text fg={theme().textMuted}>
-          {data() ? `${data()!.roles.length} roles loaded` : "loading…"}
-        </text>
+        <text fg={theme().textMuted}>{data() ? `${data()!.roles.length} roles loaded` : "loading…"}</text>
       </box>
     </box>
   )

@@ -43,7 +43,7 @@ const BACKGROUND_UPDATED = [
   "Work on non-overlapping tasks, or briefly tell the user what you sent and end your response.",
 ].join("\n")
 
-const SUBAGENT_MEMORY_GB = 0.50
+const SUBAGENT_MEMORY_GB = 0.5
 const SUBAGENT_SOFT_RESERVE_GB = 1.5
 const SUBAGENT_HARD_FLOOR_GB = 0.25
 const activeSubagentSlots = new Set<string>()
@@ -83,7 +83,7 @@ function subagentCapacity(freeGb: number) {
   // Low memory: allow exactly 1 sub-agent between 0.25GB and 1.5GB
   if (freeGb < SUBAGENT_SOFT_RESERVE_GB) return 1
   // Normal: capacity scales with available memory above the hard floor (ceil = don't waste partial slots)
-  return Math.max(1, Math.ceil(((freeGb - SUBAGENT_HARD_FLOOR_GB) / SUBAGENT_MEMORY_GB) - 1e-9))
+  return Math.max(1, Math.ceil((freeGb - SUBAGENT_HARD_FLOOR_GB) / SUBAGENT_MEMORY_GB - 1e-9))
 }
 
 function reserveSubagentSlot() {
@@ -140,7 +140,8 @@ const BaseParameterFields = {
       ". If not specified, uses the agent default or parent model.",
   }),
   effort: Schema.optional(Schema.String).annotate({
-    description: "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
+    description:
+      "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
   }),
 }
 
@@ -273,10 +274,13 @@ export const TaskTool = Tool.define(
       }
       const entry = params.model ? MODEL_MAP[params.model] : undefined
       const model = entry
-        ? { modelID: entry.modelID as typeof msg.info.modelID, providerID: entry.providerID as typeof msg.info.providerID }
+        ? {
+            modelID: entry.modelID as typeof msg.info.modelID,
+            providerID: entry.providerID as typeof msg.info.providerID,
+          }
         : params.model
           ? { modelID: params.model as typeof msg.info.modelID, providerID: msg.info.providerID }
-          : next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID }
+          : (next.model ?? { modelID: msg.info.modelID, providerID: msg.info.providerID })
       const metadata = {
         parentSessionId: ctx.sessionID,
         sessionId: nextSession.id,

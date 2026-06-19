@@ -37,24 +37,36 @@ export interface PressureResult {
  */
 const COMPACT_ACTION_MATRIX: ActionMatrix = {
   silent: {
-    RESET_BOUND:  { silent: true,  writeCapsule: false, message: "" },
-    CONTINUOUS:   { silent: true,  writeCapsule: false, message: "" },
-    TASK_BOUND:   { silent: true,  writeCapsule: false, message: "" },
+    RESET_BOUND: { silent: true, writeCapsule: false, message: "" },
+    CONTINUOUS: { silent: true, writeCapsule: false, message: "" },
+    TASK_BOUND: { silent: true, writeCapsule: false, message: "" },
   },
   soft: {
-    RESET_BOUND:  { silent: true,  writeCapsule: false, message: "" },
-    CONTINUOUS:   { silent: false, writeCapsule: true,  message: "Context usage elevated — consider compacting soon" },
-    TASK_BOUND:   { silent: true,  writeCapsule: false, message: "" },
+    RESET_BOUND: { silent: true, writeCapsule: false, message: "" },
+    CONTINUOUS: { silent: false, writeCapsule: true, message: "Context usage elevated — consider compacting soon" },
+    TASK_BOUND: { silent: true, writeCapsule: false, message: "" },
   },
   hard: {
-    RESET_BOUND:  { silent: true,  writeCapsule: false, message: "" },
-    CONTINUOUS:   { silent: false, writeCapsule: true,  message: "Context near limit — compact strongly recommended now" },
-    TASK_BOUND:   { silent: false, writeCapsule: true,  message: "Context nearing limit — wrap current task and /new" },
+    RESET_BOUND: { silent: true, writeCapsule: false, message: "" },
+    CONTINUOUS: { silent: false, writeCapsule: true, message: "Context near limit — compact strongly recommended now" },
+    TASK_BOUND: { silent: false, writeCapsule: true, message: "Context nearing limit — wrap current task and /new" },
   },
   emergency: {
-    RESET_BOUND:  { silent: false, writeCapsule: true,  message: "EMERGENCY: persist partial evidence, reopen fresh session" },
-    CONTINUOUS:   { silent: false, writeCapsule: true,  message: "EMERGENCY: checkpoint state and compact or controlled /new" },
-    TASK_BOUND:   { silent: false, writeCapsule: true,  message: "EMERGENCY: checkpoint current work and /new immediately" },
+    RESET_BOUND: {
+      silent: false,
+      writeCapsule: true,
+      message: "EMERGENCY: persist partial evidence, reopen fresh session",
+    },
+    CONTINUOUS: {
+      silent: false,
+      writeCapsule: true,
+      message: "EMERGENCY: checkpoint state and compact or controlled /new",
+    },
+    TASK_BOUND: {
+      silent: false,
+      writeCapsule: true,
+      message: "EMERGENCY: checkpoint current work and /new immediately",
+    },
   },
 }
 

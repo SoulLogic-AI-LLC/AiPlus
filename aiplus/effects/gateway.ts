@@ -20,10 +20,7 @@ const DISPATCH_LOG_FILE = ".aiplus/agents/dispatch-log.jsonl"
  * Scans the dispatch-log.jsonl for matching keys with outcome=success.
  * Returns true if a duplicate is found.
  */
-function checkDuplicateInDispatchLog(
-  projectRoot: string,
-  idempotencyKey: string,
-): boolean {
+function checkDuplicateInDispatchLog(projectRoot: string, idempotencyKey: string): boolean {
   const logPath = path.join(projectRoot, DISPATCH_LOG_FILE)
   if (!fs.existsSync(logPath)) return false
 

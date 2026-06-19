@@ -73,9 +73,7 @@ const ttlCleanup = (days: number) =>
       .run(`DELETE FROM event WHERE aggregate_id IN (SELECT id FROM session WHERE time_updated < ${cutoff})`)
       .pipe(Effect.orDie)
     yield* db
-      .run(
-        `DELETE FROM event_sequence WHERE aggregate_id IN (SELECT id FROM session WHERE time_updated < ${cutoff})`,
-      )
+      .run(`DELETE FROM event_sequence WHERE aggregate_id IN (SELECT id FROM session WHERE time_updated < ${cutoff})`)
       .pipe(Effect.orDie)
   })
 
@@ -85,9 +83,7 @@ describe("event-cleanup", () => {
       Effect.gen(function* () {
         const { db } = yield* Database.Service
 
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 2)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 2)").pipe(Effect.orDie)
 
         yield* db
           .run(
@@ -113,9 +109,7 @@ describe("event-cleanup", () => {
       Effect.gen(function* () {
         const { db } = yield* Database.Service
 
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 3)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 3)").pipe(Effect.orDie)
 
         yield* db
           .run(
@@ -142,9 +136,7 @@ describe("event-cleanup", () => {
       Effect.gen(function* () {
         const { db } = yield* Database.Service
 
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 2)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_test', 2)").pipe(Effect.orDie)
 
         yield* db
           .run(
@@ -173,9 +165,7 @@ describe("event-cleanup", () => {
         const recentTime = Date.now() - 1 * 24 * 60 * 60 * 1000
 
         yield* seedSession("ses_old", oldTime)
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_old', 1)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_old', 1)").pipe(Effect.orDie)
         yield* db
           .run(
             `INSERT INTO event (id, aggregate_id, seq, type, data) VALUES
@@ -184,9 +174,7 @@ describe("event-cleanup", () => {
           .pipe(Effect.orDie)
 
         yield* seedSession("ses_new", recentTime)
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_new', 1)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_new', 1)").pipe(Effect.orDie)
         yield* db
           .run(
             `INSERT INTO event (id, aggregate_id, seq, type, data) VALUES
@@ -196,9 +184,7 @@ describe("event-cleanup", () => {
 
         yield* ttlCleanup(30)
 
-        const oldRows: any[] = yield* db
-          .all("SELECT id FROM event WHERE aggregate_id = 'ses_old'")
-          .pipe(Effect.orDie)
+        const oldRows: any[] = yield* db.all("SELECT id FROM event WHERE aggregate_id = 'ses_old'").pipe(Effect.orDie)
         expect(oldRows.length).toBe(0)
 
         const recentRows: any[] = yield* db
@@ -223,9 +209,7 @@ describe("event-cleanup", () => {
              VALUES ('msg_keep', 'ses_msg', ${oldTime}, ${oldTime}, '{"role":"user","content":"hello"}')`,
           )
           .pipe(Effect.orDie)
-        yield* db
-          .run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_msg', 1)")
-          .pipe(Effect.orDie)
+        yield* db.run("INSERT INTO event_sequence (aggregate_id, seq) VALUES ('ses_msg', 1)").pipe(Effect.orDie)
         yield* db
           .run(
             `INSERT INTO event (id, aggregate_id, seq, type, data) VALUES
@@ -235,14 +219,10 @@ describe("event-cleanup", () => {
 
         yield* ttlCleanup(30)
 
-        const evt: any[] = yield* db
-          .all("SELECT id FROM event WHERE aggregate_id = 'ses_msg'")
-          .pipe(Effect.orDie)
+        const evt: any[] = yield* db.all("SELECT id FROM event WHERE aggregate_id = 'ses_msg'").pipe(Effect.orDie)
         expect(evt.length).toBe(0)
 
-        const msg: any[] = yield* db
-          .all("SELECT id FROM message WHERE session_id = 'ses_msg'")
-          .pipe(Effect.orDie)
+        const msg: any[] = yield* db.all("SELECT id FROM message WHERE session_id = 'ses_msg'").pipe(Effect.orDie)
         expect(msg.length).toBe(1)
         expect(msg[0].id).toBe("msg_keep")
       }),

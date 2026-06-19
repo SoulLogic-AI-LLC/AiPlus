@@ -14,7 +14,7 @@ export function resumeCommand(projectRoot: string, sessionId: string): string {
   const entries = readDispatchLog(projectRoot)
 
   // Find session by dispatch ID or session ID
-  const entry = entries.find(e => {
+  const entry = entries.find((e) => {
     const extractedId = extractSessionId(e.dispatchId)
     return e.dispatchId === sessionId || extractedId === sessionId
   })

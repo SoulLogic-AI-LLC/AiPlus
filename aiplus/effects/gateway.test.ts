@@ -144,10 +144,7 @@ describe("effect-gateway", () => {
         schemaVersion: "0.4.0",
         timestamp: new Date().toISOString(),
       }
-      fs.appendFileSync(
-        path.join(dispatchDir, "dispatch-log.jsonl"),
-        JSON.stringify(entry) + "\n",
-      )
+      fs.appendFileSync(path.join(dispatchDir, "dispatch-log.jsonl"), JSON.stringify(entry) + "\n")
 
       const result = interceptToolCall({
         toolName: "bash",
@@ -174,10 +171,7 @@ describe("effect-gateway", () => {
         schemaVersion: "0.4.0",
         timestamp: new Date().toISOString(),
       }
-      fs.appendFileSync(
-        path.join(dispatchDir, "dispatch-log.jsonl"),
-        JSON.stringify(entry) + "\n",
-      )
+      fs.appendFileSync(path.join(dispatchDir, "dispatch-log.jsonl"), JSON.stringify(entry) + "\n")
 
       const result = interceptToolCall({
         toolName: "write",
@@ -204,10 +198,7 @@ describe("effect-gateway", () => {
         schemaVersion: "0.4.0",
         timestamp: new Date().toISOString(),
       }
-      fs.appendFileSync(
-        path.join(dispatchDir, "dispatch-log.jsonl"),
-        JSON.stringify(entry) + "\n",
-      )
+      fs.appendFileSync(path.join(dispatchDir, "dispatch-log.jsonl"), JSON.stringify(entry) + "\n")
 
       const result = interceptToolCall({
         toolName: "read",

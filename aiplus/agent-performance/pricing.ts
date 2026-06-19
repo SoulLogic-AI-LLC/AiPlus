@@ -31,7 +31,10 @@ export function suggestCostEstimate(
   taskType: string,
 ): { p50: number; p90: number; count: number } | null {
   const records = queryPerformance({ projectRoot, role, taskType })
-  const costs = records.map((r) => r.costUSD).filter((c) => c > 0).sort((a, b) => a - b)
+  const costs = records
+    .map((r) => r.costUSD)
+    .filter((c) => c > 0)
+    .sort((a, b) => a - b)
   if (costs.length < 5) return null
   return { p50: percentile(costs, 0.5), p90: percentile(costs, 0.9), count: costs.length }
 }

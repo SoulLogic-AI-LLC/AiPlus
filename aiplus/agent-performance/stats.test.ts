@@ -12,16 +12,35 @@ import { appendPerformanceStart, appendPerformanceComplete } from "./record"
 function seedPair(
   dir: string,
   sessionId: string,
-  opts: { role?: string; modelId?: string; taskType?: string; actualMs?: number; costUSD?: number; outcome?: "success" | "failed" | "canceled"; linesChanged?: number },
+  opts: {
+    role?: string
+    modelId?: string
+    taskType?: string
+    actualMs?: number
+    costUSD?: number
+    outcome?: "success" | "failed" | "canceled"
+    linesChanged?: number
+  },
 ) {
   appendPerformanceStart({
-    projectRoot: dir, sessionId, role: opts.role ?? "engineer",
-    agentName: "test", modelId: opts.modelId ?? "m", taskType: opts.taskType ?? "feat", taskSummary: "t",
+    projectRoot: dir,
+    sessionId,
+    role: opts.role ?? "engineer",
+    agentName: "test",
+    modelId: opts.modelId ?? "m",
+    taskType: opts.taskType ?? "feat",
+    taskSummary: "t",
   })
   appendPerformanceComplete({
-    projectRoot: dir, sessionId, actualMs: opts.actualMs ?? 1000, tokensIn: 100,
-    tokensOut: 50, costUSD: opts.costUSD ?? 0.01, outcome: opts.outcome ?? "success",
-    linesChanged: opts.linesChanged ?? 10, filesChanged: 1,
+    projectRoot: dir,
+    sessionId,
+    actualMs: opts.actualMs ?? 1000,
+    tokensIn: 100,
+    tokensOut: 50,
+    costUSD: opts.costUSD ?? 0.01,
+    outcome: opts.outcome ?? "success",
+    linesChanged: opts.linesChanged ?? 10,
+    filesChanged: 1,
   })
 }
 

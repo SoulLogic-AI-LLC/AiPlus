@@ -9,10 +9,16 @@ const LOG_FILE = ".aiplus/agents/dispatch-log.jsonl"
 export function hashEntry(entry: DispatchEntry, logFile: string): { prev_hash: string; entry_hash: string } {
   let prevHash = "genesis"
   if (fs.existsSync(logFile)) {
-    const lines = fs.readFileSync(logFile, "utf-8").split("\n").filter(l => l.trim())
+    const lines = fs
+      .readFileSync(logFile, "utf-8")
+      .split("\n")
+      .filter((l) => l.trim())
     if (lines.length > 0) {
-      try { prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis" }
-      catch { /* corrupt */ }
+      try {
+        prevHash = JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis"
+      } catch {
+        /* corrupt */
+      }
     }
   }
   const body = JSON.stringify(entry)

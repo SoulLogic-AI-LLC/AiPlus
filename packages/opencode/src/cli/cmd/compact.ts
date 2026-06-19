@@ -102,11 +102,13 @@ export const CompactCommand = cmd({
             }),
         async (args) => {
           initSessionCompactState(process.cwd(), args.sessionId as string, args.profile as CompactProfile)
-          console.log([
-            "AiPlus Compact Init",
-            `  sessionId: ${args.sessionId as string}`,
-            `  profile: ${args.profile as string}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Compact Init",
+              `  sessionId: ${args.sessionId as string}`,
+              `  profile: ${args.profile as string}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -120,11 +122,11 @@ export const CompactCommand = cmd({
           }),
         async (args) => {
           const generation = bumpCompactionGeneration(process.cwd(), args.sessionId as string)
-          console.log([
-            "AiPlus Compact Bump",
-            `  sessionId: ${args.sessionId as string}`,
-            `  generation: ${generation}`,
-          ].join("\n"))
+          console.log(
+            ["AiPlus Compact Bump", `  sessionId: ${args.sessionId as string}`, `  generation: ${generation}`].join(
+              "\n",
+            ),
+          )
         },
       )
       .command(
@@ -138,11 +140,13 @@ export const CompactCommand = cmd({
           }),
         async (args) => {
           const forceFresh = shouldForceFresh(process.cwd(), args.sessionId as string)
-          console.log([
-            "AiPlus Compact Force Fresh",
-            `  sessionId: ${args.sessionId as string}`,
-            `  forceFresh: ${forceFresh}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Compact Force Fresh",
+              `  sessionId: ${args.sessionId as string}`,
+              `  forceFresh: ${forceFresh}`,
+            ].join("\n"),
+          )
         },
       )
       .demandCommand(1, "subcommand required: status | check | thresholds | capsule | init | bump | force-fresh"),

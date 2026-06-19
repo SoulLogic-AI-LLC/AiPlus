@@ -55,7 +55,7 @@ describe("secret-broker registry", () => {
     if (fs.existsSync(registryPath)) {
       const content = fs.readFileSync(registryPath, "utf-8")
       expect(content).not.toContain('"key"')
-      expect(content).not.toContain('sk-')
+      expect(content).not.toContain("sk-")
     }
 
     fs.rmSync(tmpDir, { recursive: true, force: true })

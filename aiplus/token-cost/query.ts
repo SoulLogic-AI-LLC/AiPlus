@@ -8,7 +8,14 @@
 import { Database } from "bun:sqlite"
 import * as path from "node:path"
 import * as os from "node:os"
-import type { TokenCostStats, TokenCostOptions, ModelBreakdown, RoleBreakdown, DailyBreakdown, ProjectBreakdown } from "./types"
+import type {
+  TokenCostStats,
+  TokenCostOptions,
+  ModelBreakdown,
+  RoleBreakdown,
+  DailyBreakdown,
+  ProjectBreakdown,
+} from "./types"
 
 /** Default DB path: ~/.local/share/opencode/opencode.db */
 function defaultDbPath(): string {
@@ -61,7 +68,9 @@ function parseModel(raw: string | null): string {
   try {
     const obj = JSON.parse(raw)
     if (obj?.id) return String(obj.id)
-  } catch { /* not JSON */ }
+  } catch {
+    /* not JSON */
+  }
   return raw
 }
 
@@ -76,7 +85,7 @@ function parseModel(raw: string | null): string {
 export function computeStats(options: TokenCostOptions = {}): TokenCostStats {
   const dbPath = options.dbPath ?? defaultDbPath()
   const now = Date.now()
-  const windowStart = options.windowStart ?? (now - 7 * 24 * 60 * 60 * 1000)
+  const windowStart = options.windowStart ?? now - 7 * 24 * 60 * 60 * 1000
   const windowEnd = options.windowEnd ?? now
 
   const db = new Database(dbPath, { readonly: true })

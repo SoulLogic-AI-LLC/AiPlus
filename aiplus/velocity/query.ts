@@ -26,9 +26,19 @@ export function parseRole(title: string, agent: string | null): string {
     if (m) return m[1]
   }
   const patterns = [
-    /^CEO-(\d+)/i, /^advisor/i, /^ca\b/i, /^chief.?auditor/i,
-    /^reviewer/i, /^qa\b/i, /^engineer-[ab]/i, /^architect/i,
-    /^pm\b/i, /^security/i, /^researcher/i, /^devops/i, /^tech.?writer/i,
+    /^CEO-(\d+)/i,
+    /^advisor/i,
+    /^ca\b/i,
+    /^chief.?auditor/i,
+    /^reviewer/i,
+    /^qa\b/i,
+    /^engineer-[ab]/i,
+    /^architect/i,
+    /^pm\b/i,
+    /^security/i,
+    /^researcher/i,
+    /^devops/i,
+    /^tech.?writer/i,
   ]
   for (const p of patterns) {
     const m = title.match(p)
@@ -101,7 +111,7 @@ function fetchSessions(dbPath: string, windowStart: number): SessionRow[] {
 export function computeVelocity(options: VelocityOptions = {}): VelocityStats {
   const dbPath = options.dbPath ?? defaultDbPath()
   const now = Date.now()
-  const windowStart = options.windowStart ?? (now - 90 * 24 * 60 * 60 * 1000)
+  const windowStart = options.windowStart ?? now - 90 * 24 * 60 * 60 * 1000
 
   const rows = fetchSessions(dbPath, windowStart)
 

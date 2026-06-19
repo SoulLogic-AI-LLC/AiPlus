@@ -96,12 +96,12 @@ const cli = yargs(args)
   .completion("completion", "generate shell completion script")
   .command(AcpCommand)
   .command(McpCommand)
-  .command(InitCommand)       // before TuiThreadCommand: yargs matches subcommands by registration order.
-  .command(OverclaimCommand)  // before TuiThreadCommand: same reason as InitCommand.
-  .command(LobbyCommand)      // before TuiThreadCommand: avoid positional project capture.
-  .command(VerifyCommand)     // before TuiThreadCommand: avoid positional project capture.
-  .command(CompactCommand)    // before TuiThreadCommand: avoid positional project capture.
-  .command(DoctorCommand)     // before TuiThreadCommand: avoid positional project capture.
+  .command(InitCommand) // before TuiThreadCommand: yargs matches subcommands by registration order.
+  .command(OverclaimCommand) // before TuiThreadCommand: same reason as InitCommand.
+  .command(LobbyCommand) // before TuiThreadCommand: avoid positional project capture.
+  .command(VerifyCommand) // before TuiThreadCommand: avoid positional project capture.
+  .command(CompactCommand) // before TuiThreadCommand: avoid positional project capture.
+  .command(DoctorCommand) // before TuiThreadCommand: avoid positional project capture.
   .command(SecretBrokerCommand)
   .command(TokenCostCommand)
   .command(VelocityCommand)
@@ -111,10 +111,10 @@ const cli = yargs(args)
   .command(WorktreeCommand)
   .command(EffectsCommand)
   .command(MemoryCommand)
-  .command(DaemonCommand)     // before TuiThreadCommand: daemon has no positional project arg, but registering
-                               // it early keeps the literal-command surface in a single ordered block.
-  .command(TuiThreadCommand)  // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
-                               // consumed as a positional project argument.
+  .command(DaemonCommand) // before TuiThreadCommand: daemon has no positional project arg, but registering
+  // it early keeps the literal-command surface in a single ordered block.
+  .command(TuiThreadCommand) // TuiThread uses $0 [project]; init/overclaim must match first to avoid being
+  // consumed as a positional project argument.
   .command(AttachCommand)
   .command(RunCommand)
   .command(GenerateCommand)

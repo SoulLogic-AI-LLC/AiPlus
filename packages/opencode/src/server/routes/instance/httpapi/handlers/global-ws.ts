@@ -34,13 +34,10 @@ export const WsErrorPayload = Schema.Struct({
 })
 export type WsErrorPayload = typeof WsErrorPayload.Type
 
-export class WsDecodeError extends Schema.TaggedErrorClass<WsDecodeError>()(
-  "WsDecodeError",
-  {
-    reason: Schema.Union([Schema.Literal("parse"), Schema.Literal("schema")]),
-    cause: Schema.Defect,
-  },
-) {}
+export class WsDecodeError extends Schema.TaggedErrorClass<WsDecodeError>()("WsDecodeError", {
+  reason: Schema.Union([Schema.Literal("parse"), Schema.Literal("schema")]),
+  cause: Schema.Defect,
+}) {}
 
 export const encodeWsMessage = (message: WsMessage): string => JSON.stringify(message)
 
@@ -55,17 +52,13 @@ export const decodeWsMessage = (raw: string): Effect.Effect<WsMessage, WsDecodeE
     )
   })
 
-export const wsEvent = (id: string | undefined, payload: unknown): WsMessage =>
-  ({ type: "event", id, payload })
+export const wsEvent = (id: string | undefined, payload: unknown): WsMessage => ({ type: "event", id, payload })
 
-export const wsRequest = (id: string, payload: unknown): WsMessage =>
-  ({ type: "request", id, payload })
+export const wsRequest = (id: string, payload: unknown): WsMessage => ({ type: "request", id, payload })
 
-export const wsResponse = (id: string, payload: unknown): WsMessage =>
-  ({ type: "response", id, payload })
+export const wsResponse = (id: string, payload: unknown): WsMessage => ({ type: "response", id, payload })
 
-export const wsError = (id: string | undefined, payload: WsErrorPayload): WsMessage =>
-  ({ type: "error", id, payload })
+export const wsError = (id: string | undefined, payload: WsErrorPayload): WsMessage => ({ type: "error", id, payload })
 
 export const wsPing = (): WsMessage => ({ type: "ping" })
 export const wsPong = (): WsMessage => ({ type: "pong" })
@@ -79,8 +72,7 @@ export const globalWebSocketHandler = Effect.fn("GlobalHttpApi.ws")(function* (c
   const registered = yield* WebSocketTracker.register(write(WebSocketTracker.SERVER_CLOSING_EVENT()))
   if (!registered) return HttpServerResponse.empty()
 
-  const send = (message: WsMessage) =>
-    write(encodeWsMessage(message)).pipe(Effect.catch(() => Effect.void))
+  const send = (message: WsMessage) => write(encodeWsMessage(message)).pipe(Effect.catch(() => Effect.void))
 
   const events = Stream.callback<GlobalBusEvent>((queue) => {
     const handler = (event: GlobalBusEvent) => Queue.offerUnsafe(queue, event)

@@ -654,7 +654,8 @@ describe("checkReplyFormatC", () => {
   })
 
   bunIt("flags a missing 🕐 HH:MM header", () => {
-    const text = "## Engineer · opencode/dev\n\n主线任务\n\n═════ 📄 正文 ═════\n" + body + "\n═════ 🔚 收尾 ═════\n完成。"
+    const text =
+      "## Engineer · opencode/dev\n\n主线任务\n\n═════ 📄 正文 ═════\n" + body + "\n═════ 🔚 收尾 ═════\n完成。"
     const missing = checkReplyFormatC(text)
     expect(missing).toContain("🕐 HH:MM header")
   })

@@ -26,13 +26,7 @@ const IRREVERSIBLE_PATTERNS = [
 ]
 
 /** Network-related bash patterns that are EXTERNAL. */
-const EXTERNAL_PATTERNS = [
-  /\bcurl\b/i,
-  /\bwget\b/i,
-  /\bfetch\b/i,
-  /\bhttp\b/i,
-  /\bhttps\b/i,
-]
+const EXTERNAL_PATTERNS = [/\bcurl\b/i, /\bwget\b/i, /\bfetch\b/i, /\bhttp\b/i, /\bhttps\b/i]
 
 /**
  * Classify a tool call by side effect type.
@@ -45,10 +39,7 @@ const EXTERNAL_PATTERNS = [
  * - bash default → MUTATING
  * - default → MUTATING
  */
-export function classifyToolEffect(
-  toolName: string,
-  toolArgs: Record<string, unknown>,
-): ClassificationResult {
+export function classifyToolEffect(toolName: string, toolArgs: Record<string, unknown>): ClassificationResult {
   // READ_ONLY
   if (READ_ONLY_TOOLS.has(toolName)) {
     return {

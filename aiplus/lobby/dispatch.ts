@@ -54,7 +54,7 @@ export function getLatestByRole(entries: DispatchEntry[]): Map<string, DispatchE
 /** Get entries from the last N hours. */
 export function getRecentEntries(entries: DispatchEntry[], hours = 24): DispatchEntry[] {
   const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000)
-  return entries.filter(e => new Date(e.timestamp) > cutoff)
+  return entries.filter((e) => new Date(e.timestamp) > cutoff)
 }
 
 /** Extract session ID from dispatch ID. */

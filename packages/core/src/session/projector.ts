@@ -109,7 +109,9 @@ function aiplusDispatchLog(sessionID: string, info: SessionV1.SessionInfo) {
       task: info.agent ? `[${info.agent}] session created` : "(session-create)",
       worktreePath: info.directory,
     })
-  } catch { /* fire-and-forget */ }
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 /** Fire-and-forget: compact pressure check on session create. */
@@ -117,23 +119,38 @@ function aiplusCompactCheck(sessionID: string, info: SessionV1.SessionInfo) {
   try {
     const modelId = info.model?.id ?? "unknown"
     const tokensUsed = (info.tokens?.input ?? 0) + (info.tokens?.output ?? 0)
-    const result = checkPressure(info.directory, sessionID, {
-      used: tokensUsed,
-      total: 200_000,
-      model: modelId,
-    }, (info.agent ?? "unknown").replace(/^aiplus-/, ""))
+    const result = checkPressure(
+      info.directory,
+      sessionID,
+      {
+        used: tokensUsed,
+        total: 200_000,
+        model: modelId,
+      },
+      (info.agent ?? "unknown").replace(/^aiplus-/, ""),
+    )
     writeCapsule(info.directory, result)
-  } catch { /* fire-and-forget */ }
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 /** Fire-and-forget: audit verify on session create. */
 function aiplusAudit(directory: string, sessionID: string) {
-  try { void auditVerify(directory, sessionID) } catch { /* fire-and-forget */ }
+  try {
+    void auditVerify(directory, sessionID)
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 /** Fire-and-forget: managed blocks on session create. */
 function aiplusManagedBlocks(directory: string) {
-  try { void verifyAndFix(directory) } catch { /* fire-and-forget */ }
+  try {
+    void verifyAndFix(directory)
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 // Format C anchor set (Constitution §III). The reply must carry ALL header anchors
@@ -192,7 +209,9 @@ function aiplusReplyFormatCheck(sessionID: string, text: string, directory: stri
       ),
       "utf-8",
     )
-  } catch { /* fire-and-forget */ }
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 // ---- End AiPlus Hook Helpers -----------------------------------------------

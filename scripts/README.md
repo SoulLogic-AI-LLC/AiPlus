@@ -2,8 +2,8 @@
 
 Operational scripts for the AiPlus-Native repo. Currently:
 
-| script | purpose |
-|---|---|
+| script                 | purpose                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `opencode-watchdog.sh` | Monitor the launchd-managed shared AiPlus daemon. Subcommands: `status`, `restart`, `logs`. The launchd agent itself is auto-installed by `install.sh` on macOS — this helper is an operator tool, not the installer. |
 
 ## Usage

@@ -21,7 +21,10 @@ function scanLegacyDispatchLog(projectRoot: string): LegacyDispatchScan {
     return { ok: true, starts: new Set(), count: 0, detail: "no dispatch log — nothing to verify" }
   }
 
-  const lines = fs.readFileSync(dispatchLog, "utf-8").split("\n").filter(l => l.trim())
+  const lines = fs
+    .readFileSync(dispatchLog, "utf-8")
+    .split("\n")
+    .filter((l) => l.trim())
   const lifecycle = new Map<string, LegacyDispatchLifecycle>()
   let lastTime = 0
   for (const line of lines) {
@@ -33,15 +36,39 @@ function scanLegacyDispatchLog(projectRoot: string): LegacyDispatchScan {
       const state = lifecycle.get(dispatchId) ?? { startSeen: false, completeSeen: false }
       if (event === "complete") {
         if (!state.startSeen) {
-          return { ok: false, check: { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `complete without start: ${dispatchId}` } }
+          return {
+            ok: false,
+            check: {
+              id: "D1",
+              name: "dispatch-chain",
+              status: "REVISE",
+              detail: `complete without start: ${dispatchId}`,
+            },
+          }
         }
         if (state.completeSeen) {
-          return { ok: false, check: { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate dispatch complete: ${dispatchId}` } }
+          return {
+            ok: false,
+            check: {
+              id: "D1",
+              name: "dispatch-chain",
+              status: "REVISE",
+              detail: `duplicate dispatch complete: ${dispatchId}`,
+            },
+          }
         }
         state.completeSeen = true
       } else {
         if (state.startSeen) {
-          return { ok: false, check: { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate dispatch start: ${dispatchId}` } }
+          return {
+            ok: false,
+            check: {
+              id: "D1",
+              name: "dispatch-chain",
+              status: "REVISE",
+              detail: `duplicate dispatch start: ${dispatchId}`,
+            },
+          }
         }
         state.startSeen = true
       }
@@ -49,7 +76,10 @@ function scanLegacyDispatchLog(projectRoot: string): LegacyDispatchScan {
       const ts = new Date(entry.timestamp).getTime()
       if (isNaN(ts)) continue
       if (ts < lastTime) {
-        return { ok: false, check: { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `time disorder at ${dispatchId}` } }
+        return {
+          ok: false,
+          check: { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `time disorder at ${dispatchId}` },
+        }
       }
       lastTime = ts
     } catch {
@@ -72,11 +102,14 @@ function scanLegacyDispatchLog(projectRoot: string): LegacyDispatchScan {
 function readCanonicalDivergenceCount(projectRoot: string): number {
   const divergencePath = path.join(projectRoot, CANONICAL_DIVERGENCE_FILE)
   if (!fs.existsSync(divergencePath)) return 0
-  return fs.readFileSync(divergencePath, "utf-8").split("\n").filter(line => line.trim()).length
+  return fs
+    .readFileSync(divergencePath, "utf-8")
+    .split("\n")
+    .filter((line) => line.trim()).length
 }
 
 function difference(left: Set<string>, right: Set<string>): string[] {
-  return [...left].filter(value => !right.has(value)).sort()
+  return [...left].filter((value) => !right.has(value)).sort()
 }
 
 function verifyCanonicalDispatchEvents(projectRoot: string): AuditCheck | null {
@@ -89,21 +122,36 @@ function verifyCanonicalDispatchEvents(projectRoot: string): AuditCheck | null {
 
   for (const event of events) {
     if (eventIds.has(event.eventId)) {
-      return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate canonical eventId: ${event.eventId}` }
+      return {
+        id: "D1",
+        name: "dispatch-chain",
+        status: "REVISE",
+        detail: `duplicate canonical eventId: ${event.eventId}`,
+      }
     }
     eventIds.add(event.eventId)
 
     const ts = new Date(event.timestamp).getTime()
     if (!Number.isNaN(ts)) {
       if (ts < lastTime) {
-        return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `canonical time disorder at ${event.eventId}` }
+        return {
+          id: "D1",
+          name: "dispatch-chain",
+          status: "REVISE",
+          detail: `canonical time disorder at ${event.eventId}`,
+        }
       }
       lastTime = ts
     }
 
     if (event.dispatchId && START_EVENT_TYPES.has(event.eventType)) {
       if (dispatchStarts.has(event.dispatchId)) {
-        return { id: "D1", name: "dispatch-chain", status: "REVISE", detail: `duplicate canonical dispatch start: ${event.dispatchId}` }
+        return {
+          id: "D1",
+          name: "dispatch-chain",
+          status: "REVISE",
+          detail: `duplicate canonical dispatch start: ${event.dispatchId}`,
+        }
       }
       dispatchStarts.add(event.dispatchId)
     }

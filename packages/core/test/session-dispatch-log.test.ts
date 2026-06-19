@@ -75,7 +75,7 @@ describe("appendDispatchLog redaction", () => {
     fs.mkdirSync(path.dirname(canonicalPath), { recursive: true })
     fs.writeFileSync(
       canonicalPath,
-      'not-json\n' +
+      "not-json\n" +
         JSON.stringify({
           schemaVersion: "0.1.0",
           eventType: "dispatch.created",

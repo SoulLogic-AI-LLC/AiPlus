@@ -24,11 +24,16 @@ export function hashEntry(entryBody: string): string {
 /** Read the last entry_hash from a memory file (or "genesis" if none). */
 function readPrevHash(memFile: string): string {
   if (!fs.existsSync(memFile)) return "genesis"
-  const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
+  const lines = fs
+    .readFileSync(memFile, "utf-8")
+    .split("\n")
+    .filter((l) => l.trim())
   if (lines.length === 0) return "genesis"
   try {
     return JSON.parse(lines[lines.length - 1]).entry_hash ?? "genesis"
-  } catch { return "genesis" }
+  } catch {
+    return "genesis"
+  }
 }
 
 /** Write a JSONL line to a memory file with hash chain and redaction. */

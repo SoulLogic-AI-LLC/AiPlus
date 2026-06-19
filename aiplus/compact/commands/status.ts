@@ -20,7 +20,9 @@ export function statusCommand(projectRoot: string, sessionId?: string): string {
     if (fs.existsSync(statePath)) {
       states = JSON.parse(fs.readFileSync(statePath, "utf-8"))
     }
-  } catch { /* empty */ }
+  } catch {
+    /* empty */
+  }
 
   // Filter to specific session if given
   if (sessionId) {

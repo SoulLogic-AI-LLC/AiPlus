@@ -27,40 +27,32 @@ describe("detectConflicts", () => {
       makeRecord({ id: "b", conflictGroup: "runtime-choice", summary: "use Node" }),
     ]
     const reports = detectConflicts(records)
-    const divergences = reports.filter(r => r.conflictType === "conflict_group_divergence")
+    const divergences = reports.filter((r) => r.conflictType === "conflict_group_divergence")
     expect(divergences.length).toBe(2)
     expect(divergences[0].relatedIds).toEqual(["a", "b"])
     expect(divergences[1].relatedIds).toEqual(["a", "b"])
   })
 
   it("reports missing_superseded when supersedes references non-existent id", () => {
-    const records = [
-      makeRecord({ id: "new-1", supersedes: ["ghost-id"] }),
-    ]
+    const records = [makeRecord({ id: "new-1", supersedes: ["ghost-id"] })]
     const reports = detectConflicts(records)
-    const missing = reports.filter(r => r.conflictType === "missing_superseded")
+    const missing = reports.filter((r) => r.conflictType === "missing_superseded")
     expect(missing.length).toBe(1)
     expect(missing[0].recordId).toBe("new-1")
     expect(missing[0].relatedIds).toEqual(["ghost-id"])
   })
 
   it("reports circular_supersede when A→B and B→A", () => {
-    const records = [
-      makeRecord({ id: "a", supersedes: ["b"] }),
-      makeRecord({ id: "b", supersedes: ["a"] }),
-    ]
+    const records = [makeRecord({ id: "a", supersedes: ["b"] }), makeRecord({ id: "b", supersedes: ["a"] })]
     const reports = detectConflicts(records)
-    const circulars = reports.filter(r => r.conflictType === "circular_supersede")
+    const circulars = reports.filter((r) => r.conflictType === "circular_supersede")
     expect(circulars.length).toBe(1)
     expect(circulars[0].relatedIds).toContain("a")
     expect(circulars[0].relatedIds).toContain("b")
   })
 
   it("returns no conflicts when records are clean", () => {
-    const records = [
-      makeRecord({ id: "x" }),
-      makeRecord({ id: "y" }),
-    ]
+    const records = [makeRecord({ id: "x" }), makeRecord({ id: "y" })]
     expect(detectConflicts(records).length).toBe(0)
   })
 })
@@ -88,9 +80,7 @@ describe("detectStale", () => {
   })
 
   it("returns empty for fresh records", () => {
-    const records = [
-      makeRecord({ id: "fresh", expiresAt: String(Date.now() + 1_000_000) }),
-    ]
+    const records = [makeRecord({ id: "fresh", expiresAt: String(Date.now() + 1_000_000) })]
     expect(detectStale(records, 0).length).toBe(0)
   })
 })

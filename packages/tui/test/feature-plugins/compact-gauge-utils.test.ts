@@ -1,25 +1,67 @@
 import { describe, expect, test } from "bun:test"
 import { RGBA } from "@opentui/core"
-import { pressureFg, shouldRender, lookupThreshold, isCapsuleResponse } from "../../src/feature-plugins/sidebar/compact-gauge-utils"
+import {
+  pressureFg,
+  shouldRender,
+  lookupThreshold,
+  isCapsuleResponse,
+} from "../../src/feature-plugins/sidebar/compact-gauge-utils"
 import type { TuiThemeCurrent } from "@opencode-ai/plugin/tui"
 
 const makeTheme = (): TuiThemeCurrent => {
   const fields: Array<keyof TuiThemeCurrent> = [
-    "primary", "secondary", "accent",
-    "error", "warning", "success", "info",
-    "text", "textMuted", "selectedListItemText",
-    "background", "backgroundPanel", "backgroundElement", "backgroundMenu",
-    "border", "borderActive", "borderSubtle",
-    "diffAdded", "diffRemoved", "diffContext", "diffHunkHeader",
-    "diffHighlightAdded", "diffHighlightRemoved",
-    "diffAddedBg", "diffRemovedBg", "diffContextBg",
-    "diffLineNumber", "diffAddedLineNumberBg", "diffRemovedLineNumberBg",
-    "markdownText", "markdownHeading", "markdownLink", "markdownLinkText",
-    "markdownCode", "markdownBlockQuote", "markdownEmph", "markdownStrong",
-    "markdownHorizontalRule", "markdownListItem", "markdownListEnumeration",
-    "markdownImage", "markdownImageText", "markdownCodeBlock",
-    "syntaxComment", "syntaxKeyword", "syntaxFunction", "syntaxVariable",
-    "syntaxString", "syntaxNumber", "syntaxType", "syntaxOperator", "syntaxPunctuation",
+    "primary",
+    "secondary",
+    "accent",
+    "error",
+    "warning",
+    "success",
+    "info",
+    "text",
+    "textMuted",
+    "selectedListItemText",
+    "background",
+    "backgroundPanel",
+    "backgroundElement",
+    "backgroundMenu",
+    "border",
+    "borderActive",
+    "borderSubtle",
+    "diffAdded",
+    "diffRemoved",
+    "diffContext",
+    "diffHunkHeader",
+    "diffHighlightAdded",
+    "diffHighlightRemoved",
+    "diffAddedBg",
+    "diffRemovedBg",
+    "diffContextBg",
+    "diffLineNumber",
+    "diffAddedLineNumberBg",
+    "diffRemovedLineNumberBg",
+    "markdownText",
+    "markdownHeading",
+    "markdownLink",
+    "markdownLinkText",
+    "markdownCode",
+    "markdownBlockQuote",
+    "markdownEmph",
+    "markdownStrong",
+    "markdownHorizontalRule",
+    "markdownListItem",
+    "markdownListEnumeration",
+    "markdownImage",
+    "markdownImageText",
+    "markdownCodeBlock",
+    "syntaxComment",
+    "syntaxKeyword",
+    "syntaxFunction",
+    "syntaxVariable",
+    "syntaxString",
+    "syntaxNumber",
+    "syntaxType",
+    "syntaxOperator",
+    "syntaxPunctuation",
   ]
   const theme = {} as Record<keyof TuiThemeCurrent, RGBA>
   for (const f of fields) theme[f] = RGBA.fromValues(0, 0, 0, 1)
@@ -38,8 +80,8 @@ const fakeTheme: TuiThemeCurrent = (() => {
 })()
 
 const sampleThresholds = {
-  "minimax-m3": { soft: 0.40, hard: 0.55, emergency: 0.70 },
-  "claude-opus": { soft: 0.25, hard: 0.35, emergency: 0.50 },
+  "minimax-m3": { soft: 0.4, hard: 0.55, emergency: 0.7 },
+  "claude-opus": { soft: 0.25, hard: 0.35, emergency: 0.5 },
 }
 
 describe("compact-gauge-utils", () => {
@@ -82,17 +124,23 @@ describe("compact-gauge-utils", () => {
   describe("lookupThreshold", () => {
     test("known model → returns HTTP value", () => {
       expect(lookupThreshold(sampleThresholds, "minimax-m3")).toEqual({
-        soft: 0.40, hard: 0.55, emergency: 0.70,
+        soft: 0.4,
+        hard: 0.55,
+        emergency: 0.7,
       })
     })
     test("unknown model → safe fallback", () => {
       expect(lookupThreshold(sampleThresholds, "unknown-model")).toEqual({
-        soft: 0.30, hard: 0.45, emergency: 0.60,
+        soft: 0.3,
+        hard: 0.45,
+        emergency: 0.6,
       })
     })
     test("empty thresholds → safe fallback", () => {
       expect(lookupThreshold({}, "minimax-m3")).toEqual({
-        soft: 0.30, hard: 0.45, emergency: 0.60,
+        soft: 0.3,
+        hard: 0.45,
+        emergency: 0.6,
       })
     })
   })

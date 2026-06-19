@@ -26,39 +26,51 @@ console.log("2. D2 Memory Match — matching entries")
 // Create dispatch-log with 2 entries
 const dispatchDir = path.join(tmpDir, ".aiplus", "agents")
 fs.mkdirSync(dispatchDir, { recursive: true })
-fs.appendFileSync(path.join(dispatchDir, "dispatch-log.jsonl"), JSON.stringify({
-  dispatchId: "dispatch-1000-engineer-a",
-  role: "engineer-a",
-  timestamp: "2026-06-13T10:00:00Z",
-  outcome: "success",
-}) + "\n")
-fs.appendFileSync(path.join(dispatchDir, "dispatch-log.jsonl"), JSON.stringify({
-  dispatchId: "dispatch-2000-ceo",
-  role: "ceo",
-  timestamp: "2026-06-13T11:00:00Z",
-  outcome: "success",
-}) + "\n")
+fs.appendFileSync(
+  path.join(dispatchDir, "dispatch-log.jsonl"),
+  JSON.stringify({
+    dispatchId: "dispatch-1000-engineer-a",
+    role: "engineer-a",
+    timestamp: "2026-06-13T10:00:00Z",
+    outcome: "success",
+  }) + "\n",
+)
+fs.appendFileSync(
+  path.join(dispatchDir, "dispatch-log.jsonl"),
+  JSON.stringify({
+    dispatchId: "dispatch-2000-ceo",
+    role: "ceo",
+    timestamp: "2026-06-13T11:00:00Z",
+    outcome: "success",
+  }) + "\n",
+)
 
 // Create memory entries with matching sessionIds
 const memoryDir = path.join(tmpDir, ".aiplus", "agent-memory")
 fs.mkdirSync(path.join(memoryDir, "engineer-a"), { recursive: true })
-fs.appendFileSync(path.join(memoryDir, "engineer-a", "memory.jsonl"), JSON.stringify({
-  sessionId: "session-1000",
-  role: "engineer-a",
-  startedAt: "2026-06-13T10:00:00Z",
-  endedAt: "2026-06-13T10:30:00Z",
-  task: "test task",
-  outcome: "success",
-}) + "\n")
+fs.appendFileSync(
+  path.join(memoryDir, "engineer-a", "memory.jsonl"),
+  JSON.stringify({
+    sessionId: "session-1000",
+    role: "engineer-a",
+    startedAt: "2026-06-13T10:00:00Z",
+    endedAt: "2026-06-13T10:30:00Z",
+    task: "test task",
+    outcome: "success",
+  }) + "\n",
+)
 fs.mkdirSync(path.join(memoryDir, "ceo"), { recursive: true })
-fs.appendFileSync(path.join(memoryDir, "ceo", "memory.jsonl"), JSON.stringify({
-  sessionId: "session-2000",
-  role: "ceo",
-  startedAt: "2026-06-13T11:00:00Z",
-  endedAt: "2026-06-13T11:30:00Z",
-  task: "test task 2",
-  outcome: "success",
-}) + "\n")
+fs.appendFileSync(
+  path.join(memoryDir, "ceo", "memory.jsonl"),
+  JSON.stringify({
+    sessionId: "session-2000",
+    role: "ceo",
+    startedAt: "2026-06-13T11:00:00Z",
+    endedAt: "2026-06-13T11:30:00Z",
+    task: "test task 2",
+    outcome: "success",
+  }) + "\n",
+)
 
 const d2Match = checkMemoryMatch(tmpDir)
 console.log(`   Status: ${d2Match.status === "PASS" ? "✅ PASS" : "❌ FAIL"}`)
@@ -67,14 +79,17 @@ console.log()
 
 console.log("3. D2 Memory Match — mismatch (memory-only)")
 // Add extra memory entry
-fs.appendFileSync(path.join(memoryDir, "ceo", "memory.jsonl"), JSON.stringify({
-  sessionId: "session-9999",
-  role: "ceo",
-  startedAt: "2026-06-13T12:00:00Z",
-  endedAt: "2026-06-13T12:30:00Z",
-  task: "extra task",
-  outcome: "success",
-}) + "\n")
+fs.appendFileSync(
+  path.join(memoryDir, "ceo", "memory.jsonl"),
+  JSON.stringify({
+    sessionId: "session-9999",
+    role: "ceo",
+    startedAt: "2026-06-13T12:00:00Z",
+    endedAt: "2026-06-13T12:30:00Z",
+    task: "extra task",
+    outcome: "success",
+  }) + "\n",
+)
 
 const d2Mismatch = checkMemoryMatch(tmpDir)
 console.log(`   Status: ${d2Mismatch.status === "REVISE" ? "✅ PASS (REVISE)" : "❌ FAIL"}`)
@@ -121,9 +136,7 @@ console.log("6. D3 Permission Check — runtime with issue (allow-all)")
 const runtimeAgentsIssue: RuntimeAgentConfig[] = [
   {
     id: "aiplus-bad",
-    permissions: [
-      { action: "*", resource: "*", effect: "allow" },
-    ],
+    permissions: [{ action: "*", resource: "*", effect: "allow" }],
     mode: "subagent",
     hidden: false,
   },

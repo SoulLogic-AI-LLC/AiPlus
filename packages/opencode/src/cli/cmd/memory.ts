@@ -44,19 +44,23 @@ export const MemoryCommand = cmd({
           const projectPath = getLayerPath(projectRoot, "project")
           const personalDir = `${projectRoot}/.aiplus/agent-memory`
           const personalRoles = fs.existsSync(personalDir)
-            ? fs.readdirSync(personalDir).filter((name) => !name.startsWith(".") && name !== "_team" && name !== "project")
+            ? fs
+                .readdirSync(personalDir)
+                .filter((name) => !name.startsWith(".") && name !== "_team" && name !== "project")
             : []
           const personalCount = personalRoles.reduce((sum, role) => {
             const filePath = getLayerPath(projectRoot, "personal", role)
             return sum + (filePath ? readJsonl(filePath).length : 0)
           }, 0)
-          console.log([
-            "AiPlus Memory",
-            `  personal roles: ${personalRoles.length}`,
-            `  personal entries: ${personalCount}`,
-            `  team entries: ${teamPath ? readJsonl(teamPath).length : 0}`,
-            `  project entries: ${projectPath ? readJsonl(projectPath).length : 0}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Memory",
+              `  personal roles: ${personalRoles.length}`,
+              `  personal entries: ${personalCount}`,
+              `  team entries: ${teamPath ? readJsonl(teamPath).length : 0}`,
+              `  project entries: ${projectPath ? readJsonl(projectPath).length : 0}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -94,10 +98,12 @@ export const MemoryCommand = cmd({
             console.log(`AiPlus Memory\n  no entries for layer=${layer}${role ? ` role=${role}` : ""}`)
             return
           }
-          console.log([
-            `AiPlus Memory (${layer}${role ? `:${role}` : ""})`,
-            ...recent.map((entry, index) => `entry ${index + 1}\n${JSON.stringify(entry, null, 2)}`),
-          ].join("\n"))
+          console.log(
+            [
+              `AiPlus Memory (${layer}${role ? `:${role}` : ""})`,
+              ...recent.map((entry, index) => `entry ${index + 1}\n${JSON.stringify(entry, null, 2)}`),
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -112,10 +118,7 @@ export const MemoryCommand = cmd({
         async (args) => {
           const text = args.text as string
           const match = detectFirstSensitive(text)
-          console.log([
-            "AiPlus Memory Redaction",
-            `  firstMatch: ${match ?? "none"}`,
-          ].join("\n"))
+          console.log(["AiPlus Memory Redaction", `  firstMatch: ${match ?? "none"}`].join("\n"))
         },
       )
       .command(
@@ -129,11 +132,9 @@ export const MemoryCommand = cmd({
           }),
         async (args) => {
           const text = args.text as string
-          console.log([
-            "AiPlus Memory Redaction",
-            `  original: ${text}`,
-            `  redacted: ${applyRedaction(text)}`,
-          ].join("\n"))
+          console.log(
+            ["AiPlus Memory Redaction", `  original: ${text}`, `  redacted: ${applyRedaction(text)}`].join("\n"),
+          )
         },
       )
       .command(
@@ -141,10 +142,12 @@ export const MemoryCommand = cmd({
         "list configured redaction rules",
         () => {},
         async () => {
-          console.log([
-            "AiPlus Memory Redaction Rules",
-            ...getRedactionRules().map((rule, index) => `  ${index + 1}. ${rule.name} — ${rule.description}`),
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Memory Redaction Rules",
+              ...getRedactionRules().map((rule, index) => `  ${index + 1}. ${rule.name} — ${rule.description}`),
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -171,9 +174,8 @@ export const MemoryCommand = cmd({
             }),
         async (args) => {
           const endedAt = typeof args.endedAt === "string" ? args.endedAt : new Date().toISOString()
-          const startedAt = typeof args.startedAt === "string"
-            ? args.startedAt
-            : new Date(Date.now() - 60_000).toISOString()
+          const startedAt =
+            typeof args.startedAt === "string" ? args.startedAt : new Date(Date.now() - 60_000).toISOString()
           appendMemoryEntry({
             projectRoot: process.cwd(),
             role: args.role as string,
@@ -183,12 +185,14 @@ export const MemoryCommand = cmd({
             endedAt,
             outcome: args.outcome as SessionOutcome,
           })
-          console.log([
-            "AiPlus Memory Append Personal",
-            `  role: ${args.role as string}`,
-            `  sessionId: ${args.sessionId as string}`,
-            `  outcome: ${args.outcome as string}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Memory Append Personal",
+              `  role: ${args.role as string}`,
+              `  sessionId: ${args.sessionId as string}`,
+              `  outcome: ${args.outcome as string}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -221,15 +225,26 @@ export const MemoryCommand = cmd({
             subject: args.subject as string,
             summary: args.summary as string,
             source: args.source as string,
-            confidence: typeof args.confidence === "string" ? args.confidence as "owner_asserted" | "verified" | "speculative" : undefined,
-            status: typeof args.status === "string" ? args.status as "active" | "superseded" | "resolved" : undefined,
-            tags: typeof args.tags === "string" ? args.tags.split(",").map((item) => item.trim()).filter(Boolean) : undefined,
+            confidence:
+              typeof args.confidence === "string"
+                ? (args.confidence as "owner_asserted" | "verified" | "speculative")
+                : undefined,
+            status: typeof args.status === "string" ? (args.status as "active" | "superseded" | "resolved") : undefined,
+            tags:
+              typeof args.tags === "string"
+                ? args.tags
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter(Boolean)
+                : undefined,
           })
-          console.log([
-            "AiPlus Memory Append Team",
-            `  subject: ${args.subject as string}`,
-            `  source: ${args.source as string}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Memory Append Team",
+              `  subject: ${args.subject as string}`,
+              `  source: ${args.source as string}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -247,13 +262,16 @@ export const MemoryCommand = cmd({
             value: args.value as string,
             source: args.source as string,
           })
-          console.log([
-            "AiPlus Memory Append Project",
-            `  key: ${args.key as string}`,
-            `  source: ${args.source as string}`,
-          ].join("\n"))
+          console.log(
+            ["AiPlus Memory Append Project", `  key: ${args.key as string}`, `  source: ${args.source as string}`].join(
+              "\n",
+            ),
+          )
         },
       )
-      .demandCommand(1, "subcommand required: status | list | detect | redact | rules | append-personal | append-team | append-project"),
+      .demandCommand(
+        1,
+        "subcommand required: status | list | detect | redact | rules | append-personal | append-team | append-project",
+      ),
   async handler() {},
 })

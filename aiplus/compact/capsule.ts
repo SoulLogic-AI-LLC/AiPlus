@@ -21,10 +21,7 @@ function isContextCapsule(value: unknown): value is ContextCapsule {
 }
 
 /** Write a context capsule for session pressure tracking (v2: profile-aware). */
-export function writeCapsule(
-  projectRoot: string,
-  result: PressureResult,
-): void {
+export function writeCapsule(projectRoot: string, result: PressureResult): void {
   if (result.action.silent) return
   try {
     const dir = path.join(projectRoot, CAPSULE_DIR)
@@ -39,11 +36,7 @@ export function writeCapsule(
       recommendation: result.recommendation,
       action: result.action,
     }
-    fs.writeFileSync(
-      path.join(dir, "context-capsule.json"),
-      JSON.stringify(capsule, null, 2),
-      "utf-8",
-    )
+    fs.writeFileSync(path.join(dir, "context-capsule.json"), JSON.stringify(capsule, null, 2), "utf-8")
     const pct = (result.contextUsage * 100).toFixed(1)
     process.stderr.write(
       `[aiplus-compact] PRESSURE=${result.level.toUpperCase()} usage=${pct}% model=${result.model} profile=${result.profile} — ${result.recommendation}\n`,

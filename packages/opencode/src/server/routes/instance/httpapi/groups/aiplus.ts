@@ -119,63 +119,62 @@ export const SessionIdParam = Schema.Struct({
 
 // ===== API Group =====
 
-export const AiplusApi = HttpApi.make("aiplus")
-  .add(
-    HttpApiGroup.make("aiplus")
-      .add(
-        HttpApiEndpoint.get("lobbyStatus", AiplusPaths.lobbyStatus, {
-          success: described(LobbyStatusResponse, "Lobby status with roles, lanes, and state"),
-        }).annotateMerge(
-          OpenApi.annotations({
-            identifier: "aiplus.lobbyStatus",
-            summary: "Get lobby status",
-            description: "Retrieve lobby status including pillar-grouped roles, CEO lane status, and bound state.",
-          }),
-        ),
-      )
-      .add(
-        HttpApiEndpoint.get("dispatchGet", AiplusPaths.dispatchGet, {
-          params: SessionIdParam,
-          success: described(DispatchEntry, "Dispatch entry for session"),
-        }).annotateMerge(
-          OpenApi.annotations({
-            identifier: "aiplus.dispatchGet",
-            summary: "Get dispatch entry",
-            description: "Retrieve the dispatch log entry for a specific session.",
-          }),
-        ),
-      )
-      .add(
-        HttpApiEndpoint.get("dispatchList", AiplusPaths.dispatchList, {
-          success: described(Schema.Array(DispatchEntry), "All dispatch entries"),
-        }).annotateMerge(
-          OpenApi.annotations({
-            identifier: "aiplus.dispatchList",
-            summary: "List all dispatch entries",
-            description: "Retrieve all dispatch log entries.",
-          }),
-        ),
-      )
-      .add(
-        HttpApiEndpoint.get("capsuleGet", AiplusPaths.capsuleGet, {
-          success: described(ContextCapsuleWithThresholds, "Context capsule with per-model thresholds"),
-        }).annotateMerge(
-          OpenApi.annotations({
-            identifier: "aiplus.capsuleGet",
-            summary: "Get compact capsule",
-            description: "Retrieve the current context pressure capsule with per-model thresholds.",
-          }),
-        ),
-      )
-      .add(
-        HttpApiEndpoint.get("personasList", AiplusPaths.personasList, {
-          success: described(Schema.Array(PersonaInfo), "List of all personas"),
-        }).annotateMerge(
-          OpenApi.annotations({
-            identifier: "aiplus.personasList",
-            summary: "List personas",
-            description: "Retrieve all AiPlus Agent Team personas with their permissions.",
-          }),
-        ),
+export const AiplusApi = HttpApi.make("aiplus").add(
+  HttpApiGroup.make("aiplus")
+    .add(
+      HttpApiEndpoint.get("lobbyStatus", AiplusPaths.lobbyStatus, {
+        success: described(LobbyStatusResponse, "Lobby status with roles, lanes, and state"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "aiplus.lobbyStatus",
+          summary: "Get lobby status",
+          description: "Retrieve lobby status including pillar-grouped roles, CEO lane status, and bound state.",
+        }),
       ),
-  )
+    )
+    .add(
+      HttpApiEndpoint.get("dispatchGet", AiplusPaths.dispatchGet, {
+        params: SessionIdParam,
+        success: described(DispatchEntry, "Dispatch entry for session"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "aiplus.dispatchGet",
+          summary: "Get dispatch entry",
+          description: "Retrieve the dispatch log entry for a specific session.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.get("dispatchList", AiplusPaths.dispatchList, {
+        success: described(Schema.Array(DispatchEntry), "All dispatch entries"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "aiplus.dispatchList",
+          summary: "List all dispatch entries",
+          description: "Retrieve all dispatch log entries.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.get("capsuleGet", AiplusPaths.capsuleGet, {
+        success: described(ContextCapsuleWithThresholds, "Context capsule with per-model thresholds"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "aiplus.capsuleGet",
+          summary: "Get compact capsule",
+          description: "Retrieve the current context pressure capsule with per-model thresholds.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.get("personasList", AiplusPaths.personasList, {
+        success: described(Schema.Array(PersonaInfo), "List of all personas"),
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "aiplus.personasList",
+          summary: "List personas",
+          description: "Retrieve all AiPlus Agent Team personas with their permissions.",
+        }),
+      ),
+    ),
+)

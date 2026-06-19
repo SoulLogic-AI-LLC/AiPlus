@@ -6,12 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as os from "node:os"
-import {
-  parseCraftMarkers,
-  processCraftMarkers,
-  isAllowedCraftRole,
-  ALLOWED_CRAFT_ROLES,
-} from "./craft"
+import { parseCraftMarkers, processCraftMarkers, isAllowedCraftRole, ALLOWED_CRAFT_ROLES } from "./craft"
 
 describe("parseCraftMarkers", () => {
   it("extracts role and lesson from valid marker line", () => {

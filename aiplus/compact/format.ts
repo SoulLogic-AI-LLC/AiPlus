@@ -22,10 +22,14 @@ const C = {
 /** Color for pressure level. */
 function levelColor(level: PressureLevel): string {
   switch (level) {
-    case "silent": return C.dim
-    case "soft": return C.green
-    case "hard": return C.yellow
-    case "emergency": return C.red
+    case "silent":
+      return C.dim
+    case "soft":
+      return C.green
+    case "hard":
+      return C.yellow
+    case "emergency":
+      return C.red
   }
 }
 
@@ -46,14 +50,14 @@ export function formatCompactStatus(
   if (entries.length === 0) {
     lines.push(`  ${C.dim}No compact state recorded yet.${C.reset}`)
   } else {
-    lines.push(`  ${C.dim}Session${C.reset}                              ${C.dim}Gen${C.reset}  ${C.dim}Profile${C.reset}        ${C.dim}Last Compacted${C.reset}`)
+    lines.push(
+      `  ${C.dim}Session${C.reset}                              ${C.dim}Gen${C.reset}  ${C.dim}Profile${C.reset}        ${C.dim}Last Compacted${C.reset}`,
+    )
     lines.push(`  ${"─".repeat(70)}`)
     for (const [sid, state] of entries) {
       const gen = String(state.generation).padStart(3)
       const profile = state.profile.padEnd(14)
-      const last = state.lastCompactedAt
-        ? formatTimeAgo(state.lastCompactedAt)
-        : "never"
+      const last = state.lastCompactedAt ? formatTimeAgo(state.lastCompactedAt) : "never"
       const genColor = state.generation >= 3 ? C.red : state.generation >= 2 ? C.yellow : C.dim
       lines.push(`  ${truncate(sid, 34).padEnd(34)} ${genColor}${gen}${C.reset}  ${profile} ${last}`)
     }
@@ -92,7 +96,9 @@ export function formatPressureResult(result: PressureResult): string {
   if (result.recommendation) {
     lines.push(`  ${lc}${result.recommendation}${C.reset}`)
   }
-  lines.push(`  Action: ${result.action.silent ? "silent" : "active"}${result.action.writeCapsule ? " + capsule written" : ""}`)
+  lines.push(
+    `  Action: ${result.action.silent ? "silent" : "active"}${result.action.writeCapsule ? " + capsule written" : ""}`,
+  )
   lines.push("")
 
   return lines.join("\n")
@@ -110,14 +116,18 @@ export function formatThresholds(
   lines.push(`${C.bold}║        Compact Thresholds (v2)           ║${C.reset}`)
   lines.push(`${C.bold}╚══════════════════════════════════════════╝${C.reset}`)
   lines.push("")
-  lines.push(`  ${C.dim}Model${C.reset}                  ${C.dim}Soft${C.reset}   ${C.dim}Hard${C.reset}   ${C.dim}Emergency${C.reset}`)
+  lines.push(
+    `  ${C.dim}Model${C.reset}                  ${C.dim}Soft${C.reset}   ${C.dim}Hard${C.reset}   ${C.dim}Emergency${C.reset}`,
+  )
   lines.push(`  ${"─".repeat(50)}`)
 
   for (const [model, t] of Object.entries(thresholds)) {
     const soft = `${(t.soft * 100).toFixed(0)}%`.padStart(4)
     const hard = `${(t.hard * 100).toFixed(0)}%`.padStart(4)
     const emerg = `${(t.emergency * 100).toFixed(0)}%`.padStart(4)
-    lines.push(`  ${model.padEnd(24)} ${C.green}${soft}${C.reset} ${C.yellow}${hard}${C.reset} ${C.red}${emerg}${C.reset}`)
+    lines.push(
+      `  ${model.padEnd(24)} ${C.green}${soft}${C.reset} ${C.yellow}${hard}${C.reset} ${C.red}${emerg}${C.reset}`,
+    )
   }
 
   lines.push("")

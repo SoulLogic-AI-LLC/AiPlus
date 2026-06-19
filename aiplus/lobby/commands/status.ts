@@ -21,12 +21,12 @@ export function statusCommand(projectRoot: string): string {
 
   // Build role statuses
   const allRoles = getAllRoleIds()
-  const roles: RoleStatus[] = allRoles.map(roleId => {
+  const roles: RoleStatus[] = allRoles.map((roleId) => {
     const latest = latestByRole.get(roleId)
     let status: RoleStatusType = "idle"
 
     if (latest) {
-      const isRecent = recentEntries.some(e => e.dispatchId === latest.dispatchId)
+      const isRecent = recentEntries.some((e) => e.dispatchId === latest.dispatchId)
       if (isRecent && latest.outcome !== "failed" && latest.outcome !== "canceled") {
         status = "active"
       } else if (!isRecent) {

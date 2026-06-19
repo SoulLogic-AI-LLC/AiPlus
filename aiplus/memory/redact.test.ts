@@ -15,7 +15,7 @@ describe("getRedactionRules", () => {
 
 describe("applyRedaction", () => {
   it("r1: redacts OpenAI key", () => {
-    const input = 'key=sk-ProjAbCdEf1234567890AbCdEf1234567890AbCdEf1234567890'
+    const input = "key=sk-ProjAbCdEf1234567890AbCdEf1234567890AbCdEf1234567890"
     const result = applyRedaction(input)
     expect(result).not.toContain("sk-Proj")
     expect(result).toContain("[REDACTED_OPENAI_KEY]")

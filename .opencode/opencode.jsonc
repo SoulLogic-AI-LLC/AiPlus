@@ -15,8 +15,8 @@
       "~/Projects/AiPlus-Native/**/*.key": "deny",
       "~/Projects/AiPlus-Native/**/*.pem": "deny",
       "~/Projects/AiPlus-Native/**/agent-key*": "deny",
-      "~/Projects/AiPlus-Native/**/secrets/**": "deny"
-    }
+      "~/Projects/AiPlus-Native/**/secrets/**": "deny",
+    },
   },
   "references": {
     "effect": {

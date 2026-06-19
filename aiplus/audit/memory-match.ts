@@ -29,14 +29,19 @@ export function checkMemoryMatch(projectRoot: string): AuditCheck {
   // Read dispatch entries
   const dispatchEntries: DispatchEntry[] = []
   if (fs.existsSync(dispatchLogPath)) {
-    const lines = fs.readFileSync(dispatchLogPath, "utf-8").split("\n").filter(l => l.trim())
+    const lines = fs
+      .readFileSync(dispatchLogPath, "utf-8")
+      .split("\n")
+      .filter((l) => l.trim())
     for (const line of lines) {
       try {
         const entry = JSON.parse(line)
         if (entry.dispatchId && entry.role && entry.timestamp) {
           dispatchEntries.push(entry)
         }
-      } catch { /* skip malformed */ }
+      } catch {
+        /* skip malformed */
+      }
     }
   }
 
@@ -47,14 +52,19 @@ export function checkMemoryMatch(projectRoot: string): AuditCheck {
       if (role.startsWith(".") || role === "_team") continue
       const memFile = path.join(memoryDir, role, "memory.jsonl")
       if (fs.existsSync(memFile)) {
-        const lines = fs.readFileSync(memFile, "utf-8").split("\n").filter(l => l.trim())
+        const lines = fs
+          .readFileSync(memFile, "utf-8")
+          .split("\n")
+          .filter((l) => l.trim())
         for (const line of lines) {
           try {
             const entry = JSON.parse(line)
             if (entry.sessionId && entry.role && entry.startedAt) {
               memoryEntries.push(entry)
             }
-          } catch { /* skip malformed */ }
+          } catch {
+            /* skip malformed */
+          }
         }
       }
     }
@@ -67,11 +77,13 @@ export function checkMemoryMatch(projectRoot: string): AuditCheck {
 
   // Build sessionId sets
   // Extract sessionId from dispatchId: dispatch-<timestamp>-<role> → session-<timestamp>
-  const dispatchSessionIds = new Set(dispatchEntries.map(e => {
-    const match = e.dispatchId.match(/^dispatch-(\d+)-/)
-    return e.sessionId ?? (match ? `session-${match[1]}` : e.dispatchId)
-  }))
-  const memorySessionIds = new Set(memoryEntries.map(e => e.sessionId))
+  const dispatchSessionIds = new Set(
+    dispatchEntries.map((e) => {
+      const match = e.dispatchId.match(/^dispatch-(\d+)-/)
+      return e.sessionId ?? (match ? `session-${match[1]}` : e.dispatchId)
+    }),
+  )
+  const memorySessionIds = new Set(memoryEntries.map((e) => e.sessionId))
 
   // Find mismatches
   const inDispatchNotMemory: string[] = []
@@ -102,10 +114,14 @@ export function checkMemoryMatch(projectRoot: string): AuditCheck {
   // Mismatches found
   const issues: string[] = []
   if (inDispatchNotMemory.length > 0) {
-    issues.push(`${inDispatchNotMemory.length} dispatch-only: ${inDispatchNotMemory.slice(0, 3).join(", ")}${inDispatchNotMemory.length > 3 ? "..." : ""}`)
+    issues.push(
+      `${inDispatchNotMemory.length} dispatch-only: ${inDispatchNotMemory.slice(0, 3).join(", ")}${inDispatchNotMemory.length > 3 ? "..." : ""}`,
+    )
   }
   if (inMemoryNotDispatch.length > 0) {
-    issues.push(`${inMemoryNotDispatch.length} memory-only: ${inMemoryNotDispatch.slice(0, 3).join(", ")}${inMemoryNotDispatch.length > 3 ? "..." : ""}`)
+    issues.push(
+      `${inMemoryNotDispatch.length} memory-only: ${inMemoryNotDispatch.slice(0, 3).join(", ")}${inMemoryNotDispatch.length > 3 ? "..." : ""}`,
+    )
   }
 
   return {

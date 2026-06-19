@@ -28,11 +28,12 @@ function opencodeDbPath(): string {
 
 /** Map a provider ID to the canonical UPPER_SNAKE alias. */
 function providerToAlias(provider: string): string {
-  return provider
-    .replace(/[^a-z0-9]/gi, "_")
-    .replace(/_+/g, "_")
-    .toUpperCase()
-    + "_API_KEY"
+  return (
+    provider
+      .replace(/[^a-z0-9]/gi, "_")
+      .replace(/_+/g, "_")
+      .toUpperCase() + "_API_KEY"
+  )
 }
 
 // ---- Source 1: auth.json --------------------------------------------------
@@ -74,9 +75,10 @@ function readFromAuthJson(): AliasEntry[] {
 function readFromCredentialDb(): AliasEntry[] {
   try {
     const db = new Database(opencodeDbPath(), { readonly: true })
-    const rows = db
-      .query(`SELECT label, active FROM credential WHERE active = 1`)
-      .all() as { label: string; active: number }[]
+    const rows = db.query(`SELECT label, active FROM credential WHERE active = 1`).all() as {
+      label: string
+      active: number
+    }[]
     db.close()
 
     return rows.map((row) => ({
@@ -165,9 +167,9 @@ function readSecretFromAuthJson(provider: string): string | null {
 function readSecretFromCredentialDb(provider: string): string | null {
   try {
     const db = new Database(opencodeDbPath(), { readonly: true })
-    const row = db
-      .query(`SELECT value FROM credential WHERE label = ? AND active = 1`)
-      .get(provider) as { value: string } | undefined
+    const row = db.query(`SELECT value FROM credential WHERE label = ? AND active = 1`).get(provider) as
+      | { value: string }
+      | undefined
     db.close()
     return row?.value ?? null
   } catch {

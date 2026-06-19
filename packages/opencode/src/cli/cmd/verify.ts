@@ -1,11 +1,5 @@
 import { cmd } from "./cmd"
-import {
-  ghCommand,
-  historyCommand,
-  reportCommand,
-  runCommand,
-  statusCommand,
-} from "../../../../../aiplus/verify"
+import { ghCommand, historyCommand, reportCommand, runCommand, statusCommand } from "../../../../../aiplus/verify"
 
 export const VerifyCommand = cmd({
   command: "verify",

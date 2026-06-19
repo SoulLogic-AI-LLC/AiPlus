@@ -99,20 +99,44 @@ describe("agent-performance query", () => {
 
   it("filter by role", () => {
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s1", role: "engineer-a", agentName: "a",
-      modelId: "m", taskType: "feat", taskSummary: "t",
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      role: "engineer-a",
+      agentName: "a",
+      modelId: "m",
+      taskType: "feat",
+      taskSummary: "t",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s1", actualMs: 100, tokensIn: 10,
-      tokensOut: 5, costUSD: 0.01, outcome: "success", linesChanged: 1, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      actualMs: 100,
+      tokensIn: 10,
+      tokensOut: 5,
+      costUSD: 0.01,
+      outcome: "success",
+      linesChanged: 1,
+      filesChanged: 1,
     })
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s2", role: "reviewer", agentName: "b",
-      modelId: "m", taskType: "fix", taskSummary: "t2",
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      role: "reviewer",
+      agentName: "b",
+      modelId: "m",
+      taskType: "fix",
+      taskSummary: "t2",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s2", actualMs: 200, tokensIn: 20,
-      tokensOut: 10, costUSD: 0.02, outcome: "success", linesChanged: 2, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      actualMs: 200,
+      tokensIn: 20,
+      tokensOut: 10,
+      costUSD: 0.02,
+      outcome: "success",
+      linesChanged: 2,
+      filesChanged: 1,
     })
 
     const result = queryPerformance({ projectRoot: tmpDir, role: "engineer-a" })
@@ -122,20 +146,44 @@ describe("agent-performance query", () => {
 
   it("filter by modelId", () => {
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s1", role: "r", agentName: "a",
-      modelId: "gpt-4o", taskType: "feat", taskSummary: "t",
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      role: "r",
+      agentName: "a",
+      modelId: "gpt-4o",
+      taskType: "feat",
+      taskSummary: "t",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s1", actualMs: 100, tokensIn: 10,
-      tokensOut: 5, costUSD: 0.01, outcome: "success", linesChanged: 1, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      actualMs: 100,
+      tokensIn: 10,
+      tokensOut: 5,
+      costUSD: 0.01,
+      outcome: "success",
+      linesChanged: 1,
+      filesChanged: 1,
     })
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s2", role: "r", agentName: "a",
-      modelId: "claude-sonnet-4-20250514", taskType: "feat", taskSummary: "t",
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      role: "r",
+      agentName: "a",
+      modelId: "claude-sonnet-4-20250514",
+      taskType: "feat",
+      taskSummary: "t",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s2", actualMs: 200, tokensIn: 20,
-      tokensOut: 10, costUSD: 0.02, outcome: "success", linesChanged: 2, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      actualMs: 200,
+      tokensIn: 20,
+      tokensOut: 10,
+      costUSD: 0.02,
+      outcome: "success",
+      linesChanged: 2,
+      filesChanged: 1,
     })
 
     const result = queryPerformance({ projectRoot: tmpDir, modelId: "gpt-4o" })
@@ -145,20 +193,44 @@ describe("agent-performance query", () => {
 
   it("filter by taskType", () => {
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s1", role: "r", agentName: "a",
-      modelId: "m", taskType: "feat", taskSummary: "t",
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      role: "r",
+      agentName: "a",
+      modelId: "m",
+      taskType: "feat",
+      taskSummary: "t",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s1", actualMs: 100, tokensIn: 10,
-      tokensOut: 5, costUSD: 0.01, outcome: "success", linesChanged: 1, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s1",
+      actualMs: 100,
+      tokensIn: 10,
+      tokensOut: 5,
+      costUSD: 0.01,
+      outcome: "success",
+      linesChanged: 1,
+      filesChanged: 1,
     })
     appendPerformanceStart({
-      projectRoot: tmpDir, sessionId: "s2", role: "r", agentName: "a",
-      modelId: "m", taskType: "fix", taskSummary: "t",
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      role: "r",
+      agentName: "a",
+      modelId: "m",
+      taskType: "fix",
+      taskSummary: "t",
     })
     appendPerformanceComplete({
-      projectRoot: tmpDir, sessionId: "s2", actualMs: 200, tokensIn: 20,
-      tokensOut: 10, costUSD: 0.02, outcome: "success", linesChanged: 2, filesChanged: 1,
+      projectRoot: tmpDir,
+      sessionId: "s2",
+      actualMs: 200,
+      tokensIn: 20,
+      tokensOut: 10,
+      costUSD: 0.02,
+      outcome: "success",
+      linesChanged: 2,
+      filesChanged: 1,
     })
 
     const result = queryPerformance({ projectRoot: tmpDir, taskType: "fix" })
@@ -178,7 +250,18 @@ describe("agent-performance amtp query functions", () => {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  function seed(dir: string, sessionId: string, role: string, taskType: string, modelId: string, actualMs: number, tokensIn: number, tokensOut: number, costUSD: number, outcome: "success" | "failed" = "success") {
+  function seed(
+    dir: string,
+    sessionId: string,
+    role: string,
+    taskType: string,
+    modelId: string,
+    actualMs: number,
+    tokensIn: number,
+    tokensOut: number,
+    costUSD: number,
+    outcome: "success" | "failed" = "success",
+  ) {
     appendPerformanceStart({
       projectRoot: dir,
       sessionId,
@@ -252,10 +335,82 @@ describe("agent-performance amtp query functions", () => {
     const filePath = path.join(tmpDir, ".aiplus/agent-performance")
     fs.mkdirSync(filePath, { recursive: true })
     const records = [
-      { phase: "start", sessionId: "b1", schemaVersion: "1.0.0", timestamp: `${date}T01:00:00.000Z`, role: "engineer-a", agentName: "a", modelId: "model-A", taskType: "feat", taskSummary: "t", estimatedMs: null, actualMs: 0, tokensIn: 0, tokensOut: 0, costUSD: 0, outcome: "success", linesChanged: 0, filesChanged: 0 },
-      { phase: "complete", sessionId: "b1", schemaVersion: "1.0.0", timestamp: `${date}T01:30:00.000Z`, role: "", agentName: "", modelId: "", taskType: "", taskSummary: "", estimatedMs: null, actualMs: 1000, tokensIn: 100, tokensOut: 50, costUSD: 0.10, outcome: "success", linesChanged: 1, filesChanged: 1 },
-      { phase: "start", sessionId: "b2", schemaVersion: "1.0.0", timestamp: `${date}T02:00:00.000Z`, role: "engineer-b", agentName: "a", modelId: "model-B", taskType: "fix", taskSummary: "t", estimatedMs: null, actualMs: 0, tokensIn: 0, tokensOut: 0, costUSD: 0, outcome: "success", linesChanged: 0, filesChanged: 0 },
-      { phase: "complete", sessionId: "b2", schemaVersion: "1.0.0", timestamp: `${date}T02:30:00.000Z`, role: "", agentName: "", modelId: "", taskType: "", taskSummary: "", estimatedMs: null, actualMs: 2000, tokensIn: 200, tokensOut: 80, costUSD: 0.20, outcome: "success", linesChanged: 1, filesChanged: 1 },
+      {
+        phase: "start",
+        sessionId: "b1",
+        schemaVersion: "1.0.0",
+        timestamp: `${date}T01:00:00.000Z`,
+        role: "engineer-a",
+        agentName: "a",
+        modelId: "model-A",
+        taskType: "feat",
+        taskSummary: "t",
+        estimatedMs: null,
+        actualMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUSD: 0,
+        outcome: "success",
+        linesChanged: 0,
+        filesChanged: 0,
+      },
+      {
+        phase: "complete",
+        sessionId: "b1",
+        schemaVersion: "1.0.0",
+        timestamp: `${date}T01:30:00.000Z`,
+        role: "",
+        agentName: "",
+        modelId: "",
+        taskType: "",
+        taskSummary: "",
+        estimatedMs: null,
+        actualMs: 1000,
+        tokensIn: 100,
+        tokensOut: 50,
+        costUSD: 0.1,
+        outcome: "success",
+        linesChanged: 1,
+        filesChanged: 1,
+      },
+      {
+        phase: "start",
+        sessionId: "b2",
+        schemaVersion: "1.0.0",
+        timestamp: `${date}T02:00:00.000Z`,
+        role: "engineer-b",
+        agentName: "a",
+        modelId: "model-B",
+        taskType: "fix",
+        taskSummary: "t",
+        estimatedMs: null,
+        actualMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUSD: 0,
+        outcome: "success",
+        linesChanged: 0,
+        filesChanged: 0,
+      },
+      {
+        phase: "complete",
+        sessionId: "b2",
+        schemaVersion: "1.0.0",
+        timestamp: `${date}T02:30:00.000Z`,
+        role: "",
+        agentName: "",
+        modelId: "",
+        taskType: "",
+        taskSummary: "",
+        estimatedMs: null,
+        actualMs: 2000,
+        tokensIn: 200,
+        tokensOut: 80,
+        costUSD: 0.2,
+        outcome: "success",
+        linesChanged: 1,
+        filesChanged: 1,
+      },
     ]
     fs.writeFileSync(path.join(filePath, "performance.jsonl"), records.map((r) => JSON.stringify(r)).join("\n") + "\n")
 
@@ -263,10 +418,10 @@ describe("agent-performance amtp query functions", () => {
     expect(result.date).toBe(date)
     expect(result.totals.tokensIn).toBe(300)
     expect(result.totals.tokensOut).toBe(130)
-    expect(result.totals.costUSD).toBeCloseTo(0.30, 5)
+    expect(result.totals.costUSD).toBeCloseTo(0.3, 5)
     expect(result.totals.sessions).toBe(2)
     expect(result.byRole["engineer-a"].tokensIn).toBe(100)
-    expect(result.byRole["engineer-a"].costUSD).toBeCloseTo(0.10, 5)
+    expect(result.byRole["engineer-a"].costUSD).toBeCloseTo(0.1, 5)
     expect(result.byRole["engineer-b"].tokensIn).toBe(200)
     expect(result.byModel["model-A"].tokensIn).toBe(100)
     expect(result.byModel["model-B"].tokensIn).toBe(200)
@@ -277,8 +432,44 @@ describe("agent-performance amtp query functions", () => {
     const filePath = path.join(tmpDir, ".aiplus/agent-performance")
     fs.mkdirSync(filePath, { recursive: true })
     const records = [
-      { phase: "start", sessionId: "td1", schemaVersion: "1.0.0", timestamp: `${today}T03:00:00.000Z`, role: "engineer-a", agentName: "a", modelId: "model-A", taskType: "feat", taskSummary: "t", estimatedMs: null, actualMs: 0, tokensIn: 0, tokensOut: 0, costUSD: 0, outcome: "success", linesChanged: 0, filesChanged: 0 },
-      { phase: "complete", sessionId: "td1", schemaVersion: "1.0.0", timestamp: `${today}T03:30:00.000Z`, role: "", agentName: "", modelId: "", taskType: "", taskSummary: "", estimatedMs: null, actualMs: 1000, tokensIn: 50, tokensOut: 25, costUSD: 0.05, outcome: "success", linesChanged: 1, filesChanged: 1 },
+      {
+        phase: "start",
+        sessionId: "td1",
+        schemaVersion: "1.0.0",
+        timestamp: `${today}T03:00:00.000Z`,
+        role: "engineer-a",
+        agentName: "a",
+        modelId: "model-A",
+        taskType: "feat",
+        taskSummary: "t",
+        estimatedMs: null,
+        actualMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUSD: 0,
+        outcome: "success",
+        linesChanged: 0,
+        filesChanged: 0,
+      },
+      {
+        phase: "complete",
+        sessionId: "td1",
+        schemaVersion: "1.0.0",
+        timestamp: `${today}T03:30:00.000Z`,
+        role: "",
+        agentName: "",
+        modelId: "",
+        taskType: "",
+        taskSummary: "",
+        estimatedMs: null,
+        actualMs: 1000,
+        tokensIn: 50,
+        tokensOut: 25,
+        costUSD: 0.05,
+        outcome: "success",
+        linesChanged: 1,
+        filesChanged: 1,
+      },
     ]
     fs.writeFileSync(path.join(filePath, "performance.jsonl"), records.map((r) => JSON.stringify(r)).join("\n") + "\n")
 
@@ -293,16 +484,88 @@ describe("agent-performance amtp query functions", () => {
     const filePath = path.join(tmpDir, ".aiplus/agent-performance")
     fs.mkdirSync(filePath, { recursive: true })
     const records = [
-      { phase: "start", sessionId: "d1", schemaVersion: "1.0.0", timestamp: `${target}T05:00:00.000Z`, role: "engineer-a", agentName: "a", modelId: "model-A", taskType: "feat", taskSummary: "t", estimatedMs: null, actualMs: 0, tokensIn: 0, tokensOut: 0, costUSD: 0, outcome: "success", linesChanged: 0, filesChanged: 0 },
-      { phase: "complete", sessionId: "d1", schemaVersion: "1.0.0", timestamp: `${target}T05:30:00.000Z`, role: "", agentName: "", modelId: "", taskType: "", taskSummary: "", estimatedMs: null, actualMs: 1000, tokensIn: 100, tokensOut: 50, costUSD: 0.10, outcome: "success", linesChanged: 1, filesChanged: 1 },
-      { phase: "start", sessionId: "d2", schemaVersion: "1.0.0", timestamp: `${other}T05:00:00.000Z`, role: "engineer-a", agentName: "a", modelId: "model-A", taskType: "feat", taskSummary: "t", estimatedMs: null, actualMs: 0, tokensIn: 0, tokensOut: 0, costUSD: 0, outcome: "success", linesChanged: 0, filesChanged: 0 },
-      { phase: "complete", sessionId: "d2", schemaVersion: "1.0.0", timestamp: `${other}T05:30:00.000Z`, role: "", agentName: "", modelId: "", taskType: "", taskSummary: "", estimatedMs: null, actualMs: 2000, tokensIn: 200, tokensOut: 80, costUSD: 0.20, outcome: "success", linesChanged: 1, filesChanged: 1 },
+      {
+        phase: "start",
+        sessionId: "d1",
+        schemaVersion: "1.0.0",
+        timestamp: `${target}T05:00:00.000Z`,
+        role: "engineer-a",
+        agentName: "a",
+        modelId: "model-A",
+        taskType: "feat",
+        taskSummary: "t",
+        estimatedMs: null,
+        actualMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUSD: 0,
+        outcome: "success",
+        linesChanged: 0,
+        filesChanged: 0,
+      },
+      {
+        phase: "complete",
+        sessionId: "d1",
+        schemaVersion: "1.0.0",
+        timestamp: `${target}T05:30:00.000Z`,
+        role: "",
+        agentName: "",
+        modelId: "",
+        taskType: "",
+        taskSummary: "",
+        estimatedMs: null,
+        actualMs: 1000,
+        tokensIn: 100,
+        tokensOut: 50,
+        costUSD: 0.1,
+        outcome: "success",
+        linesChanged: 1,
+        filesChanged: 1,
+      },
+      {
+        phase: "start",
+        sessionId: "d2",
+        schemaVersion: "1.0.0",
+        timestamp: `${other}T05:00:00.000Z`,
+        role: "engineer-a",
+        agentName: "a",
+        modelId: "model-A",
+        taskType: "feat",
+        taskSummary: "t",
+        estimatedMs: null,
+        actualMs: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUSD: 0,
+        outcome: "success",
+        linesChanged: 0,
+        filesChanged: 0,
+      },
+      {
+        phase: "complete",
+        sessionId: "d2",
+        schemaVersion: "1.0.0",
+        timestamp: `${other}T05:30:00.000Z`,
+        role: "",
+        agentName: "",
+        modelId: "",
+        taskType: "",
+        taskSummary: "",
+        estimatedMs: null,
+        actualMs: 2000,
+        tokensIn: 200,
+        tokensOut: 80,
+        costUSD: 0.2,
+        outcome: "success",
+        linesChanged: 1,
+        filesChanged: 1,
+      },
     ]
     fs.writeFileSync(path.join(filePath, "performance.jsonl"), records.map((r) => JSON.stringify(r)).join("\n") + "\n")
 
     const result = queryBudget(target, { projectRoot: tmpDir })
     expect(result.totals.sessions).toBe(1)
-    expect(result.totals.costUSD).toBeCloseTo(0.10, 5)
+    expect(result.totals.costUSD).toBeCloseTo(0.1, 5)
     expect(result.totals.tokensIn).toBe(100)
   })
 

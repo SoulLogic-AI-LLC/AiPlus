@@ -1,16 +1,13 @@
 import { CompactProfile } from "./types"
 
 /** Per-model compact thresholds — from AiPlus-Source PR #395 (main @ a919bdb). */
-export const COMPACT_THRESHOLDS: Record<
-  string,
-  { soft: number; hard: number; emergency: number }
-> = {
-  "deepseek-v4-pro":       { soft: 0.40, hard: 0.55, emergency: 0.70 },
-  "minimax-m3":            { soft: 0.40, hard: 0.55, emergency: 0.70 },
-  "mimo-v2.5-pro":         { soft: 0.25, hard: 0.35, emergency: 0.50 },
-  "claude-opus":           { soft: 0.25, hard: 0.35, emergency: 0.50 },
-  "gpt-5.5":               { soft: 0.25, hard: 0.35, emergency: 0.50 },
-  "claude-fable":          { soft: 0.22, hard: 0.30, emergency: 0.45 },
+export const COMPACT_THRESHOLDS: Record<string, { soft: number; hard: number; emergency: number }> = {
+  "deepseek-v4-pro": { soft: 0.4, hard: 0.55, emergency: 0.7 },
+  "minimax-m3": { soft: 0.4, hard: 0.55, emergency: 0.7 },
+  "mimo-v2.5-pro": { soft: 0.25, hard: 0.35, emergency: 0.5 },
+  "claude-opus": { soft: 0.25, hard: 0.35, emergency: 0.5 },
+  "gpt-5.5": { soft: 0.25, hard: 0.35, emergency: 0.5 },
+  "claude-fable": { soft: 0.22, hard: 0.3, emergency: 0.45 },
 }
 
 /** Uniform handoff token reserve across all models. */
@@ -20,36 +17,36 @@ export const HANDOFF_TOKENS = 5_000
  *  Normalizes provider-prefixed IDs ("deepseek/deepseek-v4-pro" → "deepseek-v4-pro"). */
 export function getThresholds(modelId: string): { soft: number; hard: number; emergency: number } {
   const normalized = modelId.includes("/") ? modelId.split("/").pop()! : modelId
-  return COMPACT_THRESHOLDS[normalized] ?? COMPACT_THRESHOLDS[modelId] ?? { soft: 0.30, hard: 0.45, emergency: 0.60 }
+  return COMPACT_THRESHOLDS[normalized] ?? COMPACT_THRESHOLDS[modelId] ?? { soft: 0.3, hard: 0.45, emergency: 0.6 }
 }
 
 /** Role → lifecycle profile mapping (20 roles, 3-way triage from Advisor spec v2). */
 export const ROLE_COMPACT_PROFILES: Record<string, CompactProfile> = {
   // RESET_BOUND — single-shot audit/inspection tasks
-  "chief-auditor":          CompactProfile.RESET_BOUND,
-  "evidence-auditor":       CompactProfile.RESET_BOUND,
+  "chief-auditor": CompactProfile.RESET_BOUND,
+  "evidence-auditor": CompactProfile.RESET_BOUND,
 
   // CONTINUOUS — long-running coordination
-  "advisor":                CompactProfile.CONTINUOUS,
-  "ceo":                    CompactProfile.CONTINUOUS,
+  advisor: CompactProfile.CONTINUOUS,
+  ceo: CompactProfile.CONTINUOUS,
 
   // TASK_BOUND — clear task boundaries (16 roles)
-  "engineer-a":             CompactProfile.TASK_BOUND,
-  "engineer-b":             CompactProfile.TASK_BOUND,
-  "qa":                     CompactProfile.TASK_BOUND,
-  "reviewer":               CompactProfile.TASK_BOUND,
-  "pm":                     CompactProfile.TASK_BOUND,
-  "architect":              CompactProfile.TASK_BOUND,
-  "security-reviewer":      CompactProfile.TASK_BOUND,
-  "researcher":             CompactProfile.TASK_BOUND,
-  "tech-writer":            CompactProfile.TASK_BOUND,
-  "devops":                 CompactProfile.TASK_BOUND,
-  "ui-designer":            CompactProfile.TASK_BOUND,
-  "ai-integration":         CompactProfile.TASK_BOUND,
-  "integration-manager":    CompactProfile.TASK_BOUND,
-  "cqo":                    CompactProfile.TASK_BOUND,
-  "performance-auditor":    CompactProfile.TASK_BOUND,
-  "release-manager":        CompactProfile.TASK_BOUND,
+  "engineer-a": CompactProfile.TASK_BOUND,
+  "engineer-b": CompactProfile.TASK_BOUND,
+  qa: CompactProfile.TASK_BOUND,
+  reviewer: CompactProfile.TASK_BOUND,
+  pm: CompactProfile.TASK_BOUND,
+  architect: CompactProfile.TASK_BOUND,
+  "security-reviewer": CompactProfile.TASK_BOUND,
+  researcher: CompactProfile.TASK_BOUND,
+  "tech-writer": CompactProfile.TASK_BOUND,
+  devops: CompactProfile.TASK_BOUND,
+  "ui-designer": CompactProfile.TASK_BOUND,
+  "ai-integration": CompactProfile.TASK_BOUND,
+  "integration-manager": CompactProfile.TASK_BOUND,
+  cqo: CompactProfile.TASK_BOUND,
+  "performance-auditor": CompactProfile.TASK_BOUND,
+  "release-manager": CompactProfile.TASK_BOUND,
 }
 
 /** Lookup compact profile for a role ID, with TASK_BOUND fallback for unknown roles. */

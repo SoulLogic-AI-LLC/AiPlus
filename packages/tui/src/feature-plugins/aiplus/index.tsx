@@ -44,9 +44,7 @@ const tui: TuiPlugin = async (api) => {
         },
       },
     ],
-    bindings: [
-      { command: "aiplus.open-lobby", key: "F2" },
-    ],
+    bindings: [{ command: "aiplus.open-lobby", key: "F2" }],
   })
 }
 

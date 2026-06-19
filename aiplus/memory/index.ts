@@ -5,7 +5,14 @@
  * Redaction pipeline on every write.
  */
 
-export { appendMemoryEntry, appendTeamEntry, appendProjectEntry, appendSessionCreated, hashEntry, writeLine } from "./append"
+export {
+  appendMemoryEntry,
+  appendTeamEntry,
+  appendProjectEntry,
+  appendSessionCreated,
+  hashEntry,
+  writeLine,
+} from "./append"
 export { applyRedaction, detectFirstSensitive, getRedactionRules } from "./redact"
 export { resolveLayerPath } from "./layers"
 export { detectConflicts, detectStale } from "./conflict"

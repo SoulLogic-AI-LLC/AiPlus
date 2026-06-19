@@ -37,14 +37,16 @@ export function verifyAndFix(projectRoot: string): BlockReport[] {
     }
 
     // Auto-append missing blocks to markdown body (safe — appends, never modifies existing)
-    const toAppend = BLOCK_NAMES
-      .filter((name, i) => missing.includes(name))
-      .map(() => ALL_BLOCKS[BLOCK_NAMES.indexOf(missing[0])]) // grab corresponding block
+    const toAppend = BLOCK_NAMES.filter((name, i) => missing.includes(name)).map(
+      () => ALL_BLOCKS[BLOCK_NAMES.indexOf(missing[0])],
+    ) // grab corresponding block
     // Correctly map missing names to their blocks
-    const appendText = missing.map(name => {
-      const idx = BLOCK_NAMES.indexOf(name)
-      return "\n\n" + ALL_BLOCKS[idx]
-    }).join("")
+    const appendText = missing
+      .map((name) => {
+        const idx = BLOCK_NAMES.indexOf(name)
+        return "\n\n" + ALL_BLOCKS[idx]
+      })
+      .join("")
 
     fs.appendFileSync(filePath, appendText, "utf-8")
     results.push({ file, missing, action: "appended" })

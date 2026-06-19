@@ -12,17 +12,11 @@ import * as path from "node:path"
 
 // ---- Types -----------------------------------------------------------------
 
-export type Classification =
-  | { accepted: true; argv: string[] }
-  | { accepted: false; reason: string }
+export type Classification = { accepted: true; argv: string[] } | { accepted: false; reason: string }
 
-const METACHARS = new Set([
-  "|", "&", ";", "(", ")", "<", ">", "`", "$", "\n", "\r", "\\", "*", "?", "{", "}", "[", "]",
-])
+const METACHARS = new Set(["|", "&", ";", "(", ")", "<", ">", "`", "$", "\n", "\r", "\\", "*", "?", "{", "}", "[", "]"])
 
-const PROGRAM_ALLOWLIST = new Set([
-  "grep", "rg", "git", "cat", "head", "tail", "wc", "test", "python3",
-])
+const PROGRAM_ALLOWLIST = new Set(["grep", "rg", "git", "cat", "head", "tail", "wc", "test", "python3"])
 
 // ---- Absolute path cache (prevents PATH hijack) ----------------------------
 
@@ -56,8 +50,20 @@ function resolveProgramPaths(): void {
 resolveProgramPaths()
 
 const DENY_FLAGS = new Set([
-  "-w", "--write", "-o", "--output", "-i", "--in-place", "--force",
-  "-d", "--delete", "-D", "--hard", "--soft", "-rf", "-fr",
+  "-w",
+  "--write",
+  "-o",
+  "--output",
+  "-i",
+  "--in-place",
+  "--force",
+  "-d",
+  "--delete",
+  "-D",
+  "--hard",
+  "--soft",
+  "-rf",
+  "-fr",
 ])
 
 // ---- Step 1: NUL byte rejection -------------------------------------------

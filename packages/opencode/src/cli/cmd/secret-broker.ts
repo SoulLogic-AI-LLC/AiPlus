@@ -1,5 +1,11 @@
 import { cmd } from "./cmd"
-import { listAliases, resolveAlias, resolveSecret, runWithSecrets, writeAliasRegistry } from "../../../../../aiplus/secret-broker"
+import {
+  listAliases,
+  resolveAlias,
+  resolveSecret,
+  runWithSecrets,
+  writeAliasRegistry,
+} from "../../../../../aiplus/secret-broker"
 
 function formatStatus(projectRoot: string): string {
   const aliases = listAliases()
@@ -62,13 +68,15 @@ export const SecretBrokerCommand = cmd({
             return
           }
           const available = resolveSecret(alias) !== null
-          console.log([
-            "AiPlus Secret Broker Resolve",
-            `  alias: ${entry.alias}`,
-            `  provider: ${entry.provider}`,
-            `  source: ${entry.source}`,
-            `  resolvable: ${available}`,
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Secret Broker Resolve",
+              `  alias: ${entry.alias}`,
+              `  provider: ${entry.provider}`,
+              `  source: ${entry.source}`,
+              `  resolvable: ${available}`,
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -82,11 +90,13 @@ export const SecretBrokerCommand = cmd({
             console.log("AiPlus Secret Broker\n  registry write failed")
             return
           }
-          console.log([
-            "AiPlus Secret Broker Registry",
-            `  aliases: ${registry.aliases.length}`,
-            "  path: .aiplus/secret-broker/aliases.json",
-          ].join("\n"))
+          console.log(
+            [
+              "AiPlus Secret Broker Registry",
+              `  aliases: ${registry.aliases.length}`,
+              "  path: .aiplus/secret-broker/aliases.json",
+            ].join("\n"),
+          )
         },
       )
       .command(
@@ -108,9 +118,13 @@ export const SecretBrokerCommand = cmd({
           const direct = Array.isArray(args.alias)
             ? args.alias.filter((item): item is string => typeof item === "string")
             : []
-          const combined = typeof args.aliases === "string"
-            ? args.aliases.split(",").map((item) => item.trim()).filter(Boolean)
-            : []
+          const combined =
+            typeof args.aliases === "string"
+              ? args.aliases
+                  .split(",")
+                  .map((item) => item.trim())
+                  .filter(Boolean)
+              : []
           const aliases = [...direct, ...combined]
           const command = Array.isArray(args["--"])
             ? args["--"].filter((item): item is string => typeof item === "string")
