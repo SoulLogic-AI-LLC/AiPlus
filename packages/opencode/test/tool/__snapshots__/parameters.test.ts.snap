@@ -1,5 +1,51 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
+exports[`tool parameters JSON Schema (wire shape) task 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "background": {
+      "description": "Run the agent in the background. You will be notified when it completes. DO NOT sleep, poll, or proactively check on its progress",
+      "type": "boolean",
+    },
+    "command": {
+      "description": "The command that triggered this task",
+      "type": "string",
+    },
+    "description": {
+      "description": "A short (3-5 words) description of the task",
+      "type": "string",
+    },
+    "effort": {
+      "description": "Task complexity/effort level (low, medium, high). Maps to model variants (e.g., thinking mode for high effort).",
+      "type": "string",
+    },
+    "model": {
+      "description": "Override the model for this task. Valid values: deepseek-v4-pro, deepseek-v4-flash, deepseek-chat, minimax-m3, minimax-m2.7, mimo-v2.5, mimo-v2.5-pro, kimi-k2.7-code, kimi-k2.6, glm-5.1, glm-5, qwen3.7-max, qwen3.7-plus, qwen3.6-plus, gemini-2.5-flash-direct, gemini-3.5-flash-direct, groq-llama-3.3-70b, openrouter-deepseek-v3, openrouter-qwen-coder-32b, openrouter-llama-3.3-70b, openrouter-auto. If not specified, uses the agent default or parent model.",
+      "type": "string",
+    },
+    "prompt": {
+      "description": "The task for the agent to perform",
+      "type": "string",
+    },
+    "subagent_type": {
+      "description": "The type of specialized agent to use for this task",
+      "type": "string",
+    },
+    "task_id": {
+      "description": "This should only be set if you mean to resume a previous task (you can pass a prior task_id and the task will continue the same subagent session as before instead of creating a fresh one)",
+      "type": "string",
+    },
+  },
+  "required": [
+    "description",
+    "prompt",
+    "subagent_type",
+  ],
+  "type": "object",
+}
+`;
+
 exports[`tool parameters JSON Schema (wire shape) apply_patch 1`] = `
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -310,44 +356,6 @@ exports[`tool parameters JSON Schema (wire shape) skill 1`] = `
   },
   "required": [
     "name",
-  ],
-  "type": "object",
-}
-`;
-
-exports[`tool parameters JSON Schema (wire shape) task 1`] = `
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "properties": {
-    "background": {
-      "description": "Run the agent in the background. You will be notified when it completes. DO NOT sleep, poll, or proactively check on its progress",
-      "type": "boolean",
-    },
-    "command": {
-      "description": "The command that triggered this task",
-      "type": "string",
-    },
-    "description": {
-      "description": "A short (3-5 words) description of the task",
-      "type": "string",
-    },
-    "prompt": {
-      "description": "The task for the agent to perform",
-      "type": "string",
-    },
-    "subagent_type": {
-      "description": "The type of specialized agent to use for this task",
-      "type": "string",
-    },
-    "task_id": {
-      "description": "This should only be set if you mean to resume a previous task (you can pass a prior task_id and the task will continue the same subagent session as before instead of creating a fresh one)",
-      "type": "string",
-    },
-  },
-  "required": [
-    "description",
-    "prompt",
-    "subagent_type",
   ],
   "type": "object",
 }

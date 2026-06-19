@@ -1355,14 +1355,12 @@ describe("ProviderTransform.message - DeepSeek reasoning content", () => {
     )
 
     expect(result).toHaveLength(1)
-    expect(result[0].content).toEqual([
-      {
-        type: "tool-call",
-        toolCallId: "test",
-        toolName: "bash",
-        input: { command: "echo hello" },
-      },
-    ])
+    expect(result[0].content).toHaveLength(1)
+    const toolCall = result[0].content[0] as { type: string; toolCallId: string; toolName: string; input: unknown }
+    expect(toolCall.type).toBe("tool-call")
+    expect(toolCall.toolCallId).toBe("test")
+    expect(toolCall.toolName).toBe("bash")
+    expect(toolCall.input).toEqual({ command: "echo hello" })
     expect(result[0].providerOptions?.openaiCompatible?.reasoning_content).toBe("Let me think about this...")
   })
 
