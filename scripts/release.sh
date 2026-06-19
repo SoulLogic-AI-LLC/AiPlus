@@ -16,7 +16,7 @@ if [ $# -ne 1 ]; then
 fi
 
 VERSION="$1"
-REPO="izhiwen/AiPlus-Native"
+REPO="SoulLogic-AI-LLC/AiPlus-Native"
 CMD="aiplus-native"
 PLATFORM="darwin-arm64"
 ASSET="${CMD}-${PLATFORM}"

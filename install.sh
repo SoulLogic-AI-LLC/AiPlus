@@ -5,16 +5,16 @@ set -eu
 # AiPlus-Native installer (latest release, macOS arm64)
 #
 # Private repo:
-#   gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
+#   gh api "repos/SoulLogic-AI-LLC/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
 #
 # Optional pinned version:
-#   gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash -s -- v0.1.0
+#   gh api "repos/SoulLogic-AI-LLC/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash -s -- v0.1.0
 #
 # Public repo fallback (if the repo is opened later):
-#   curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/SoulLogic-AI-LLC/AiPlus-Native/dev/install.sh | bash
 # ============================================================
 
-REPO="izhiwen/AiPlus-Native"
+REPO="SoulLogic-AI-LLC/AiPlus-Native"
 CLI_CMD="aiplus-native"
 DAEMON_CMD="aiplus-daemon"
 FIXED_PORT="37367"

@@ -13,7 +13,7 @@ AiPlus-Native is an AiPlus-flavored build of OpenCode.
 This repo is currently **private**, so use `gh` to fetch the installer:
 
 ```bash
-gh api "repos/izhiwen/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
+gh api "repos/SoulLogic-AI-LLC/AiPlus-Native/contents/install.sh?ref=dev" --jq .content | tr -d '\n' | base64 -D | bash
 ```
 
 ```bash
@@ -41,7 +41,7 @@ If `~/.local/bin` is not in your `PATH`, the installer will show the exact comma
 ## From source
 
 ```bash
-git clone git@github.com:izhiwen/AiPlus-Native.git
+git clone git@github.com:SoulLogic-AI-LLC/AiPlus-Native.git
 cd AiPlus-Native
 bun install
 bun run dev

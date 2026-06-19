@@ -38,3 +38,4 @@ tsconfig.tsbuildinfo
 .aiplus/agents/
 .aiplus/compact/
 packages/opencode/.aiplus/
+.gstack/

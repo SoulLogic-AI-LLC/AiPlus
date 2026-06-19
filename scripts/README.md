@@ -10,7 +10,7 @@ Operational scripts for the AiPlus-Native repo. Currently:
 
 ```sh
 # One-time setup (after cloning the repo on a new machine) — NOT this script:
-curl -fsSL https://raw.githubusercontent.com/izhiwen/AiPlus-Native/dev/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SoulLogic-AI-LLC/AiPlus-Native/dev/install.sh | bash
 # install.sh handles the binary + the launchd plist in one go.
 
 # Daily check for the shared user-scoped daemon on port 37367:
