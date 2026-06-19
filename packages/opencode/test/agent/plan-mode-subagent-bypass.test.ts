@@ -110,14 +110,14 @@ it.effect("subagent self permissions are preserved", () =>
       name: "executor",
       mode: "subagent",
       permission: {
-        "*": "deny",
         read: "allow",
         bash: "allow",
         task: {
-          "*": "deny",
           worker: "allow",
+          "*": "deny",
         },
         edit: "allow",
+        "*": "deny",
       },
     })
 

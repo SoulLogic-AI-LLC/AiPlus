@@ -137,27 +137,26 @@ export const layer = Layer.effect(
           ...referenceDirs.map((dir) => path.join(dir, "*")),
         ]
         const readonlyExternalDirectory = {
-          "*": "ask",
           ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
+          "*": "ask",
         } satisfies Record<string, "allow" | "ask" | "deny">
 
         const defaults = Permission.fromConfig({
-          "*": "allow",
           doom_loop: "ask",
-          external_directory: {
-            "*": "ask",
-            ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
-          },
           question: "deny",
           plan_enter: "deny",
           plan_exit: "deny",
-          // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
-          read: {
-            "*": "allow",
-            "*.env": "ask",
-            "*.env.*": "ask",
-            "*.env.example": "allow",
+          external_directory: {
+            ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
+            "*": "ask",
           },
+          read: {
+            "*.env.example": "allow",
+            "*.env.*": "ask",
+            "*.env": "ask",
+            "*": "allow",
+          },
+          "*": "allow",
         })
 
         const user = Permission.fromConfig(cfg.permission ?? {})
@@ -195,9 +194,9 @@ export const layer = Layer.effect(
                   [path.join(Global.Path.data, "plans", "*")]: "allow",
                 },
                 edit: {
-                  "*": "deny",
                   [path.join(".opencode", "plans", "*.md")]: "allow",
                   [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
+                  "*": "deny",
                 },
               }),
               user,
@@ -225,7 +224,6 @@ export const layer = Layer.effect(
             permission: Permission.merge(
               defaults,
               Permission.fromConfig({
-                "*": "deny",
                 grep: "allow",
                 glob: "allow",
                 list: "allow",
@@ -234,6 +232,7 @@ export const layer = Layer.effect(
                 websearch: "allow",
                 read: "allow",
                 external_directory: readonlyExternalDirectory,
+                "*": "deny",
               }),
               user,
             ),
