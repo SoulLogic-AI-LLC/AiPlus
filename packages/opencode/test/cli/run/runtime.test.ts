@@ -7,6 +7,7 @@ type SessionMessage = NonNullable<Awaited<ReturnType<OpencodeClient["session"]["
 
 type CapturedLifecycle = {
   onAgentSelect?: (name: string) => void
+  footer?: FooterApi
 }
 
 const provider: RunProvider = {
@@ -293,6 +294,7 @@ describe("run interactive runtime", () => {
         createRuntimeLifecycle: async (input) => {
           lifecycle.onAgentSelect = input.onAgentSelect
           const nextFooter = footer()
+          lifecycle.footer = nextFooter
           return {
             footer: {
               ...nextFooter,
@@ -302,7 +304,6 @@ describe("run interactive runtime", () => {
                   promptStarted.resolve()
                   prompt.promise.then((next) => {
                     fn(next)
-                    nextFooter.close()
                   })
                 })
                 return () => {}
@@ -332,6 +333,7 @@ describe("run interactive runtime", () => {
     await promptStarted.promise
     prompt.resolve({ text: "hello", parts: [] })
     await promptFinished.promise
+    lifecycle.footer?.close()
     await task
 
     expect(calls).toEqual(["advisor"])
