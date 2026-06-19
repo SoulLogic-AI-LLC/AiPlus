@@ -3,7 +3,7 @@ import { Effect, Exit, Fiber, Scope } from "effect"
 import { DaemonLifecycle } from "../../src/cli/daemon-lifecycle"
 
 describe("DaemonLifecycle", () => {
-  test("increment/decrement active turn and idle shutdown behavior", () =>
+  test("active turn holds off shutdown, idle does not auto-shutdown", () =>
     Effect.runPromise(
       Effect.scoped(Effect.gen(function* () {
         let shutdownExitCode: number | undefined
@@ -20,13 +20,21 @@ describe("DaemonLifecycle", () => {
         yield* lifecycle.incrementActiveTurn
         yield* lifecycle.removeConnection
 
-        // Active turn holds off shutdown even with no connections.
+        // Active turn holds off explicit shutdown.
         yield* Effect.sleep(50)
         expect(shutdownExitCode).toBeUndefined()
 
         yield* lifecycle.decrementActiveTurn
 
-        // After the turn ends, shutdown fires event-driven — no timer needed.
+        // Idle (no connections, no active turns) must NOT auto-shutdown.
+        // Auto-shutdown was intentionally removed in PR #65 to prevent
+        // the daemon from exiting on transient connection drops.
+        yield* Effect.sleep(50)
+        expect(shutdownExitCode).toBeUndefined()
+
+        // Explicit shutdown must fire.
+        yield* lifecycle.shutdown
+
         yield* Effect.gen(function* () {
           while (shutdownExitCode === undefined) {
             yield* Effect.sleep(5)

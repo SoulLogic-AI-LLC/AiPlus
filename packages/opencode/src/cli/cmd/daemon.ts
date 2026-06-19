@@ -58,7 +58,14 @@ export const DaemonCommand = effectCmd({
       ),
     )
     if (Option.isSome(existingPort)) {
-      yield* clearDaemonPort()
+      if (existingPort.value.port !== port) {
+        const status = yield* isDaemonAlive(existingPort.value)
+        if (status !== "alive") {
+          yield* clearDaemonPort()
+        }
+      } else {
+        yield* clearDaemonPort()
+      }
     }
 
     const password = yield* DaemonAuth.ensurePassword()

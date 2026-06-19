@@ -296,7 +296,10 @@ export const spawnDaemonProcess = Effect.fn("Cli.daemon-port.spawn")(function* (
   const port = daemonPort()
   const portOpt = yield* readDaemonPort()
   if (Option.isSome(portOpt) && portOpt.value.port !== port) {
-    yield* clearDaemonPort()
+    const status = yield* isDaemonAlive(portOpt.value)
+    if (status !== "alive") {
+      yield* clearDaemonPort()
+    }
   }
   if (Option.isSome(portOpt) && portOpt.value.port === port) {
     const status = yield* isDaemonAlive(portOpt.value)
