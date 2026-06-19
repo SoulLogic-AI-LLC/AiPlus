@@ -1,8 +1,17 @@
 import { Context, Effect, Option } from "effect"
-import { effectCmd } from "../effect-cmd"
+import { effectCmd, fail } from "../effect-cmd"
 import { Heap } from "@/cli/heap"
-import { clearDaemonPort, writeDaemonPort, readDaemonPort, isDaemonAlive } from "@/cli/daemon-port"
+import {
+  cleanupStaleDaemonPort,
+  clearDaemonPort,
+  daemonPort,
+  isDaemonAlive,
+  probeDaemonPort,
+  readDaemonPort,
+  writeDaemonPort,
+} from "@/cli/daemon-port"
 import { DaemonLifecycle } from "@/cli/daemon-lifecycle"
+import { DaemonAuth } from "@/cli/daemon-auth"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { EventCleanup } from "@/event-cleanup"
@@ -19,22 +28,42 @@ export const DaemonCommand = effectCmd({
   // at startup, matching `serve.ts:12`.
   instance: false,
   handler: Effect.fn("Cli.daemon")(function* () {
+    const port = daemonPort()
+
     Heap.start()
 
     const { Server } = yield* Effect.promise(() => import("../../server/server"))
 
-    if (!Flag.OPENCODE_SERVER_PASSWORD) {
-      process.stderr.write("Warning: OPENCODE_SERVER_PASSWORD is not set; daemon is unsecured.\n")
-    }
-
     const existingPort = yield* readDaemonPort()
-    if (Option.isSome(existingPort)) {
+    if (Option.isSome(existingPort) && existingPort.value.port === port) {
       const status = yield* isDaemonAlive(existingPort.value)
       if (status === "alive" || status === "unauthorized") {
-        process.stderr.write(`daemon already running on port ${existingPort.value.port}\n`)
+        process.stderr.write(`daemon already running on port ${port}\n`)
         return
       }
     }
+
+    const directStatus = yield* probeDaemonPort(port)
+    if (directStatus === "alive" || directStatus === "unauthorized") {
+      process.stderr.write(`daemon already running on port ${port}\n`)
+      return
+    }
+
+    yield* cleanupStaleDaemonPort(port).pipe(
+      Effect.catchTag("CliDaemonPortBlockedError", (error) =>
+        fail(
+          `Port ${error.port} is owned by a non-daemon process (pid ${error.pid}): ${error.command}. ` +
+            "Will not kill it automatically.",
+        ),
+      ),
+    )
+    if (Option.isSome(existingPort)) {
+      yield* clearDaemonPort()
+    }
+
+    const password = yield* DaemonAuth.ensurePassword()
+    process.env.OPENCODE_SERVER_PASSWORD = password
+    Flag.OPENCODE_SERVER_PASSWORD = password
 
     const shutdownGraceMs = Number(process.env.OPENCODE_DAEMON_SHUTDOWN_GRACE_MS ?? "30000")
 
@@ -61,7 +90,7 @@ export const DaemonCommand = effectCmd({
     const context = Context.make(DaemonLifecycle.Service, lifecycle)
 
     server = yield* Effect.promise(() =>
-      Server.listen({ port: 0, hostname: "127.0.0.1" }, context),
+      Server.listen({ port, hostname: "127.0.0.1" }, context),
     )
 
     yield* writeDaemonPort(server.port)

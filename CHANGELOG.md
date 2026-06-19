@@ -3,6 +3,14 @@
 > Forked from OpenCode at commit f884766. Diverged at v0.1.0.
 > AiPlus-Native versions track our own semver, independent of upstream.
 
+## Unreleased
+
+### Daemon install / watchdog stabilization
+- `install.sh` now re-creates the canonical hardlinked install pair `aiplus-native` + `aiplus-daemon` on every install/upgrade after binary replacement
+- launchd now targets `aiplus-daemon` and migrates the legacy `com.aiplus.aiplus-native-daemon` label/path on reinstall
+- `scripts/opencode-watchdog.sh` now tracks the shared fixed daemon port `37367` and recognizes both current + legacy launchd labels during migration
+- install/docs now explain the shared user-scoped daemon model, fixed port `37367`, and why `~/.local/bin/aiplus-native-next` is only a local wrapper
+
 ## v0.3.0 (2026-06-16)
 
 ### Unified Backend (Phase 1-3)

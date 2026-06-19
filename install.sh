@@ -15,9 +15,13 @@ set -eu
 # ============================================================
 
 REPO="izhiwen/AiPlus-Native"
-CMD="aiplus-native"
+CLI_CMD="aiplus-native"
+DAEMON_CMD="aiplus-daemon"
+FIXED_PORT="37367"
+LAUNCHD_LOG="/tmp/aiplus-daemon-launchd.log"
 # GitHub release asset: build.ts emits ${pkg.name}-${os}-${arch}.zip (pkg.name is
-# "opencode") containing a binary named "opencode" — we rename it to ${CMD} on install.
+# "opencode") containing a binary named "opencode" — we rename it to the
+# canonical installed commands on install.
 ASSET="opencode-darwin-arm64.zip"
 BIN="opencode"
 
@@ -70,7 +74,7 @@ if [ ! -f "${TMP}/${ASSET}" ]; then
   exit 1
 fi
 
-# Extract the binary from the zip and rename to ${CMD} for the installed command.
+# Extract the binary from the zip and rename to the canonical CLI name.
 EXTRACT_DIR="${TMP}/extracted"
 mkdir -p "$EXTRACT_DIR"
 unzip -o -q "${TMP}/${ASSET}" -d "$EXTRACT_DIR"
@@ -79,26 +83,32 @@ if [ ! -f "${EXTRACT_DIR}/${BIN}" ]; then
   echo "Error: ${ASSET} did not contain expected binary '${BIN}'."
   exit 1
 fi
-mv "${EXTRACT_DIR}/${BIN}" "${TMP}/${CMD}"
+mv "${EXTRACT_DIR}/${BIN}" "${TMP}/${CLI_CMD}"
 
-chmod +x "${TMP}/${CMD}"
+chmod +x "${TMP}/${CLI_CMD}"
 
 # ---- install ----
 INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
-mv "${TMP}/${CMD}" "${INSTALL_DIR}/${CMD}"
+STAGED_PATH="${INSTALL_DIR}/.${CLI_CMD}.new"
+mv "${TMP}/${CLI_CMD}" "$STAGED_PATH"
+rm -f "${INSTALL_DIR}/${CLI_CMD}" "${INSTALL_DIR}/${DAEMON_CMD}"
+mv "$STAGED_PATH" "${INSTALL_DIR}/${CLI_CMD}"
+ln "${INSTALL_DIR}/${CLI_CMD}" "${INSTALL_DIR}/${DAEMON_CMD}"
 
 # ---- install launchd watchdog (macOS only) ----
 # After install, the daemon is supervised by launchd so it:
 #   - auto-starts at login/reboot (RunAtLoad)
 #   - auto-restarts on crash (KeepAlive, throttled to 1 per 10s)
-#   - logs to /tmp/aiplus-native-launchd.log
+#   - logs to /tmp/aiplus-daemon-launchd.log
 # End users don't need to run anything else.
 # Linux: systemd support is a follow-up; this section is silently skipped.
 WATCHDOG_STATUS=""
 if [ "$(uname 2>/dev/null)" = "Darwin" ]; then
-  PLIST_LABEL="com.aiplus.aiplus-native-daemon"
+  PLIST_LABEL="com.aiplus.aiplus-daemon"
+  LEGACY_PLIST_LABEL="com.aiplus.aiplus-native-daemon"
   PLIST_PATH="$HOME/Library/LaunchAgents/${PLIST_LABEL}.plist"
+  LEGACY_PLIST_PATH="$HOME/Library/LaunchAgents/${LEGACY_PLIST_LABEL}.plist"
   mkdir -p "$(dirname "$PLIST_PATH")"
   cat > "$PLIST_PATH" <<PLIST_EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -109,7 +119,7 @@ if [ "$(uname 2>/dev/null)" = "Darwin" ]; then
     <string>${PLIST_LABEL}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${INSTALL_DIR}/${CMD}</string>
+        <string>${INSTALL_DIR}/${DAEMON_CMD}</string>
         <string>daemon</string>
     </array>
     <key>WorkingDirectory</key>
@@ -121,20 +131,24 @@ if [ "$(uname 2>/dev/null)" = "Darwin" ]; then
     <key>ThrottleInterval</key>
     <integer>10</integer>
     <key>StandardOutPath</key>
-    <string>/tmp/aiplus-native-launchd.log</string>
+    <string>${LAUNCHD_LOG}</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/aiplus-native-launchd.log</string>
+    <string>${LAUNCHD_LOG}</string>
     <key>ProcessType</key>
     <string>Background</string>
 </dict>
 </plist>
 PLIST_EOF
-  # If a previous version of the watchdog is loaded (upgrade re-run),
-  # unload it first so the new plist content takes effect.
+  # If a previous version of the watchdog is loaded (upgrade re-run), unload it
+  # first so the new plist content and binary target take effect. We also clean
+  # up the legacy label/path from the earlier aiplus-native-daemon naming.
   launchctl bootout "gui/$(id -u)/${PLIST_LABEL}" 2>/dev/null || true
   launchctl unload "$PLIST_PATH" 2>/dev/null || true
+  launchctl bootout "gui/$(id -u)/${LEGACY_PLIST_LABEL}" 2>/dev/null || true
+  launchctl unload "$LEGACY_PLIST_PATH" 2>/dev/null || true
+  rm -f "$LEGACY_PLIST_PATH"
   if launchctl bootstrap "gui/$(id -u)" "$PLIST_PATH" 2>/dev/null; then
-    WATCHDOG_STATUS="enabled (auto-restart on crash, auto-start at login)"
+    WATCHDOG_STATUS="enabled (shared per-user daemon, auto-restart on crash, auto-start at login)"
   elif launchctl load "$PLIST_PATH" 2>/dev/null; then
     WATCHDOG_STATUS="enabled via legacy launchctl"
   else
@@ -143,11 +157,13 @@ PLIST_EOF
 fi
 
 echo ""
-echo "AiPlus-Native installed to ${INSTALL_DIR}/${CMD}"
+echo "AiPlus-Native installed to ${INSTALL_DIR}/${CLI_CMD}"
+echo "Daemon hardlink: ${INSTALL_DIR}/${DAEMON_CMD}"
 echo "Release: ${RELEASE}"
+echo "Shared daemon: fixed user-scoped service on port ${FIXED_PORT}"
 if [ -n "$WATCHDOG_STATUS" ]; then
   echo "Watchdog: ${WATCHDOG_STATUS}"
-  echo "  Log:     tail -f /tmp/aiplus-native-launchd.log"
+  echo "  Log:     tail -f ${LAUNCHD_LOG}"
   echo "  Status:  launchctl list | grep ${PLIST_LABEL}"
   echo "  Remove:  launchctl bootout gui/\$(id -u)/${PLIST_LABEL} && rm ${PLIST_PATH}"
 fi
@@ -166,4 +182,4 @@ fi
 echo ""
 echo "  Usage:"
 echo "    cd /path/to/project"
-echo "    ${CMD}"
+echo "    ${CLI_CMD}"

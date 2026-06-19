@@ -8,8 +8,8 @@ import { writeHeapSnapshot } from "v8"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
 import { Effect, Option } from "effect"
-import { readDaemonPort, isDaemonAlive, clearDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
-import { ServerAuth } from "@/server/auth"
+import { DaemonAuth } from "@/cli/daemon-auth"
+import { clearDaemonPort, daemonPort, isDaemonAlive, probeDaemonPort, readDaemonPort, spawnDaemonProcess } from "@/cli/daemon-port"
 import { createDaemonFetch, createHybridEventSource } from "../tui/daemon-transport"
 
 async function input(value?: string) {
@@ -17,6 +17,12 @@ async function input(value?: string) {
   if (!value) return piped
   if (!piped) return value
   return piped + "\n" + value
+}
+
+function warnIgnoredDaemonNetworkFlags() {
+  if (process.argv.includes("--port") || process.argv.includes("--hostname")) {
+    console.warn("warning: daemon is running; ignoring --port/--hostname flags")
+  }
 }
 
 export function resolveThreadDirectory(project?: string, envPWD = process.env.PWD, cwd = process.cwd()) {
@@ -27,6 +33,7 @@ export function resolveThreadDirectory(project?: string, envPWD = process.env.PW
 
 async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | undefined } | null> {
   let mode = process.env.OPENCODE_DAEMON_MODE ?? "auto"
+  const port = daemonPort()
 
   if (mode !== "auto" && mode !== "0" && mode !== "force" && mode !== "1" && mode !== "off") {
     console.warn(`unknown OPENCODE_DAEMON_MODE=${mode}, treating as auto`)
@@ -38,34 +45,34 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
     mode = "auto"
   }
 
+  const auth = await Effect.runPromise(DaemonAuth.readHeader())
   const portOpt = await Effect.runPromise(readDaemonPort())
-  if (Option.isNone(portOpt)) {
-    if (mode === "auto" || mode === "0" || !mode) {
-      try {
-        const spawned = await Effect.runPromise(spawnDaemonProcess())
-        if (spawned.type === "existing") {
-          return { url: spawned.url, auth: ServerAuth.header() }
-        }
-        const deadline = Date.now() + 15000
-        while (Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 500))
-          const p = await Effect.runPromise(readDaemonPort())
-          if (Option.isSome(p) && (await Effect.runPromise(isDaemonAlive(p.value))) === "alive")
-            return { url: `http://127.0.0.1:${p.value.port}`, auth: ServerAuth.header() }
-        }
-        console.warn("warning: daemon auto-start timed out")
-      } catch (e) {
-        console.error("failed to auto-start daemon:", e)
-      }
-    }
-
-    if (mode === "force" || mode === "1")
-      throw new Error("Daemon mode forced but no daemon found. Start one with: opencode daemon")
-    return null
+  if (Option.isSome(portOpt) && portOpt.value.port !== port) {
+    await Effect.runPromise(clearDaemonPort())
   }
 
-  const portInfo = portOpt.value
-  const status = await Effect.runPromise(isDaemonAlive(portInfo))
+  if (Option.isSome(portOpt) && portOpt.value.port === port) {
+    const status = await Effect.runPromise(isDaemonAlive(portOpt.value))
+    if (status === "alive") {
+      warnIgnoredDaemonNetworkFlags()
+      return { url: `http://127.0.0.1:${port}`, auth }
+    }
+    if (status === "unauthorized") {
+      console.error("failed to connect to daemon: unauthorized (wrong password?)")
+      if (mode === "force") {
+        throw new Error("Daemon mode forced but daemon password is incorrect.")
+      }
+      return null
+    }
+
+    await Effect.runPromise(clearDaemonPort())
+  }
+
+  const status = await Effect.runPromise(probeDaemonPort(port))
+  if (status === "alive") {
+    warnIgnoredDaemonNetworkFlags()
+    return { url: `http://127.0.0.1:${port}`, auth }
+  }
   if (status === "unauthorized") {
     console.error("failed to connect to daemon: unauthorized (wrong password?)")
     if (mode === "force") {
@@ -73,21 +80,22 @@ async function detectAndConnectDaemon(): Promise<{ url: string; auth: string | u
     }
     return null
   }
-  if (status !== "alive") {
-    await Effect.runPromise(clearDaemonPort())
-    if (mode === "force") {
-      throw new Error(
-        "Daemon mode forced but daemon not responding. Stale port file removed; start a fresh daemon.",
-      )
+
+  if (mode === "auto" || mode === "0" || !mode) {
+    try {
+      const spawned = await Effect.runPromise(spawnDaemonProcess())
+      warnIgnoredDaemonNetworkFlags()
+      return { url: spawned.url, auth: await Effect.runPromise(DaemonAuth.readHeader()) }
+    } catch (error) {
+      console.error("failed to auto-start daemon:", error)
     }
-    return null
   }
 
-  if (process.argv.includes("--port") || process.argv.includes("--hostname")) {
-    console.warn("warning: daemon is running; ignoring --port/--hostname flags")
+  if (mode === "force" || mode === "1") {
+    throw new Error("Daemon mode forced but no daemon found. Start one with: opencode daemon")
   }
-  const auth = ServerAuth.header()
-  return { url: `http://127.0.0.1:${portInfo.port}`, auth }
+
+  return null
 }
 
 export const TuiThreadCommand = cmd({

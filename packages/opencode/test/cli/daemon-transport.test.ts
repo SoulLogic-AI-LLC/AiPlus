@@ -35,7 +35,7 @@ async function writePortFile(port: number) {
 }
 
 /** Start an HTTP server that responds to /global/health and upgrades to WebSocket. */
-function startDaemonServer(): Promise<{ port: number; ws: WebSocketServer; http: http.Server; connections: number }> {
+function startDaemonServer(port = 0): Promise<{ port: number; ws: WebSocketServer; http: http.Server; connections: number }> {
   return new Promise((resolve) => {
     const state = { connections: 0 }
     const httpServer = http.createServer((req, res) => {
@@ -45,7 +45,7 @@ function startDaemonServer(): Promise<{ port: number; ws: WebSocketServer; http:
     })
     const wss = new WebSocketServer({ server: httpServer })
     wss.on("connection", () => { state.connections++ })
-    httpServer.listen(0, () => {
+    httpServer.listen(port, () => {
       const addr = httpServer.address() as { port: number }
       resolve({ port: addr.port, ws: wss, http: httpServer, get connections() { return state.connections } })
     })
@@ -161,6 +161,36 @@ describe("daemon-transport port rediscovery", () => {
     serverB.ws.close()
 
     // Client should have reconnected to server B
+    expect(serverB.connections).toBeGreaterThanOrEqual(1)
+  }, 15000)
+
+  test("reconnects after daemon restarts on the same port", async () => {
+    await savePortFile()
+
+    const serverA = await startDaemonServer()
+    const previousInterval = process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS
+    process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS = "0"
+
+    const unsubscribe = await createWebSocketEventSource(`http://127.0.0.1:${serverA.port}`, undefined).subscribe(() => {})
+    expect(serverA.connections).toBe(1)
+
+    serverA.ws.clients.forEach((client) => client.terminate())
+    serverA.ws.close()
+    serverA.http.closeAllConnections?.()
+    await new Promise<void>((resolve) => serverA.http.close(() => resolve()))
+
+    const serverB = await startDaemonServer(serverA.port)
+    await writePortFile(serverB.port)
+    await new Promise((resolve) => setTimeout(resolve, 2500))
+
+    await unsubscribe()
+
+    if (previousInterval === undefined) delete process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS
+    else process.env.OPENCODE_DAEMON_HEARTBEAT_INTERVAL_MS = previousInterval
+
+    serverB.http.close()
+    serverB.ws.close()
+
     expect(serverB.connections).toBeGreaterThanOrEqual(1)
   }, 15000)
 })

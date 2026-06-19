@@ -23,15 +23,20 @@ aiplus-native
 
 That is the main user path.
 
-The installer downloads the latest GitHub release asset for **macOS Apple Silicon** and installs `aiplus-native` into `~/.local/bin/`.
+The installer downloads the latest GitHub release asset for **macOS Apple Silicon** and installs the canonical hardlinked command pair `aiplus-native` + `aiplus-daemon` into `~/.local/bin/`.
+
+On macOS, the same install also re-creates `~/Library/LaunchAgents/com.aiplus.aiplus-daemon.plist`, which runs one shared user-scoped daemon for all projects on fixed port `37367`. Re-running `install.sh` after an upgrade refreshes both hardlinks after binary replacement, so the launchd target does not stay pinned to an old inode.
 
 If `~/.local/bin` is not in your `PATH`, the installer will show the exact command to add it.
+
+`aiplus-native` is the interactive user entrypoint. `aiplus-daemon` is the launchd target. They should always resolve to the same installed binary.
 
 ### Important
 
 - The **release binary** may lag behind the current `dev` branch.
 - If you want the newest TUI fixes from `dev`, use the source path below until a newer release is cut.
 - If this repo becomes public later, the raw GitHub installer URL can be used again.
+- If you keep `~/.local/bin/aiplus-native-next`, treat it as an optional local wrapper only. It is **not** the source of truth; the canonical installed names are `aiplus-native` and `aiplus-daemon`.
 
 ## From source
 
