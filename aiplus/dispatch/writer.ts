@@ -28,19 +28,29 @@ export function hashEntry(entry: DispatchEntry, logFile: string): { prev_hash: s
 
 /**
  * Append a dispatch entry to the JSONL log file with hash chain.
+ * Caller must hold `.aiplus/agents/dispatch-log.lock` when concurrent
+ * appenders exist (e.g. lifecycle hooks). This function performs no I/O
+ * locking of its own.
+ */
+export function appendLogEntry(projectRoot: string, entry: DispatchEntry): void {
+  const logPath = path.join(projectRoot, LOG_FILE)
+  const dir = path.dirname(logPath)
+  fs.mkdirSync(dir, { recursive: true })
+  const chain = hashEntry(entry, logPath)
+  const line = JSON.stringify({ ...entry, ...chain }) + "\n"
+  fs.appendFileSync(logPath, line, "utf-8")
+}
+
+/**
+ * Append a dispatch entry to the JSONL log file with hash chain.
  * Fire-and-forget: write failure is logged to stderr but never throws.
  *
- * NOTE: session lifecycle dispatch writes go through session.ts's inline
- * appendDispatchLog() — this module is for external (CLI/tool) dispatch use.
+ * This is the unlocked CLI path. Concurrent callers (lifecycle hooks) should
+ * use `appendLogEntry` while holding `dispatch-log.lock`.
  */
 export function append(projectRoot: string, entry: DispatchEntry): void {
   try {
-    const logPath = path.join(projectRoot, LOG_FILE)
-    const dir = path.dirname(logPath)
-    fs.mkdirSync(dir, { recursive: true })
-    const chain = hashEntry(entry, logPath)
-    const line = JSON.stringify({ ...entry, ...chain }) + "\n"
-    fs.appendFileSync(logPath, line, "utf-8")
+    appendLogEntry(projectRoot, entry)
     appendCanonicalEvent(projectRoot, {
       eventType: "dispatch.appended",
       timestamp: entry.timestamp,

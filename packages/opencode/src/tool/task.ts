@@ -17,6 +17,7 @@ import { InstanceState } from "@/effect/instance-state"
 import { Database } from "@opencode-ai/core/database/database"
 import os from "os"
 import { appendPerformanceStart, appendPerformanceComplete } from "../../../../aiplus/agent-performance/record"
+import { createDispatchLifecycleHook, generateDispatchId } from "../../../../aiplus/dispatch/lifecycle-hook"
 
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): Effect.Effect<void>
@@ -189,6 +190,8 @@ export const TaskTool = Tool.define(
     ) {
       const cfg = yield* config.get()
       const instanceCtx = yield* InstanceState.context
+      const lane = process.env.AIPLUS_AGENT_LANE
+      const dispatchHook = createDispatchLifecycleHook(instanceCtx.directory, { backend: "opencode" })
       const runInBackground = params.background === true
       if (runInBackground && !flags.experimentalBackgroundSubagents) {
         return yield* Effect.fail(
@@ -258,6 +261,7 @@ export const TaskTool = Tool.define(
       )
       if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
       const variant = msg.info.variant
+      const dispatchId = generateDispatchId(next.name, lane)
 
       // CEO-specified model overrides agent default and parent inheritance.
       // MODEL_MAP is at module scope — the parameter description auto-syncs.
@@ -286,6 +290,7 @@ export const TaskTool = Tool.define(
         sessionId: nextSession.id,
         model,
         effort: params.effort,
+        dispatchId,
         ...(runInBackground ? { background: true } : {}),
       }
 
@@ -308,6 +313,23 @@ export const TaskTool = Tool.define(
           taskSummary: params.description,
           estimatedMs: null,
         }),
+      )
+
+      yield* Effect.promise(() =>
+        dispatchHook.onDispatchStart({
+          dispatchId,
+          role: next.name,
+          task: params.description,
+          lane,
+          sessionId: nextSession.id,
+          backend: "opencode",
+        })
+      ).pipe(
+        Effect.catch((err) =>
+          Effect.sync(() =>
+            process.stderr.write(`[aiplus-dispatch] start hook failed: ${err}\n`)
+          )
+        )
       )
 
       const ops = ctx.extra?.promptOps as TaskPromptOps
@@ -462,6 +484,23 @@ export const TaskTool = Tool.define(
                   filesChanged: 0,
                 }),
               )
+              yield* Effect.promise(() =>
+                dispatchHook.onDispatchFail({
+                  dispatchId,
+                  role: next.name,
+                  task: params.description,
+                  sessionId: nextSession.id,
+                  durationMs: Date.now() - taskStartTime,
+                  error: result.error ?? "unknown error",
+                  backend: "opencode",
+                })
+              ).pipe(
+                Effect.catch((err) =>
+                  Effect.sync(() =>
+                    process.stderr.write(`[aiplus-dispatch] fail hook failed: ${err}\n`)
+                  )
+                )
+              )
               return yield* Effect.fail(new Error(result.error ?? "Task failed"))
             }
             if (result?.status === "cancelled") return yield* Effect.fail(new Error("Task cancelled"))
@@ -478,6 +517,22 @@ export const TaskTool = Tool.define(
                 linesChanged: 0,
                 filesChanged: 0,
               }),
+            )
+            yield* Effect.promise(() =>
+              dispatchHook.onDispatchComplete({
+                dispatchId,
+                role: next.name,
+                task: params.description,
+                sessionId: nextSession.id,
+                durationMs: Date.now() - taskStartTime,
+                backend: "opencode",
+              })
+            ).pipe(
+              Effect.catch((err) =>
+                Effect.sync(() =>
+                  process.stderr.write(`[aiplus-dispatch] complete hook failed: ${err}\n`)
+                )
+              )
             )
             return {
               title: params.description,
