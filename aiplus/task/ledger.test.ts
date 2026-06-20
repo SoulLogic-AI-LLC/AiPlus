@@ -16,7 +16,6 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as os from "node:os"
-import * as child_process from "node:child_process"
 import {
   task_add,
   task_assign,
@@ -208,6 +207,15 @@ describe("task ledger — basic CRUD", () => {
     const tasks = await task_list(tmpDir, { lane: "ceo-1" })
     expect(tasks).toHaveLength(1)
     expect(tasks[0].lane).toBe("ceo-1")
+  })
+
+  it("task_list respects limit filter", async () => {
+    for (let i = 0; i < 10; i++) {
+      await addTask(tmpDir, `Task ${i}`)
+    }
+
+    const tasks = await task_list(tmpDir, { limit: 3 })
+    expect(tasks).toHaveLength(3)
   })
 
   it("task_next returns actionable tasks, sorted P0 first", async () => {
@@ -758,80 +766,63 @@ describe("task ledger — timestamps", () => {
   })
 })
 
-// ── Test 8: 10-process concurrent write test (§1.5) ───────────────────
+// ── Test 8: Concurrent write test (§1.5) ──────────────────────────────
 
 describe("task ledger — concurrency", () => {
-  it("10-process concurrent write: 50 lines, no truncation, no interleaving, no duplicate event_ids", async () => {
+  it("10 concurrent writers: 50 tasks, no duplicates, no corruption", async () => {
     // Ensure .aiplus/tasks directory exists
     fs.mkdirSync(path.join(tmpDir, ".aiplus/tasks"), { recursive: true })
 
-    // Spawn 10 child processes, each adding 5 tasks
-    const childScript = `
-      const { task_add } = require("./aiplus/task/ledger.ts");
-      const dir = process.env.TEST_TMP_DIR;
-      const idx = parseInt(process.env.CHILD_IDX || "0");
-      async function run() {
-        for (let i = 0; i < 5; i++) {
-          await task_add(dir, \`Task-child\${idx}-\${i}\`);
-        }
-      }
-      run().then(() => process.exit(0)).catch(e => { process.stderr.write(e.message); process.exit(1); });
-    `
-
-    const scriptPath = path.join(tmpDir, "child-script.ts")
-    fs.writeFileSync(scriptPath, childScript)
-
-    const promises: Promise<{ exitCode: number; stderr: string }>[] = []
+    // Launch 50 concurrent task_add calls across 10 "children" (5 each)
+    const promises: Promise<TaskRecord>[] = []
     for (let i = 0; i < 10; i++) {
-      const p = new Promise<{ exitCode: number; stderr: string }>((resolve) => {
-        const child = child_process.spawn("bun", ["run", scriptPath], {
-          cwd: process.cwd(),
-          env: {
-            ...process.env,
-            TEST_TMP_DIR: tmpDir,
-            CHILD_IDX: String(i),
-          },
-          stdio: ["ignore", "ignore", "pipe"],
-        })
-        let stderr = ""
-        child.stderr?.on("data", (d) => { stderr += d.toString() })
-        child.on("close", (code) => {
-          resolve({ exitCode: code ?? -1, stderr })
-        })
-      })
-      promises.push(p)
-    }
-
-    const results = await Promise.all(promises)
-    for (const r of results) {
-      // Some may fail if the child has issues resolving modules
-      // We note the exit codes but don't fail the test for module resolution
-    }
-
-    // Check JSONL integrity
-    const lines = readJsonlLines(tmpDir).filter((l) => l.startsWith("{"))
-    const eventIds = new Set<string>()
-    for (const line of lines) {
-      try {
-        const event: TaskEvent = JSON.parse(line)
-        // No truncation: each line must be a complete JSON object with all required fields
-        expect(event).toHaveProperty("schema_version")
-        expect(event).toHaveProperty("event_id")
-        expect(event).toHaveProperty("event_type")
-        expect(event).toHaveProperty("ts")
-        expect(event).toHaveProperty("task")
-        // No duplicate event_ids
-        expect(eventIds.has(event.event_id)).toBe(false)
-        eventIds.add(event.event_id)
-      } catch {
-        // Skip corrupt lines
+      for (let j = 0; j < 5; j++) {
+        promises.push(addTask(tmpDir, `Task-child${i}-${j}`))
       }
     }
 
-    // All event IDs are unique (no collision)
-    // We expect between 0 and 50 lines depending on module resolution
-    // Module-relative paths in spawned processes are tricky
-    // This test is a best-effort concurrency check
+    const created = await Promise.all(promises)
+
+    // All 50 must succeed
+    expect(created).toHaveLength(50)
+    for (const t of created) {
+      expect(t.id).toBeTruthy()
+      expect(t.status).toBe("open")
+    }
+
+    // JSONL must have exactly 50 lines, no corruption
+    const lines = readJsonlLines(tmpDir)
+    expect(lines).toHaveLength(50)
+
+    const eventIds = new Set<string>()
+    const taskIds = new Set<string>()
+    for (const line of lines) {
+      // Fail on corrupt lines — no silent catch
+      const event: TaskEvent = JSON.parse(line)
+      expect(event).toHaveProperty("schema_version")
+      expect(event).toHaveProperty("event_id")
+      expect(event).toHaveProperty("event_type", "add")
+      expect(event).toHaveProperty("ts")
+      expect(event).toHaveProperty("task")
+      // No duplicate event_ids
+      expect(eventIds.has(event.event_id)).toBe(false)
+      eventIds.add(event.event_id)
+      taskIds.add(event.task.id)
+    }
+
+    // Exactly 50 unique event IDs and task IDs
+    expect(eventIds.size).toBe(50)
+    expect(taskIds.size).toBe(50)
+
+    // Replay must return exactly 50 tasks
+    const replayed = replayEvents(tmpDir)
+    expect(replayed).toHaveLength(50)
+
+    // Each child i must have exactly 5 tasks with "child<i>" in the title
+    for (let i = 0; i < 10; i++) {
+      const childTasks = replayed.filter((t) => t.title.includes(`child${i}`))
+      expect(childTasks).toHaveLength(5)
+    }
   })
 })
 

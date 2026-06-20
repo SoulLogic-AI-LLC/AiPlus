@@ -19,7 +19,7 @@ import type {
   EvidenceKind,
 } from "./types"
 import { EVENT_SCHEMA_VERSION, EVIDENCE_LEVEL_RANK } from "./types"
-import { rfc3339Now, appendEvent, getTaskById, snapshotTasks, replayEvents, sortTasks } from "./store"
+import { rfc3339Now, appendEvent, withLockedTask, getTaskById, snapshotTasks, replayEvents, sortTasks } from "./store"
 import { validateStatusTransition, computeEvidenceLevel } from "./state-machine"
 import { validateEvidenceAdd, isAutoRerunnable, taskMaxEvidenceLevel } from "./evidence"
 import * as fs from "node:fs"
@@ -151,28 +151,17 @@ export async function task_assign(
   id: string,
   params: TaskAssignParams,
 ): Promise<TaskRecord | null> {
-  const current = await getTaskById(projectRoot, id)
-  if (!current) return null
-
-  const updated: TaskRecord = {
-    ...current,
-    status: "assigned",
-    driver_agent: params.driver_agent !== undefined ? params.driver_agent : current.driver_agent,
-    worker_agent: params.worker_agent !== undefined ? params.worker_agent : current.worker_agent,
-    runtime: params.runtime !== undefined ? params.runtime : current.runtime,
-    updated_at: rfc3339Now(),
-  }
-
-  const event: TaskEvent = {
-    schema_version: EVENT_SCHEMA_VERSION,
-    event_id: generateEventId(id),
-    event_type: "assign",
-    ts: updated.updated_at,
-    task: updated,
-  }
-
-  await appendEvent(projectRoot, event)
-  return updated
+  return await withLockedTask(projectRoot, id, (current) => {
+    const updated: TaskRecord = {
+      ...current,
+      status: "assigned",
+      driver_agent: params.driver_agent !== undefined ? params.driver_agent : current.driver_agent,
+      worker_agent: params.worker_agent !== undefined ? params.worker_agent : current.worker_agent,
+      runtime: params.runtime !== undefined ? params.runtime : current.runtime,
+      updated_at: rfc3339Now(),
+    }
+    return { task: updated, eventType: "assign" }
+  })
 }
 
 // ── task_update ───────────────────────────────────────────────────────
@@ -200,69 +189,70 @@ export async function task_update(
   id: string,
   params: TaskUpdateParams,
 ): Promise<{ task: TaskRecord | null; error?: string }> {
-  const current = await getTaskById(projectRoot, id)
-  if (!current) return { task: null, error: `task not found: ${id}` }
+  let validationError: string | undefined
+  let currentForError: TaskRecord | null = null
 
-  const now = rfc3339Now()
-  const updated: TaskRecord = { ...current, updated_at: now }
+  const updated = await withLockedTask(projectRoot, id, (current) => {
+    currentForError = current
+    const now = rfc3339Now()
+    const task: TaskRecord = { ...current, updated_at: now }
 
-  // Handle blocked flag
-  if (params.blocked !== undefined) {
-    updated.blocked = params.blocked
-    if (params.blocked) {
-      updated.blocked_reason = params.blocked_reason
-    } else {
-      delete updated.blocked_reason
-    }
-  }
-  if (params.clear_blocked) {
-    updated.blocked = false
-    delete updated.blocked_reason
-  }
-  if (params.blocked_reason !== undefined && updated.blocked) {
-    updated.blocked_reason = params.blocked_reason
-  }
-
-  // Handle stop_gate flag
-  if (params.stop_gate !== undefined) {
-    updated.stop_gate = params.stop_gate
-    updated.stop_gate_kind = params.stop_gate_kind
-  }
-  if (params.clear_stop_gate) {
-    updated.stop_gate = false
-    delete updated.stop_gate_kind
-  }
-
-  // Handle status transition
-  if (params.status !== undefined && params.status !== current.status) {
-    const validation = validateStatusTransition(updated, params.status)
-    if (!validation.valid) {
-      return { task: current, error: validation.error }
-    }
-    updated.status = params.status
-  }
-
-  // Handle evidence_level update (cap check)
-  if (params.evidence_level !== undefined) {
-    const maxLevel = taskMaxEvidenceLevel(updated)
-    if (EVIDENCE_LEVEL_RANK[params.evidence_level] > EVIDENCE_LEVEL_RANK[maxLevel]) {
-      return {
-        task: current,
-        error: `cannot set evidence_level to ${params.evidence_level}: max evidence pointer is ${maxLevel}`,
+    // Handle blocked flag
+    if (params.blocked !== undefined) {
+      task.blocked = params.blocked
+      if (params.blocked) {
+        task.blocked_reason = params.blocked_reason
+      } else {
+        delete task.blocked_reason
       }
     }
-    updated.evidence_level = params.evidence_level
-  }
+    if (params.clear_blocked) {
+      task.blocked = false
+      delete task.blocked_reason
+    }
+    if (params.blocked_reason !== undefined && task.blocked) {
+      task.blocked_reason = params.blocked_reason
+    }
 
-  const event: TaskEvent = {
-    schema_version: EVENT_SCHEMA_VERSION,
-    event_id: generateEventId(id),
-    event_type: "update",
-    ts: now,
-    task: updated,
-  }
+    // Handle stop_gate flag
+    if (params.stop_gate !== undefined) {
+      task.stop_gate = params.stop_gate
+      task.stop_gate_kind = params.stop_gate_kind
+    }
+    if (params.clear_stop_gate) {
+      task.stop_gate = false
+      delete task.stop_gate_kind
+    }
 
-  await appendEvent(projectRoot, event)
+    // Handle status transition
+    if (params.status !== undefined && params.status !== current.status) {
+      const validation = validateStatusTransition(task, params.status)
+      if (!validation.valid) {
+        validationError = validation.error
+        return null
+      }
+      task.status = params.status
+    }
+
+    // Handle evidence_level update (cap check)
+    if (params.evidence_level !== undefined) {
+      const maxLevel = taskMaxEvidenceLevel(task)
+      if (EVIDENCE_LEVEL_RANK[params.evidence_level] > EVIDENCE_LEVEL_RANK[maxLevel]) {
+        validationError = `cannot set evidence_level to ${params.evidence_level}: max evidence pointer is ${maxLevel}`
+        return null
+      }
+      task.evidence_level = params.evidence_level
+    }
+
+    return { task, eventType: "update" }
+  })
+
+  if (!updated) {
+    return {
+      task: currentForError,
+      error: validationError || `task not found: ${id}`,
+    }
+  }
   return { task: updated }
 }
 
@@ -290,45 +280,48 @@ export async function task_evidence_add(
   id: string,
   params: TaskEvidenceAddParams,
 ): Promise<{ task: TaskRecord | null; error?: string }> {
-  const current = await getTaskById(projectRoot, id)
-  if (!current) return { task: null, error: `task not found: ${id}` }
+  let validationError: string | undefined
+  let currentForError: TaskRecord | null = null
 
-  const level = params.level ?? "L1"
-  const rerunnable = isAutoRerunnable(params.kind) ? true : (params.rerunnable ?? false)
+  const updated = await withLockedTask(projectRoot, id, (current) => {
+    currentForError = current
+    const level = params.level ?? "L1"
+    const rerunnable = isAutoRerunnable(params.kind) ? true : (params.rerunnable ?? false)
 
-  // Validate evidence (queued/unsupported cap)
-  const validation = validateEvidenceAdd(params.kind, level)
-  if (!validation.valid) {
-    return { task: current, error: validation.error }
+    // Validate evidence (queued/unsupported cap)
+    const validation = validateEvidenceAdd(params.kind, level)
+    if (!validation.valid) {
+      validationError = validation.error
+      return null
+    }
+
+    const pointer: EvidencePointer = {
+      kind: params.kind,
+      value: params.value,
+      level,
+      rerunnable,
+      added_at: rfc3339Now(),
+      note: params.note,
+    }
+
+    const task: TaskRecord = {
+      ...current,
+      evidence: [...current.evidence, pointer],
+      evidence_level: "", // placeholder, computed below
+      updated_at: rfc3339Now(),
+    }
+    // Auto-update evidence_level to max
+    task.evidence_level = computeEvidenceLevel(task.evidence)
+
+    return { task, eventType: "evidence_add" }
+  })
+
+  if (!updated) {
+    return {
+      task: currentForError,
+      error: validationError || `task not found: ${id}`,
+    }
   }
-
-  const pointer: EvidencePointer = {
-    kind: params.kind,
-    value: params.value,
-    level,
-    rerunnable,
-    added_at: rfc3339Now(),
-    note: params.note,
-  }
-
-  const updated: TaskRecord = {
-    ...current,
-    evidence: [...current.evidence, pointer],
-    evidence_level: "", // placeholder, computed below
-    updated_at: rfc3339Now(),
-  }
-  // Auto-update evidence_level to max
-  updated.evidence_level = computeEvidenceLevel(updated.evidence)
-
-  const event: TaskEvent = {
-    schema_version: EVENT_SCHEMA_VERSION,
-    event_id: generateEventId(id),
-    event_type: "evidence_add",
-    ts: updated.updated_at,
-    task: updated,
-  }
-
-  await appendEvent(projectRoot, event)
   return { task: updated }
 }
 
@@ -346,10 +339,6 @@ export async function task_validate(
   packetPath: string,
   level?: TaskEvidenceLevel,
 ): Promise<{ task: TaskRecord | null; error?: string }> {
-  // Check that task exists
-  const current = await getTaskById(projectRoot, id)
-  if (!current) return { task: null, error: `task not found: ${id}` }
-
   // Read and parse the overclaim packet file
   let packetContent: string
   try {
@@ -359,17 +348,17 @@ export async function task_validate(
       : path.resolve(projectRoot, packetPath)
     packetContent = fs.readFileSync(resolvedPath, "utf-8")
   } catch (err: any) {
-    return { task: current, error: `cannot read packet file: ${err.message}` }
+    return { task: null, error: `cannot read packet file: ${err.message}` }
   }
 
   // Validate it's parseable JSON (basic check)
   try {
     JSON.parse(packetContent)
   } catch {
-    return { task: current, error: "packet file is not valid JSON" }
+    return { task: null, error: "packet file is not valid JSON" }
   }
 
-  // Add evidence with kind=overclaim-packet
+  // Delegate to task_evidence_add — now lock-safe via withLockedTask
   return await task_evidence_add(projectRoot, id, {
     kind: "overclaim-packet",
     value: packetPath,
@@ -394,6 +383,7 @@ export interface TaskListFilters {
   status?: TaskStatus
   agent?: string // matches driver_agent OR worker_agent
   lane?: string
+  limit?: number
 }
 
 /**
@@ -417,6 +407,9 @@ export async function task_list(
     }
     if (filters.lane) {
       tasks = tasks.filter((t) => t.lane === filters.lane)
+    }
+    if (filters.limit !== undefined) {
+      tasks = tasks.slice(0, filters.limit)
     }
   }
 

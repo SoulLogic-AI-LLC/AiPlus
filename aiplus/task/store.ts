@@ -16,6 +16,7 @@ import * as path from "node:path"
 import type {
   TaskRecord,
   TaskEvent,
+  TaskEventType,
   TaskIndex,
   TaskStatus,
   TaskPriority,
@@ -226,6 +227,60 @@ export async function getTaskById(projectRoot: string, id: string): Promise<Task
   // Fall back to full replay under lock
   const tasks = await snapshotTasks(projectRoot)
   return tasks.find((t) => t.id === id) ?? null
+}
+
+// ── Locked read-modify-write ──────────────────────────────────────────
+
+/**
+ * Sub-millisecond counter for event_id uniqueness inside locked writes.
+ */
+let _storeEventSeq = 0
+
+/**
+ * Run a read-modify-write cycle on a single task under one exclusive lock.
+ *
+ * 1. acquire tasks.lock
+ * 2. replay JSONL → get current task
+ * 3. call fn(task) → { task, eventType } | null
+ * 4. if result, append event to JSONL
+ * 5. rebuild index via atomic rename
+ * 6. release lock (in finally!)
+ * 7. return updated task (null if not found or fn returned null)
+ *
+ * This eliminates the TOCTOU window between getTaskById and appendEvent.
+ */
+export async function withLockedTask(
+  projectRoot: string,
+  id: string,
+  fn: (current: TaskRecord) => Promise<{ task: TaskRecord; eventType: TaskEventType } | null>,
+): Promise<TaskRecord | null> {
+  return await withLock(lockPath(projectRoot), async () => {
+    const tasks = replayEvents(projectRoot)
+    const current = tasks.find((t) => t.id === id)
+    if (!current) return null
+
+    const result = await fn(current)
+    if (!result) return null
+
+    const event: TaskEvent = {
+      schema_version: EVENT_SCHEMA_VERSION,
+      event_id: `event_${Date.now()}_${++_storeEventSeq}_${id}`,
+      event_type: result.eventType,
+      ts: result.task.updated_at,
+      task: result.task,
+    }
+
+    const logPath = eventLogPath(projectRoot)
+    const dir = path.dirname(logPath)
+    fs.mkdirSync(dir, { recursive: true })
+    const line = JSON.stringify(event) + "\n"
+    fs.appendFileSync(logPath, line, "utf-8")
+
+    const allTasks = replayEvents(projectRoot)
+    rebuildIndex(projectRoot, allTasks)
+
+    return result.task
+  })
 }
 
 // ── Proactive state / config passthrough (read-only) ──────────────────
