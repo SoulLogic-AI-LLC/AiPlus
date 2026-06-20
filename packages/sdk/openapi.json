@@ -31002,7 +31002,8 @@
       "description": "Experimental HttpApi workspace routes."
     },
     {
-      "name": "aiplus"
+      "name": "aiplus",
+      "description": "AiPlus Agent Team routes."
     },
     {
       "name": "opencode HttpApi",

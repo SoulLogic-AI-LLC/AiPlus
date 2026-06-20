@@ -34,84 +34,88 @@ async function waitFor<A>(label: string, fn: () => Promise<A | undefined>, timeo
 }
 
 describe("opencode daemon (subprocess)", () => {
-  test.skipIf(process.platform === "win32")("writes the daemon password file and protects /global/health", async () => {
-    // TODO: Windows support requires resolving Bun spawn/path issues that prevent the daemon from starting in CI.
-    await using tmp = await tmpdir()
-    const home = path.join(tmp.path, "home")
-    const port = await freePort()
-    await fs.mkdir(home, { recursive: true })
+  test.skipIf(process.platform === "win32")(
+    "writes the daemon password file and protects /global/health",
+    async () => {
+      // TODO: Windows support requires resolving Bun spawn/path issues that prevent the daemon from starting in CI.
+      await using tmp = await tmpdir()
+      const home = path.join(tmp.path, "home")
+      const port = await freePort()
+      await fs.mkdir(home, { recursive: true })
 
-    const env = {
-      ...process.env,
-      HOME: home,
-      OPENCODE_AUTH_CONTENT: "{}",
-      OPENCODE_CONFIG_CONTENT: JSON.stringify(testProviderConfig("http://127.0.0.1:1")),
-      OPENCODE_DAEMON_PORT: String(port),
-      OPENCODE_DISABLE_AUTOCOMPACT: "1",
-      OPENCODE_DISABLE_AUTOUPDATE: "1",
-      OPENCODE_DISABLE_MODELS_FETCH: "1",
-      OPENCODE_DISABLE_PROJECT_CONFIG: "1",
-      OPENCODE_PURE: "1",
-      OPENCODE_TEST_HOME: home,
-      XDG_CACHE_HOME: path.join(home, ".cache"),
-      XDG_CONFIG_HOME: path.join(home, ".config"),
-      XDG_DATA_HOME: path.join(home, ".local/share"),
-      XDG_STATE_HOME: path.join(home, ".local/state"),
-    }
+      const env = {
+        ...process.env,
+        HOME: home,
+        OPENCODE_AUTH_CONTENT: "{}",
+        OPENCODE_CONFIG_CONTENT: JSON.stringify(testProviderConfig("http://127.0.0.1:1")),
+        OPENCODE_DAEMON_PORT: String(port),
+        OPENCODE_DISABLE_AUTOCOMPACT: "1",
+        OPENCODE_DISABLE_AUTOUPDATE: "1",
+        OPENCODE_DISABLE_MODELS_FETCH: "1",
+        OPENCODE_DISABLE_PROJECT_CONFIG: "1",
+        OPENCODE_PURE: "1",
+        OPENCODE_TEST_HOME: home,
+        XDG_CACHE_HOME: path.join(home, ".cache"),
+        XDG_CONFIG_HOME: path.join(home, ".config"),
+        XDG_DATA_HOME: path.join(home, ".local/share"),
+        XDG_STATE_HOME: path.join(home, ".local/state"),
+      }
 
-    const proc = Bun.spawn(["bun", "run", "--conditions=browser", "./src/index.ts", "daemon"], {
-      cwd: packageRoot,
-      env,
-      stderr: "pipe",
-      stdout: "pipe",
-    })
-
-    try {
-      const dataDir = path.join(home, ".local/share", "opencode")
-      const passwordFile = path.join(dataDir, "daemon.password")
-      const portFile = path.join(dataDir, "daemon.port")
-
-      await waitFor("daemon health endpoint", async () => {
-        const response = await fetch(`http://127.0.0.1:${port}/global/health`).catch(() => undefined)
-        if (!response) return undefined
-        return response.status === 401 || response.status === 200 ? response.status : undefined
+      const proc = Bun.spawn(["bun", "run", "--conditions=browser", "./src/index.ts", "daemon"], {
+        cwd: packageRoot,
+        env,
+        stderr: "pipe",
+        stdout: "pipe",
       })
 
-      await waitFor("daemon password file", async () => {
-        try {
-          return await fs.stat(passwordFile)
-        } catch {
-          return undefined
-        }
-      })
+      try {
+        const dataDir = path.join(home, ".local/share", "opencode")
+        const passwordFile = path.join(dataDir, "daemon.password")
+        const portFile = path.join(dataDir, "daemon.port")
 
-      await waitFor("daemon port file", async () => {
-        try {
-          return await fs.stat(portFile)
-        } catch {
-          return undefined
-        }
-      })
+        await waitFor("daemon health endpoint", async () => {
+          const response = await fetch(`http://127.0.0.1:${port}/global/health`).catch(() => undefined)
+          if (!response) return undefined
+          return response.status === 401 || response.status === 200 ? response.status : undefined
+        })
 
-      const password = (await fs.readFile(passwordFile, "utf8")).trim()
-      const stat = await fs.stat(passwordFile)
-      const portInfo = JSON.parse(await fs.readFile(portFile, "utf8")) as { port: number }
+        await waitFor("daemon password file", async () => {
+          try {
+            return await fs.stat(passwordFile)
+          } catch {
+            return undefined
+          }
+        })
 
-      expect(portInfo.port).toBe(port)
-      expect(password.length).toBeGreaterThan(20)
-      expect(stat.mode & 0o777).toBe(0o600)
+        await waitFor("daemon port file", async () => {
+          try {
+            return await fs.stat(portFile)
+          } catch {
+            return undefined
+          }
+        })
 
-      const unauthenticated = await fetch(`http://127.0.0.1:${port}/global/health`)
-      expect(unauthenticated.status).toBe(401)
+        const password = (await fs.readFile(passwordFile, "utf8")).trim()
+        const stat = await fs.stat(passwordFile)
+        const portInfo = JSON.parse(await fs.readFile(portFile, "utf8")) as { port: number }
 
-      const authorization = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`
-      const authenticated = await fetch(`http://127.0.0.1:${port}/global/health`, {
-        headers: { Authorization: authorization },
-      })
-      expect(authenticated.status).toBe(200)
-    } finally {
-      proc.kill()
-      await proc.exited.catch(() => undefined)
-    }
-  }, 30000)
+        expect(portInfo.port).toBe(port)
+        expect(password.length).toBeGreaterThan(20)
+        expect(stat.mode & 0o777).toBe(0o600)
+
+        const unauthenticated = await fetch(`http://127.0.0.1:${port}/global/health`)
+        expect(unauthenticated.status).toBe(401)
+
+        const authorization = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`
+        const authenticated = await fetch(`http://127.0.0.1:${port}/global/health`, {
+          headers: { Authorization: authorization },
+        })
+        expect(authenticated.status).toBe(200)
+      } finally {
+        proc.kill()
+        await proc.exited.catch(() => undefined)
+      }
+    },
+    30000,
+  )
 })
