@@ -34,7 +34,8 @@ async function waitFor<A>(label: string, fn: () => Promise<A | undefined>, timeo
 }
 
 describe("opencode daemon (subprocess)", () => {
-  test("writes the daemon password file and protects /global/health", async () => {
+  test.skipIf(process.platform === "win32")("writes the daemon password file and protects /global/health", async () => {
+    // TODO: Windows support requires resolving Bun spawn/path issues that prevent the daemon from starting in CI.
     await using tmp = await tmpdir()
     const home = path.join(tmp.path, "home")
     const port = await freePort()

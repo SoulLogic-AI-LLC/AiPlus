@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 import { described } from "./metadata"
+import { Authorization } from "../middleware/authorization"
 
 // ===== Response Schemas =====
 
@@ -176,5 +177,7 @@ export const AiplusApi = HttpApi.make("aiplus").add(
           description: "Retrieve all AiPlus Agent Team personas with their permissions.",
         }),
       ),
-    ),
+    )
+    .middleware(Authorization)
+    .annotateMerge(OpenApi.annotations({ title: "aiplus", description: "AiPlus Agent Team routes." })),
 )
