@@ -3,6 +3,11 @@
 
 [English README](README.md)
 
+<!-- TODO: verify AiPlus_StarWeaver repo ownership
+     All AiPlus_StarWeaver links below still point to the legacy izhiwen/AiPlus_StarWeaver repo.
+     The SoulLogic-AI-LLC org does not currently contain an AiPlus_StarWeaver repository;
+     Owner needs to confirm whether these should become SoulLogic-AI-LLC/AiPlus or a separate repo. -->
+
 ![AiPlus：把单个 AI coding agent 升级成一支协同团队。图中是项目 lobby 的真实 17 角色名册（12 核心角色 + 2 评审席 + 3 专家），下方是一行可复制的安装命令，以及贯穿七个阶段的工作流条带：记住决策 → 派活 → 团队协作 → 安全交接 → 状态报告 → 自我纠偏 → 可审计。底部是凭据徽章：最新 tag v0.7.23、100% 本地、无遥测。](docs/screenshots/readme-hero-zh.webp)
 
 **把单个 AI coding helper，升级成一支协同团队。**

@@ -2268,7 +2268,7 @@ This release lands **two iterations** of discovery work:
   Mac), `x86_64-unknown-linux-gnu` (Linux), `aarch64-unknown-linux-gnu`
   (Linux ARM). The CI release workflow no longer cross-builds these.
 - **Users on dropped platforms** can still build from source:
-  `git clone https://github.com/izhiwen/AiPlus && cargo build
+  `git clone https://github.com/SoulLogic-AI-LLC/AiPlus && cargo build
   --release -p aiplus-cli`. Existing installed binaries continue
   to work; this only affects future pre-built downloads.
 - `install.sh` now refuses non-Apple-Silicon-Mac platforms with a
