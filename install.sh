@@ -25,11 +25,7 @@ case "$OS" in
     echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
-RELEASE_URL="https://github.com/izhiwen/AiPlus_StarWeaver/releases/download/v1.0.0-test-3/aiplus-${TARGET}.${EXT}"
-# TODO: verify AiPlus_StarWeaver repo ownership
-# This release URL still points to the legacy izhiwen/AiPlus_StarWeaver repo.
-# The SoulLogic-AI-LLC org does not currently contain an AiPlus_StarWeaver repository;
-# Owner needs to confirm whether this should become SoulLogic-AI-LLC/AiPlus or a separate repo.
+RELEASE_URL="https://github.com/SoulLogic-AI-LLC/AiPlus/releases/download/v1.0.0-test-3/aiplus-${TARGET}.${EXT}"
 CHECKSUM_URL="${RELEASE_URL}.sha256"
 
 echo "Installing AiPlus v1.0.0-test-3 for ${TARGET}..."
