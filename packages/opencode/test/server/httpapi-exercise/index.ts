@@ -115,6 +115,30 @@ const scenarios: Scenario[] = [
       },
       "status",
     ),
+  http.protected.get("/aiplus/lobby/status", "aiplus.lobby.status").json(200, (body) => {
+    object(body)
+    array(body.roles)
+    array(body.lanes)
+    object(body.state)
+  }),
+  http.protected.get("/aiplus/dispatch/list", "aiplus.dispatch.list").json(200, array),
+  http.protected
+    .get("/aiplus/dispatch/{sessionId}", "aiplus.dispatch.get.missing")
+    .at((ctx) => ({
+      path: route("/aiplus/dispatch/{sessionId}", { sessionId: "ses_httpapi_missing" }),
+      headers: ctx.headers(),
+    }))
+    .status(404),
+  http.protected.get("/aiplus/compact/capsule", "aiplus.compact.capsule").json(200, (body) => {
+    object(body)
+    check(body.capsule === null || isRecord(body.capsule), "capsule should be null or an object")
+    object(body.thresholds)
+  }),
+  http.protected.get("/aiplus/personas", "aiplus.personas.list").json(200, array),
+  // /global/ws is a WebSocket upgrade route. The exerciser harness uses HttpRouter.toWebHandler and
+  // does not perform an actual WebSocket handshake, so the route returns 400 without an upgrade header.
+  // A full WebSocket scenario would require harness support for Bun websocket upgrades.
+  http.protected.get("/global/ws", "global.ws").global().status(400),
   http.protected.get("/path", "path.get").json(200, (body, ctx) => {
     object(body)
     check(body.directory === ctx.directory, "directory should resolve from x-opencode-directory")

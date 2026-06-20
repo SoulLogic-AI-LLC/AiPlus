@@ -191,8 +191,8 @@ describe("tool.task", () => {
       config: {
         permission: {
           task: {
-            "*": "allow",
             zebra: "deny",
+            "*": "allow",
           },
         },
         agent: {

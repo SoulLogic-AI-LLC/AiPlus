@@ -38,7 +38,8 @@ interface State {
 
 export function evaluate(permission: string, pattern: string, ...rulesets: PermissionV1.Ruleset[]): PermissionV1.Rule {
   return (
-    rulesets
+    [...rulesets]
+      .reverse()
       .flat()
       .find((rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern)) ?? {
       action: "ask",
@@ -209,7 +210,9 @@ export function fromConfig(permission: ConfigPermissionV1.Info) {
 }
 
 export function merge(...rulesets: PermissionV1.Ruleset[]): PermissionV1.Rule[] {
-  return rulesets.flat()
+  // With first-match-wins semantics, later rulesets must appear first so that
+  // more specific/user config overrides earlier defaults.
+  return [...rulesets].reverse().flat()
 }
 
 export function disabled(tools: string[], ruleset: PermissionV1.Ruleset): Set<string> {

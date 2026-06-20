@@ -16,6 +16,8 @@ import { Skill } from "../../src/skill"
 import { Truncate } from "../../src/tool/truncate"
 import { LocationServiceMap } from "@opencode-ai/core/location-layer"
 
+import { TEAM } from "../../../../aiplus/team/manifest"
+
 const agentLayer = (flags: Partial<RuntimeFlags.Info> = {}) =>
   Agent.layer.pipe(
     Layer.provide(Plugin.defaultLayer),
@@ -440,12 +442,27 @@ it.instance(
 )
 
 it.instance(
-  "Agent.list keeps the default agent first and sorts the rest by name",
+  "Agent.list keeps the default agent first, then native agents, then persona agents",
   () =>
     Effect.gen(function* () {
-      const names = (yield* load((svc) => svc.list())).map((a) => a.name)
+      const agents = yield* load((svc) => svc.list())
+      const names = agents.map((a) => a.name)
       expect(names[0]).toBe("plan")
-      expect(names.slice(1)).toEqual(names.slice(1).toSorted((a, b) => a.localeCompare(b)))
+
+      const rest = agents.slice(1)
+      const nativeNames = rest.filter((a) => a.native === true).map((a) => a.name)
+      const personaNames = rest.filter((a) => a.native !== true).map((a) => a.name)
+
+      // Native agents come before persona agents.
+      if (nativeNames.length > 0 && personaNames.length > 0) {
+        const lastNativeIndex = names.lastIndexOf(nativeNames[nativeNames.length - 1])
+        const firstPersonaIndex = names.indexOf(personaNames[0])
+        expect(lastNativeIndex).toBeLessThan(firstPersonaIndex)
+      }
+
+      // Each group is sorted case-insensitively.
+      expect(nativeNames).toEqual(nativeNames.toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())))
+      expect(personaNames).toEqual(personaNames.toSorted((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())))
     }),
   {
     config: {
@@ -651,17 +668,17 @@ it.instance(
   },
 )
 
-it.instance("defaultAgent returns build when no default_agent config", () =>
+it.instance("defaultAgent returns first visible persona when no default_agent config", () =>
   Effect.gen(function* () {
     const agent = yield* load((svc) => svc.defaultAgent())
-    expect(agent).toBe("build")
+    expect(agent).toBe("Advisor")
   }),
 )
 
-it.instance("defaultInfo returns resolved build agent when no default_agent config", () =>
+it.instance("defaultInfo returns resolved persona agent when no default_agent config", () =>
   Effect.gen(function* () {
     const agent = yield* load((svc) => svc.defaultInfo())
-    expect(agent.name).toBe("build")
+    expect(agent.name).toBe("Advisor")
     expect(agent.mode).toBe("primary")
   }),
 )
@@ -730,12 +747,12 @@ it.instance(
 )
 
 it.instance(
-  "defaultAgent returns plan when build is disabled and default_agent not set",
+  "defaultAgent returns first visible persona when build is disabled and default_agent not set",
   () =>
     Effect.gen(function* () {
       const agent = yield* load((svc) => svc.defaultAgent())
-      // build is disabled, so it should return plan (next primary agent)
-      expect(agent).toBe("plan")
+      // build is disabled, but visible personas are still preferred as the default
+      expect(agent).toBe("Advisor")
     }),
   {
     config: {
@@ -747,13 +764,14 @@ it.instance(
 )
 
 it.instance(
-  "defaultAgent throws when all primary agents are disabled",
+  "defaultAgent throws when all visible primary agents are disabled",
   () => expectDefaultAgentError("no primary visible agent found"),
   {
     config: {
       agent: {
         build: { disable: true },
         plan: { disable: true },
+        ...Object.fromEntries(TEAM.map((role) => [role.persona, { disable: true }])),
       },
     },
   },
