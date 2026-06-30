@@ -280,7 +280,7 @@ Once you're in, you don't need to memorize commands. Just ask the agent in plain
 
 ### Status
 
-Latest release: **`v0.1.0`**, available from
+Latest release: **`v1.0.2`**, available from
 [Releases](https://github.com/SoulLogic-AI-LLC/AiPlus/releases/latest) (pre-built binaries cover Apple
 Silicon macOS and Intel Windows, with published checksums). Active development continues on
 `main`; `main` may include updates newer than the latest tag — shipped capabilities are defined
@@ -292,4 +292,3 @@ the latest tagged release when clearly marked.
 ### License
 
 Source available. [License](LICENSE).
-

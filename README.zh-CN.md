@@ -195,11 +195,10 @@ aiplus
 
 ### 状态
 
-最新发布：**`v0.7.23`**，可从 [Releases](https://github.com/SoulLogic-AI-LLC/AiPlus/releases/latest) 获取（预编译二进制覆盖 Apple Silicon macOS 和 Intel Windows，并发布 checksums）。`main` 分支持续活跃开发；`main` 可能包含比最新 tag 更新的内容 —— 已发布能力以最新 tag 和 release notes 为准。README 里某些细节，在明确标注时，可能描述比最新 tag 更新的工作。
+最新发布：**`v1.0.2`**，可从 [Releases](https://github.com/SoulLogic-AI-LLC/AiPlus/releases/latest) 获取（预编译二进制覆盖 Apple Silicon macOS 和 Intel Windows，并发布 checksums）。`main` 分支持续活跃开发；`main` 可能包含比最新 tag 更新的内容 —— 已发布能力以最新 tag 和 release notes 为准。README 里某些细节，在明确标注时，可能描述比最新 tag 更新的工作。
 
 如果它帮你省了时间，欢迎 [在 GitHub 上给 AiPlus 点个 Star](https://github.com/SoulLogic-AI-LLC/AiPlus)。
 
 ### License
 
 Source available. [License](LICENSE).
-
