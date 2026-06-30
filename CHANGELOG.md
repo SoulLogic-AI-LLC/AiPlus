@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- Public `install.sh` now installs GitHub Latest by default, honors
+  `AIPLUS_VERSION=<tag>`, and verifies downloaded release archives against
+  the release `checksums.txt`.
+
 ## 0.7.30
 
 ### Added
